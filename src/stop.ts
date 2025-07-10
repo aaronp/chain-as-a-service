@@ -1,3 +1,3 @@
 import { execa } from "execa";
 
-await execa("docker", ["rm", "-f", "anvil_txcase"]);
+await execa("docker", ["rm", "-f", "anvil_bootstrap"]);

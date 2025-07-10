@@ -9,6 +9,9 @@ const cmd = [
     "--name", "anvil_bootstrap",
     "-p", "8545:8545",
     "-v", `${process.cwd()}/${stateDir}:/output`,
+    // Mount the src directory for scripts and artifacts
+    "-v", `${process.cwd()}/scripts:/scripts`,
+    "-v", `${process.cwd()}/src/contracts:/contracts`,
     "ghcr.io/foundry-rs/foundry:latest",
     "anvil", "--host", "0.0.0.0", "--dump-state", "/output/state.json"
 ];

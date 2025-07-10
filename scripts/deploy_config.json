@@ -1,0 +1,7 @@
+{
+  "idFile": "id.json",
+  "contractPath": "/contracts/erc20/MyToken.sol:MyToken",
+  "name": "MyToken",
+  "symbol": "MTK",
+  "supply": 10000
+}
