@@ -6,10 +6,13 @@ await execa("mkdir", ["-p", stateDir]);
 // Start Anvil, dump state to mounted host folder
 const cmd = [
     "run", "--rm", "-d",
+    "--platform", "linux/amd64",
     "--name", "anvil_bootstrap",
     "-p", "8545:8545",
     "-v", `${process.cwd()}/${stateDir}:/output`,
-    // Mount the src directory for scripts and artifacts
+    // Mount the project root for id.json and contract sources
+    "-v", `${process.cwd()}:/project`,
+    // Mount the scripts directory for deploy.sh and config
     "-v", `${process.cwd()}/scripts:/scripts`,
     "-v", `${process.cwd()}/src/contracts:/contracts`,
     "ghcr.io/foundry-rs/foundry:latest",
