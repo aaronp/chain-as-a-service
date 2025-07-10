@@ -15,6 +15,7 @@ const cmd = [
     // Mount the scripts directory for deploy.sh and config
     "-v", `${process.cwd()}/scripts:/scripts`,
     "-v", `${process.cwd()}/src/contracts:/contracts`,
+    "-v", `${process.cwd()}/src/contracts/openzeppelin-contracts:/lib/openzeppelin-contracts`,
     "ghcr.io/foundry-rs/foundry:latest",
     "anvil", "--host", "0.0.0.0", "--dump-state", "/output/state.json"
 ];
