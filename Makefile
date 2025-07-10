@@ -9,6 +9,7 @@ deploy:
 	bun run src/createDeploy.ts
 deployExec:
 	docker exec -it anvil_bootstrap /bin/sh /scripts/deploy.sh /scripts/deploy_config.json
-
+shell:
+	docker exec -it anvil_bootstrap /bin/sh 
 tx:
 	bun run src/tx.ts
