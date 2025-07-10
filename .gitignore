@@ -40,3 +40,4 @@ yarn-error.log*
 **/*.log
 package-lock.json
 **/*.bunerc20-demo
+id.json
