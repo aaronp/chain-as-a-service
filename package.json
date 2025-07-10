@@ -6,6 +6,7 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@clack/prompts": "^0.11.0",
     "clack": "^0.1.0",
     "elysia": "^1.3.5",
     "ethers": "^6.15.0",

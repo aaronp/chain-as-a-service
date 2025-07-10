@@ -1,11 +1,10 @@
 import { Wallet, JsonRpcProvider, ContractFactory } from "ethers";
 import { readFile, writeFile } from "fs/promises";
-// @ts-expect-error: clack/prompts may not have types in Bun
-import { text, intro, outro } from "clack/prompts";
+import { text, intro, outro } from "@clack/prompts";
 
 // ---- Config ----
 const RPC_URL = "http://localhost:8545"; // Change if needed
-const CONTRACT_ARTIFACT = "./contracts/erc20/MyToken.json";
+const CONTRACT_ARTIFACT = "./src/contracts/erc20/MyToken.json";
 const ID_FILE = "./id.json";
 const DEPLOY_INFO = "./deployed_token.json";
 
@@ -31,23 +30,17 @@ async function main() {
         placeholder: "MTK",
         defaultValue: "MTK"
     }) || "MTK";
-    const decimalsStr = await text({
-        message: "Decimals:",
-        placeholder: "18",
-        defaultValue: "18",
-        validate: (v: string) => isNaN(Number(v)) ? "Enter a number" : undefined
-    }) || "18";
-    const decimals = Number(decimalsStr);
     const supplyStr = await text({
         message: "Initial supply:",
-        placeholder: "1000000",
-        defaultValue: "1000000",
+        placeholder: "10000",
+        defaultValue: "10000",
         validate: (v: string) => isNaN(Number(v)) ? "Enter a number" : undefined
-    }) || "1000000";
+    }) || "10000";
     const supply = Number(supplyStr);
 
     // Load identity
-    const { privateKey } = JSON.parse(await readFile(idFile, "utf-8"));
+    const idFilePath = typeof idFile === "string" ? idFile : String(idFile);
+    const { privateKey } = JSON.parse(await readFile(idFilePath, "utf-8"));
 
     // Setup provider/wallet
     const provider = new JsonRpcProvider(RPC_URL);
@@ -64,8 +57,7 @@ async function main() {
     const token = await factory.deploy(
         name,      // name
         symbol,    // symbol
-        decimals,  // decimals (if your constructor uses this)
-        supply     // supply (adjust for your contract)
+        supply     // supply
     );
     console.log("Deploying... TX:", token.deploymentTransaction()?.hash);
 
