@@ -1,7 +1,7 @@
 import { execa } from "execa";
 import { mkdir } from "fs/promises";
 
-const stateDir = "./anvil_state_bootstrap";
+const stateDir = "./state";
 await execa("mkdir", ["-p", stateDir, "./out"]);
 await execa("mkdir", ["-p", stateDir, "./cache"]);
 // Ensure out directory exists for build artifacts
@@ -24,7 +24,7 @@ const cmd = [
     // Mount the OpenZeppelin contracts
     "-v", `${process.cwd()}/src/contracts/openzeppelin-contracts:/openzeppelin-contracts`,
     // Mount the out directory for build artifacts
-    "-v", `${process.cwd()}/out:/out`,
+    "-v", `${process.cwd()}/state/out:/out`,
     // Mount the remappings.txt file
     "-v", `${process.cwd()}/remappings.txt:/remappings.txt`,
     "ghcr.io/foundry-rs/foundry:latest",

@@ -8,9 +8,9 @@ async function main() {
 
     const idFile = await text({
         message: "Path to identity file:",
-        placeholder: "id.json",
-        defaultValue: "id.json"
-    }) || "id.json";
+        placeholder: "/project/id.json",
+        defaultValue: "/project/id.json"
+    }) || "/project/id.json";
 
     const contractPath = await text({
         message: "Contract path (e.g. /contracts/erc20/MyToken.sol:MyToken):",

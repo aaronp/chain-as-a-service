@@ -29,5 +29,6 @@ PRIVATE_KEY=$(json_extract privateKey "$ID_FILE")
 forge create \
   --rpc-url http://127.0.0.1:8545 \
   --private-key "$PRIVATE_KEY" \
+  --broadcast \
   "$CONTRACT_PATH" \
   --constructor-args "$NAME" "$SYMBOL" "$SUPPLY" 
