@@ -8,7 +8,7 @@ await execa("mkdir", ["-p", stateDir, "./cache"]);
 await mkdir("./out", { recursive: true });
 
 // const image = "ghcr.io/foundry-rs/foundry:latest"
-const image = "evm-as-a-service:latest"
+const image = "evm-as-a-service:0.0.1"
 
 // Start Anvil, dump state to mounted host folder
 const cmd = [

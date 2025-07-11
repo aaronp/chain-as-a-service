@@ -1,8 +1,9 @@
 FROM ghcr.io/foundry-rs/foundry:latest
 
 USER root
-RUN apt-get update && apt-get install -y socat
+RUN apt-get update && apt-get install -y socat bash
 
 USER foundry
-# Start socat in the background, then anvil
-CMD ["sh", "-c", "socat TCP-LISTEN:8545,fork,reuseaddr TCP:127.0.0.1:8545 & anvil --host 127.0.0.1"]
+# Start socat and anvil in background, wait for either to exit
+CMD ["echo", "hello EVM world"]
+
