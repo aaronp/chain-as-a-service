@@ -1,6 +1,15 @@
 import { execa } from "execa";
 import { writeFile } from "fs/promises";
 
+/**
+ * This script is used to extract the private keys from the anvil_bootstrap container and write them to a file.
+ * It is used to get the private keys for the accounts that are created by the anvil_bootstrap container.
+ * It is also used to get the private key for the deployer account.
+ * 
+ * It is used in the deploy.sh script to get the private key for the deployer account.
+ * 
+ * It is used in the parseDeploy.ts script to get the private keys for the accounts that are created by the anvil_bootstrap container.
+ */
 async function main() {
     // Get the logs from the anvil_bootstrap container
     const { stdout } = await execa("docker", ["logs", "anvil_bootstrap"]);
