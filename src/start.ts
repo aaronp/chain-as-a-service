@@ -7,11 +7,14 @@ await execa("mkdir", ["-p", stateDir, "./cache"]);
 // Ensure out directory exists for build artifacts
 await mkdir("./out", { recursive: true });
 
+// const image = "ghcr.io/foundry-rs/foundry:latest"
+const image = "evm-as-a-service:latest"
+
 // Start Anvil, dump state to mounted host folder
 const cmd = [
     "run", "--rm", "-d",
-    "--platform", "linux/amd64",
-    "--name", "anvil_bootstrap",
+    // "--platform", "linux/amd64",
+    "--name", "evm-as-a-service",
     "-p", "8545:8545",
     "-v", `${process.cwd()}/${stateDir}/output:/output`,
     "-v", `${process.cwd()}/${stateDir}/cache:/cache`,
@@ -27,7 +30,7 @@ const cmd = [
     "-v", `${process.cwd()}/state/out:/out`,
     // Mount the remappings.txt file
     "-v", `${process.cwd()}/remappings.txt:/remappings.txt`,
-    "ghcr.io/foundry-rs/foundry:latest",
+    image,
     "anvil", "--host", "0.0.0.0", "--dump-state", "/output/state.json"
 ];
 console.log(`🦊 Starting Anvil EVM API with command:\ndocker ${cmd.join(" ")}`);
