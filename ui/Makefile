@@ -1,7 +1,7 @@
 TAG=latest
 NAME=chain-as-a-service
 run:
-	docker run --rm -p 3000:3000 $(NAME):$(TAG)
+	docker run --rm -it -p 3000:3000 $(NAME):$(TAG)
 stop:
 	docker stop $(NAME):$(TAG)
 remove:

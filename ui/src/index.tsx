@@ -3,6 +3,7 @@ import index from "./index.html";
 import apiApp from "./api/api";
 
 const server = serve({
+  hostname: "0.0.0.0", // Added to allow external access in Docker
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
