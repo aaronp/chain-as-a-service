@@ -1,5 +1,6 @@
 import { treaty } from '@elysiajs/eden';
 import { Elysia, Static, t } from 'elysia';
+import { deployContract } from './impl/deployContract';
 
 export const DeployRequestSchema = t.Object({
     contractType: t.UnionEnum(['ERC20', 'ERC3643']),
@@ -20,8 +21,7 @@ export type ChainService = {
 }
 export class ChainImpl implements ChainService {
     deploy(request: DeployRequest): Promise<DeployResponse> {
-        console.log("ACTUALLY deploying", request);
-        return Promise.resolve({ result: "deploying " + request.contractType })
+        return deployContract(request);
     }
 }
 
@@ -40,7 +40,6 @@ export const chainRoutes = new Elysia({
             "Chain commands",
     },
 }).use(context)
-    .get("/", ({ service }) => service.deploy({ contractType: "ERC20" }))
     .post(
         '/',
         async ({ body, service }: { body: DeployRequest, service: ChainService }) => service.deploy(body),
@@ -54,7 +53,7 @@ export const chainRoutes = new Elysia({
             },
             detail: {
                 tags: ["chain"],
-                description: "Chain commands",
+                description: "Deploy a new contract to a chain",
             },
         },
     );

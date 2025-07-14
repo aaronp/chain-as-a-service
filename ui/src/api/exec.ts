@@ -1,4 +1,5 @@
 import { Elysia, Static, t } from 'elysia';
+import { execute } from './impl/execute';
 
 export const ExecuteRequestSchema = t.Object({
     commandLine: t.String(),
@@ -14,39 +15,10 @@ export const ExecuteResponseSchema = t.Object({
 export type ExecuteResponse = Static<typeof ExecuteResponseSchema>;
 
 
-/**
- * The execute business logic 
- * @param request The request to execute
- * @returns 
- */
-const exec = async (request: ExecuteRequest) => {
-    const { commandLine, timeout } = request;
-    console.log("executing ", request);
-    const [cmd, ...args] = commandLine.split(' ');
-    let stdout = '', stderr = '', code = null;
-    try {
-        const proc = Bun.spawn([
-            cmd,
-            ...args
-        ], {
-            stdout: 'pipe',
-            stderr: 'pipe',
-        });
-        const timer = setTimeout(() => proc.kill(), timeout);
-        stdout = await new Response(proc.stdout).text();
-        stderr = await new Response(proc.stderr).text();
-        code = await proc.exited;
-        clearTimeout(timer);
-    } catch (e: any) {
-        stderr = String(e);
-        code = -1;
-    }
-    return { stdout, stderr, code };
-}
 
 export const execContext = new Elysia({ name: "execContext" })
     .derive({ as: "global" }, ({ }) => {
-        return { exec };
+        return { exec: execute };
     });
 
 
@@ -59,10 +31,10 @@ export const execRoute = new Elysia({
             "Execute commands",
     },
 }).use(execContext)
-    .get("/", () => exec({ commandLine: "pwd", timeout: 10000 }))
+    .get("/", ({ exec }) => exec({ commandLine: "pwd", timeout: 10000 }))
     .post(
         '/',
-        async ({ body }: { body: ExecuteRequest }) => exec(body),
+        async ({ body, exec }: { body: ExecuteRequest, exec: (request: ExecuteRequest) => Promise<ExecuteResponse> }) => exec(body),
         {
             body: ExecuteRequestSchema,
             response: {
