@@ -13,7 +13,10 @@
     "execa": "^9.6.0"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "autoprefixer": "^10.4.21",
+    "bun-types": "latest",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11"
   },
   "module": "src/index.js"
 }
