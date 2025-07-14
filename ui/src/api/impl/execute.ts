@@ -1,4 +1,5 @@
 import { ExecuteRequest } from "../exec";
+import path from "path";
 
 /**
  * The execute business logic 
@@ -12,15 +13,17 @@ export const execute = async (request: ExecuteRequest) => {
     const args = allArgs.filter(arg => arg.trim() !== "").map(arg => arg.replace(/\n/g, ''));
     let stdout = '', stderr = '', code = null;
     console.log(">>>>\n", cmd, args.join(" "), "\n");
-    console.log("executing ", cmd, "w/", JSON.stringify(args));
+    const dir = request.dir ? path.resolve(request.dir) : process.cwd();
+    console.log("executing ", cmd, "w/", JSON.stringify(args), "in", dir, " (current dir is:", process.cwd(), ")");
     try {
-        const proc = Bun.spawn(["sh", "-c",
+        const proc = Bun.spawn([
             cmd,
             ...args
         ], {
             stdout: 'pipe',
             stderr: 'pipe',
             env: { ...request.env, ...process.env },
+            cwd: dir
         });
         const timer = setTimeout(() => proc.kill(), timeout);
         stdout = await new Response(proc.stdout).text();

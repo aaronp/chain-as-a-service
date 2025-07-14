@@ -60,23 +60,9 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
         throw new Error("Unsupported contract type: " + contractType)
     }
 
-    const contractJsonPath = `./ui/contracts/erc20/MyToken.sol:MyToken`;
-
-    // note: this is coupled with the anvil seed key
-    // hard-coded seed key for anvil
-    const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-
-    //--private-key "$PRIVATE_KEY" \
     const result = await withAnvil(async () => {
         const result = await execute({
-            commandLine: `forge create 
-            --rpc-url http://127.0.0.1:8545
-            --private-key "${privateKey}" 
-            --broadcast 
-            ${contractJsonPath}
-            --constructor-args "${name}" "${symbol}" "${decimals}" `, timeout: 10000, env: {
-                FOUNDRY_REMAPPINGS: "@openzeppelin/contracts/=/openzeppelin-contracts/contracts/"
-            }
+            commandLine: `./deploy.sh ${name} ${symbol} ${decimals}`, timeout: 10000, dir: "./contracts/erc20"
         });
         console.log("deploy result", result);
         return { result: result.stdout || result.stderr };

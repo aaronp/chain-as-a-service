@@ -5,6 +5,7 @@ export const ExecuteRequestSchema = t.Object({
     commandLine: t.String(),
     timeout: t.Optional(t.Number()),
     env: t.Optional(t.Record(t.String(), t.String())),
+    dir: t.Optional(t.String()),
 });
 export type ExecuteRequest = Static<typeof ExecuteRequestSchema>;
 
