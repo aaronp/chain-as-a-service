@@ -11,18 +11,16 @@ export const execute = async (request: ExecuteRequest) => {
     const [cmd, ...allArgs] = commandLine.split(' ');
     const args = allArgs.filter(arg => arg.trim() !== "").map(arg => arg.replace(/\n/g, ''));
     let stdout = '', stderr = '', code = null;
-    console.log("executing ", cmd, "w/", args.length, "args:");
-    for (const [i, arg] of args.entries()) {
-        console.log(i, " :", arg);
-    }
-    console.log("WHOLE LINE:", JSON.stringify(args));
+    console.log(">>>>\n", cmd, args.join(" "), "\n");
+    console.log("executing ", cmd, "w/", JSON.stringify(args));
     try {
-        const proc = Bun.spawn([
+        const proc = Bun.spawn(["sh", "-c",
             cmd,
             ...args
         ], {
             stdout: 'pipe',
             stderr: 'pipe',
+            env: { ...request.env, ...process.env },
         });
         const timer = setTimeout(() => proc.kill(), timeout);
         stdout = await new Response(proc.stdout).text();

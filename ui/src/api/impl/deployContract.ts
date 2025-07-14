@@ -74,7 +74,9 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
             --private-key "${privateKey}" 
             --broadcast 
             ${contractJsonPath}
-            --constructor-args "${name}" "${symbol}" "${decimals}" `, timeout: 10000
+            --constructor-args "${name}" "${symbol}" "${decimals}" `, timeout: 10000, env: {
+                FOUNDRY_REMAPPINGS: "@openzeppelin/contracts/=/openzeppelin-contracts/contracts/"
+            }
         });
         console.log("deploy result", result);
         return { result: result.stdout || result.stderr };
