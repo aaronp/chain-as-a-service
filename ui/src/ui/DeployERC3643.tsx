@@ -5,7 +5,7 @@ import { client } from "@/api/client";
 
 const api = edenTreaty('/api');
 
-export default function DeployERC20() {
+export default function DeployERC3643() {
     const { id } = useParams(); // chain id
     const navigate = useNavigate();
     const [name, setName] = useState("");
@@ -19,7 +19,7 @@ export default function DeployERC20() {
         setError(null);
         try {
             const response = await client(window.location.origin).deploy({
-                contractType: "ERC20",
+                contractType: "ERC3643",
                 name,
                 symbol,
                 decimals,
@@ -39,7 +39,7 @@ export default function DeployERC20() {
 
     return (
         <div className="p-4 max-w-md mx-auto bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Deploy ERC20 Token</h2>
+            <h2 className="text-xl font-semibold mb-4">Deploy ERC3643 Token</h2>
             <label className="block mb-2 font-medium" htmlFor="token-name">Token Name</label>
             <input
                 id="token-name"

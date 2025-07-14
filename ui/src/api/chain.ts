@@ -2,7 +2,10 @@ import { treaty } from '@elysiajs/eden';
 import { Elysia, Static, t } from 'elysia';
 
 export const DeployRequestSchema = t.Object({
-    contractType: t.UnionEnum(['ERC20', 'ERC3643'])
+    contractType: t.UnionEnum(['ERC20', 'ERC3643']),
+    name: t.String(),
+    symbol: t.String(),
+    decimals: t.Number(),
 });
 export type DeployRequest = Static<typeof DeployRequestSchema>;
 

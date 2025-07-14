@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import DeployERC20 from "./DeployERC20";
+import DeployERC3643 from "./DeployERC3643";
 
 export default function DeployContract() {
     const [type, setType] = useState("ERC20");
@@ -18,6 +20,9 @@ export default function DeployContract() {
                 <option value="ERC20">ERC20</option>
                 <option value="ERC3643">ERC3643</option>
             </select>
+
+            {type === "ERC20" && <DeployERC20 />}
+            {type === "ERC3643" && <DeployERC3643 />}
         </div>
     );
 }
