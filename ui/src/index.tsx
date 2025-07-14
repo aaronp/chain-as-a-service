@@ -1,10 +1,18 @@
 import { serve } from "bun";
 import index from "./index.html";
+import apiApp from "./api";
 
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
+
+    "/api/elysia": async req => {
+      // Use Elysia app to handle the request
+      // Elysia expects a BunRequest, so we forward it
+      console.log("api/elysia forwarding...");
+      return await apiApp.handle(req);
+    },
 
     "/api/hello": {
       async GET(req) {
