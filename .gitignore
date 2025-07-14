@@ -44,3 +44,5 @@ id.json
 
 src/contracts/openzeppelin-contracts
 state
+
+**/anvil-state-*json

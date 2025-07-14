@@ -2,13 +2,16 @@ import { DeployRequest, DeployResponse } from '../chain';
 import { writeFile } from 'fs/promises';
 import { execute } from './execute';
 import { ErrorResponse } from '../error';
+import path from 'path';
 
-const withAnvil = async (fn: () => Promise<DeployResponse | ErrorResponse>) => {
-    console.log("starting anvil");
+
+const withAnvil = async <A>(fn: () => Promise<A | ErrorResponse>) => {
+    const id = crypto.randomUUID();
+    const stateFile = path.resolve(`anvil-state-${id}.json`);
     const proc = Bun.spawn([
         "anvil",
         "--dump-state",
-        "anvil-state.json"
+        stateFile
     ], {
         stdout: 'pipe',
         stderr: 'pipe',
@@ -38,10 +41,34 @@ const withAnvil = async (fn: () => Promise<DeployResponse | ErrorResponse>) => {
         throw new Error("Anvil did not start in time");
     }
 
+    let result: A | ErrorResponse;
     try {
-        return await fn();
+        result = await fn();
+    } catch (e) {
+        console.error("anvil error", e);
+        throw e;
     } finally {
         proc.kill();
+    }
+
+    if (isErrorResponse(result)) {
+        return { result, state: null };
+    }
+    try {
+        // Wait for stateFile to exist, retry up to 20 times with 50ms sleep
+        let retries = 0;
+        while (!(await Bun.file(stateFile).exists())) {
+            if (retries++ >= 20) {
+                throw new Error(`State file not found after ${retries} attempts: ${stateFile}`);
+            }
+            await Bun.sleep(50);
+        }
+        const state = await Bun.file(stateFile).json();
+        console.log("returning state", state);
+        return { result, state };
+    } catch (e) {
+        console.error("error reading state", e);
+        return { result, state: null };
     }
 }
 
@@ -74,6 +101,8 @@ const parseDeployOutput = (scriptStdout: string): DeployOutput | ErrorResponse =
     return { contractAddress: address, txHash, deployerAddress: deployerAddress };
 }
 
+const isErrorResponse = (x: any): x is ErrorResponse => x && typeof x.error === 'string';
+
 /**
  * Deploys a contract using deploy.sh and returns the deployment result.
  * @param contractJsonPath Path to the contract JSON (e.g. /contracts/erc20/MyToken.sol:MyToken)
@@ -89,18 +118,25 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
         return { error: "Unsupported contract type: " + contractType }
     }
 
-    const result = await withAnvil(async () => {
+    const anvilResult = await withAnvil<DeployOutput>(async () => {
         const result = await execute({
             commandLine: `./deploy.sh ${name} ${symbol} ${decimals}`, timeout: 10000, dir: "./contracts/erc20"
         });
-        console.log("deploy result", result);
-        try {
-            const response: DeployOutput | ErrorResponse = parseDeployOutput(result.stdout);
-            return response;
-        } catch (e) {
-            const response: ErrorResponse = { error: result.stderr || result.stdout }
-            return response;
-        }
+        const parsed = parseDeployOutput(result.stdout);
+        return parsed;
     });
-    return result;
+    if (isErrorResponse(anvilResult)) {
+        return { error: anvilResult.error };
+    }
+    const { result: deployOutput, state } = anvilResult;
+    if (isErrorResponse(deployOutput)) {
+        // Defensive: should not happen, but handle just in case
+        return { error: deployOutput.error };
+    }
+    return {
+        contractAddress: deployOutput.contractAddress,
+        txHash: deployOutput.txHash,
+        deployerAddress: deployOutput.deployerAddress,
+        state
+    };
 }

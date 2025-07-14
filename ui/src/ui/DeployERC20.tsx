@@ -13,10 +13,12 @@ export default function DeployERC20() {
     const [decimals, setDecimals] = useState(18);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [deployResult, setDeployResult] = useState<any>(null);
 
     async function onDeployERC20() {
         setLoading(true);
         setError(null);
+        setDeployResult(null);
         try {
             const response = await client(window.location.origin).deploy({
                 contractType: "ERC20",
@@ -24,8 +26,9 @@ export default function DeployERC20() {
                 symbol,
                 decimals,
             });
-            alert(response.result);
-            navigate(`/chain/${id}`);
+            console.log(response);
+            setDeployResult(response);
+            // navigate(`/chain/${id}`);
         } catch (e: any) {
             setError(e.message || "Failed to deploy");
         } finally {
@@ -68,6 +71,12 @@ export default function DeployERC20() {
                 onChange={e => setDecimals(Number(e.target.value))}
             />
             {error && <div className="text-red-600 mb-2">{error}</div>}
+            {deployResult && (
+                <div className="text-green-700 bg-green-100 rounded p-2 mb-2 break-all">
+                    <strong>Deployment Result:</strong>
+                    <pre className="whitespace-pre-wrap text-xs mt-1">{JSON.stringify(deployResult, null, 2)}</pre>
+                </div>
+            )}
             <div className="flex justify-end gap-2">
                 <button
                     className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"

@@ -24,7 +24,7 @@ export default function DeployERC3643() {
                 symbol,
                 decimals,
             });
-            alert(response.result);
+            console.log(response);
             navigate(`/chain/${id}`);
         } catch (e: any) {
             setError(e.message || "Failed to deploy");

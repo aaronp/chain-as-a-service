@@ -15,6 +15,7 @@ export const DeployResponseSchema = t.Object({
     contractAddress: t.String(),
     txHash: t.String(),
     deployerAddress: t.String(),
+    state: t.Any({ description: "The EVM state at the time of deployment" })
 });
 export type DeployResponse = Static<typeof DeployResponseSchema>;
 
