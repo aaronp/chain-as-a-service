@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
+import { onDeployContract } from "./bff";
 
 const api = edenTreaty('/api');
 
@@ -27,6 +28,9 @@ export default function DeployERC20() {
                 decimals,
             });
             console.log(response);
+
+            onDeployContract(id!, "erc20", name, response.contractAddress, response.state);
+
             setDeployResult(response);
             // navigate(`/chain/${id}`);
         } catch (e: any) {
