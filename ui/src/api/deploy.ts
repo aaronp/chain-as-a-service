@@ -1,14 +1,12 @@
 import { Elysia, Static, t } from 'elysia';
 
 export const DeployRequestSchema = t.Object({
-    contractType: t.String()
+    contractType: t.UnionEnum(['ERC20', 'ERC3643'])
 });
 export type DeployRequest = Static<typeof DeployRequestSchema>;
 
 export const DeployResponseSchema = t.Object({
-    stdout: t.String(),
-    stderr: t.String(),
-    code: t.Number(),
+    result: t.String(),
 });
 export type DeployResponse = Static<typeof DeployResponseSchema>;
 
@@ -18,50 +16,29 @@ export type DeployResponse = Static<typeof DeployResponseSchema>;
  * @param request The request to deploy
  * @returns 
  */
-const exec = async (request: DeployRequest) => {
-    const { commandLine, timeout } = request;
-    console.log("executing ", request);
-    const [cmd, ...args] = commandLine.split(' ');
-    let stdout = '', stderr = '', code = null;
-    try {
-        const proc = Bun.spawn([
-            cmd,
-            ...args
-        ], {
-            stdout: 'pipe',
-            stderr: 'pipe',
-        });
-        const timer = setTimeout(() => proc.kill(), timeout);
-        stdout = await new Response(proc.stdout).text();
-        stderr = await new Response(proc.stderr).text();
-        code = await proc.exited;
-        clearTimeout(timer);
-    } catch (e: any) {
-        stderr = String(e);
-        code = -1;
-    }
-    return { stdout, stderr, code };
+const deploy = async (request: DeployRequest) => {
+    return { result: "deploying " + request.contractType }
 }
 
-export const execContext = new Elysia({ name: "execContext" })
+export const context = new Elysia({ name: "chainContext" })
     .derive({ as: "global" }, ({ }) => {
-        return { exec };
+        return { deploy };
     });
 
 
-export const execRoute = new Elysia({
-    name: "Deploy",
-    prefix: "/exec",
+export const chainRoutes = new Elysia({
+    name: "Chain",
+    prefix: "/chain",
     detail: {
-        tags: ["exec"],
+        tags: ["chain"],
         description:
-            "Deploy commands",
+            "Chain commands",
     },
-}).use(execContext)
-    .get("/", () => exec({ commandLine: "pwd", timeout: 10000 }))
+}).use(context)
+    .get("/", () => deploy({ contractType: "ERC20" }))
     .post(
         '/',
-        async ({ body }: { body: DeployRequest }) => exec(body),
+        async ({ body }: { body: DeployRequest }) => deploy(body),
         {
             body: DeployRequestSchema,
             response: {
@@ -71,8 +48,8 @@ export const execRoute = new Elysia({
                 }),
             },
             detail: {
-                tags: ["exec"],
-                description: "Deploy commands",
+                tags: ["chain"],
+                description: "Chain commands",
             },
         },
     );
