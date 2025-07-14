@@ -1,8 +1,9 @@
 import { DeployRequest, DeployResponse } from '../chain';
 import { writeFile } from 'fs/promises';
 import { execute } from './execute';
+import { ErrorResponse } from '../error';
 
-const withAnvil = async (fn: () => Promise<DeployResponse>) => {
+const withAnvil = async (fn: () => Promise<DeployResponse | ErrorResponse>) => {
     console.log("starting anvil");
     const proc = Bun.spawn([
         "anvil",
@@ -44,6 +45,34 @@ const withAnvil = async (fn: () => Promise<DeployResponse>) => {
     }
 }
 
+type DeployOutput = {
+    contractAddress: string;
+    txHash: string;
+    deployerAddress: string;
+}
+const parseDeployOutput = (scriptStdout: string): DeployOutput | ErrorResponse => {
+    const lines = scriptStdout.split("\n");
+
+    const deployerAddressLine = lines.find(line => line.includes("Deployer:"));
+    if (!deployerAddressLine) {
+        return { error: "No deployer address found in deploy output: " + scriptStdout };
+    }
+    const deployerAddress = deployerAddressLine.split("Deployer:")[1].trim();
+
+    const addressLine = lines.find(line => line.includes("Deployed to:"));
+    if (!addressLine) {
+        return { error: "No address found in deploy output: " + scriptStdout };
+    }
+    const address = addressLine.split("Deployed to:")[1].trim();
+
+    const txHashLine = lines.find(line => line.includes("Transaction hash:"));
+    if (!txHashLine) {
+        return { error: "No tx hash found in deploy output: " + scriptStdout };
+    }
+    const txHash = txHashLine.split("Transaction hash:")[1].trim();
+
+    return { contractAddress: address, txHash, deployerAddress: deployerAddress };
+}
 
 /**
  * Deploys a contract using deploy.sh and returns the deployment result.
@@ -53,11 +82,11 @@ const withAnvil = async (fn: () => Promise<DeployResponse>) => {
  * @param decimals Number of decimals (supply will be 10^decimals)
  * @returns DeployResponse with result string (deployed address or error)
  */
-export async function deployContract(request: DeployRequest): Promise<DeployResponse> {
+export async function deployContract(request: DeployRequest): Promise<DeployResponse | ErrorResponse> {
 
     const { contractType, name, symbol, decimals } = request;
     if (contractType !== "ERC20") {
-        throw new Error("Unsupported contract type: " + contractType)
+        return { error: "Unsupported contract type: " + contractType }
     }
 
     const result = await withAnvil(async () => {
@@ -65,7 +94,13 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
             commandLine: `./deploy.sh ${name} ${symbol} ${decimals}`, timeout: 10000, dir: "./contracts/erc20"
         });
         console.log("deploy result", result);
-        return { result: result.stdout || result.stderr };
+        try {
+            const response: DeployOutput | ErrorResponse = parseDeployOutput(result.stdout);
+            return response;
+        } catch (e) {
+            const response: ErrorResponse = { error: result.stderr || result.stdout }
+            return response;
+        }
     });
     return result;
 }

@@ -1,6 +1,7 @@
 import { treaty } from '@elysiajs/eden';
 import { Elysia, Static, t } from 'elysia';
 import { deployContract } from './impl/deployContract';
+import { ErrorResponseSchema } from './error';
 
 export const DeployRequestSchema = t.Object({
     contractType: t.UnionEnum(['ERC20', 'ERC3643']),
@@ -11,16 +12,18 @@ export const DeployRequestSchema = t.Object({
 export type DeployRequest = Static<typeof DeployRequestSchema>;
 
 export const DeployResponseSchema = t.Object({
-    result: t.String(),
+    contractAddress: t.String(),
+    txHash: t.String(),
+    deployerAddress: t.String(),
 });
 export type DeployResponse = Static<typeof DeployResponseSchema>;
 
 
 export type ChainService = {
-    deploy: (request: DeployRequest) => Promise<DeployResponse>;
+    deploy: (request: DeployRequest) => Promise<DeployResponse | { error: string }>;
 }
 export class ChainImpl implements ChainService {
-    deploy(request: DeployRequest): Promise<DeployResponse> {
+    deploy(request: DeployRequest): Promise<DeployResponse | { error: string }> {
         return deployContract(request);
     }
 }
@@ -47,9 +50,7 @@ export const chainRoutes = new Elysia({
             body: DeployRequestSchema,
             response: {
                 200: DeployResponseSchema,
-                400: t.Object({
-                    error: t.String(),
-                }),
+                400: ErrorResponseSchema,
             },
             detail: {
                 tags: ["chain"],
