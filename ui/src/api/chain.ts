@@ -1,3 +1,4 @@
+import { treaty } from '@elysiajs/eden';
 import { Elysia, Static, t } from 'elysia';
 
 export const DeployRequestSchema = t.Object({
@@ -11,18 +12,19 @@ export const DeployResponseSchema = t.Object({
 export type DeployResponse = Static<typeof DeployResponseSchema>;
 
 
-/**
- * The deploy business logic 
- * @param request The request to deploy
- * @returns 
- */
-const deploy = async (request: DeployRequest) => {
-    return { result: "deploying " + request.contractType }
+export type ChainService = {
+    deploy: (request: DeployRequest) => Promise<DeployResponse>;
+}
+export class ChainImpl implements ChainService {
+    deploy(request: DeployRequest): Promise<DeployResponse> {
+        console.log("ACTUALLY deploying", request);
+        return Promise.resolve({ result: "deploying " + request.contractType })
+    }
 }
 
 export const context = new Elysia({ name: "chainContext" })
     .derive({ as: "global" }, ({ }) => {
-        return { deploy };
+        return { service: new ChainImpl() };
     });
 
 
@@ -35,10 +37,10 @@ export const chainRoutes = new Elysia({
             "Chain commands",
     },
 }).use(context)
-    .get("/", () => deploy({ contractType: "ERC20" }))
+    .get("/", ({ service }) => service.deploy({ contractType: "ERC20" }))
     .post(
         '/',
-        async ({ body }: { body: DeployRequest }) => deploy(body),
+        async ({ body, service }: { body: DeployRequest, service: ChainService }) => service.deploy(body),
         {
             body: DeployRequestSchema,
             response: {

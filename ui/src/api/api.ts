@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { execRoute } from './exec';
 import swagger from "@elysiajs/swagger";
+import { chainRoutes } from "./chain";
 
 const app = new Elysia({
     name: "Chain-as-a-Service",
@@ -45,6 +46,7 @@ const app = new Elysia({
         set.headers["Expires"] = "0";
     })
     .use(execRoute)
+    .use(chainRoutes)
     .get("/", ({ set, request }) => {
         console.log("Redirecting to swagger docs at /docs from root");
         set.headers["Location"] = "/api/docs";
@@ -69,4 +71,5 @@ const app = new Elysia({
         };
     });
 
-export default app; 
+export default app;
+export type Api = typeof app;
