@@ -3,11 +3,19 @@ import { writeFile } from 'fs/promises';
 import { execute } from './execute';
 import { ErrorResponse } from '../error';
 import path from 'path';
+import os from 'os';
 
-
+/**
+ * Runs a function with anvil running in the background.
+ * @param fn The function to run.
+ * @returns The result of the function, or an error response if the function fails.
+ */
 const withAnvil = async <A>(fn: () => Promise<A | ErrorResponse>) => {
     const id = crypto.randomUUID();
     const stateFile = path.resolve(`anvil-state-${id}.json`);
+
+    const anvilDir = path.resolve(os.homedir(), ".foundry/bin");
+    console.log("anvilDir", anvilDir);
     const proc = Bun.spawn([
         "anvil",
         "--dump-state",
@@ -15,6 +23,7 @@ const withAnvil = async <A>(fn: () => Promise<A | ErrorResponse>) => {
     ], {
         stdout: 'pipe',
         stderr: 'pipe',
+        cwd: anvilDir
     });
 
     // Wait for Anvil to be ready by polling the REST endpoint

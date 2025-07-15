@@ -28,6 +28,14 @@ const updateState = (updater: (state: State) => State) => {
     saveState(newState);
 };
 
+// Minimal UUID v4 generator
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 export function onDeployContract(chainId: string, type: "erc20" | "erc3643", contractName: string, address: string, state: any) {
     updateState(state => ({
         ...state,
@@ -36,7 +44,7 @@ export function onDeployContract(chainId: string, type: "erc20" | "erc3643", con
 }
 
 export function onAddChain(chainName: string) {
-    const newChain = { name: chainName, id: crypto.randomUUID(), createdAt: Date.now(), contracts: [] };
+    const newChain = { name: chainName, id: uuidv4(), createdAt: Date.now(), contracts: [] };
     updateState(state => ({
         ...state,
         chains: [...state.chains, newChain]

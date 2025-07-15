@@ -15,5 +15,8 @@ remove:
 	docker stop $(NAME) || true
 	docker rm $(NAME) || true
 
-dev:
-	bunx tailwindcss -i ./src/input.css -o ./dist/output.css --watch && bun dev
+tailwind:
+	bunx tailwindcss -i ./src/input.css -o ./dist/output.css --watch &
+
+dev: tailwind
+	bun dev
