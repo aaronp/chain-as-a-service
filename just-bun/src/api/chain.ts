@@ -8,6 +8,7 @@ export const DeployRequestSchema = t.Object({
     name: t.String(),
     symbol: t.String(),
     decimals: t.Number(),
+    previousState: t.Optional(t.Any({ description: "The EVM state at the time of deployment" }))
 });
 export type DeployRequest = Static<typeof DeployRequestSchema>;
 

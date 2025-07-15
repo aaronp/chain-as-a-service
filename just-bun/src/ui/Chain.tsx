@@ -18,19 +18,22 @@ export default function Chain() {
 
 
     return (
-        <div>
-            <h2>{chain.name}</h2>
+        <div className="p-8">
+            <h2 className="text-3xl font-bold">{chain.name}</h2>
             <div className="text-gray-500">({chain.id})</div>
-            <div>Created: {new Date(chain.createdAt).toLocaleString()}</div>
+            <div className="text-gray-500">Created: {new Date(chain.createdAt).toLocaleString()}</div>
 
-            <h3 className="mt-6 text-lg font-semibold">Contracts</h3>
+            <h3 className="mt-6 text-2xl font-semibold">Contracts</h3>
             {contracts?.length === 0 ? (
                 <div className="text-gray-500">No contracts yet.</div>
             ) : (
                 <ul className="list-disc ml-6">
                     {contracts?.map((c, i) => (
                         <li key={i}>
-                            <span className="font-mono">{c.name}</span> @ <span className="font-mono">{c.address}</span> (added {new Date(c.createdAt).toLocaleString()})
+
+                            <div className="text-bold text-2xl">{c.name}</div>
+                            <div className="font-mono text-gray-500">{c.address}</div>
+                            <div className="text-gray-500"> (added {new Date(c.createdAt).toLocaleString()})</div>
                         </li>
                     ))}
                 </ul>

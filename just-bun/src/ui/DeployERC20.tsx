@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
-import { onDeployContract } from "./bff";
+import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "./bff";
 
 const api = edenTreaty('/api');
 
@@ -21,15 +21,18 @@ export default function DeployERC20() {
         setError(null);
         setDeployResult(null);
         try {
+            const state = evmStateForChain(id!)
             const response = await client(window.location.origin).deploy({
                 contractType: "ERC20",
                 name,
                 symbol,
                 decimals,
+                previousState: state
             });
             console.log(response);
 
-            onDeployContract(id!, "erc20", name, response.contractAddress, response.state);
+            onDeployContract(id!, "erc20", name, response.contractAddress);
+            updateEvmStateForContract(id!, response.state);
 
             setDeployResult(response);
             // navigate(`/chain/${id}`);

@@ -1,3 +1,5 @@
+import { uuidv4 } from "@/lib/uuid";
+
 export type State = {
     chains: {
         name: string;
@@ -7,10 +9,46 @@ export type State = {
             name: string;
             type: "erc20" | "erc3643";
             address: string;
-            createdAt: number;
-            state: any;
+            createdAt: number
         }[];
     }[];
+}
+
+export type BlockchainState = {
+    chainId: string;
+    evmState: any[];
+}
+
+// store evm chain state against a key of:
+// index a state-<chain>-<contract-addr>:
+// 
+
+const chainKey = (chainId: string) => `evmstate-${chainId}`;
+
+const stateForChain = (chainId: string) => {
+    const state = localStorage.getItem(chainKey(chainId));
+    return state ? JSON.parse(state) : {
+        chainId,
+        evmState: []
+    };
+}
+export const evmStateForChain = (chainId: string) => {
+    const evmChain = stateForChain(chainId).evmState
+    if (evmChain.length === 0) {
+        return undefined;
+    }
+    return evmChain[0];
+}
+
+/**
+ * TODO - take the SHA-256 of the previous state for a check
+ * @param chainId 
+ * @param newState 
+ */
+export const updateEvmStateForContract = (chainId: string, newState: any) => {
+    const state = stateForChain(chainId);
+    state.evmState.unshift(newState);
+    localStorage.setItem(chainKey(chainId), JSON.stringify(state));
 }
 
 const state = (): State => {
@@ -28,18 +66,13 @@ const updateState = (updater: (state: State) => State) => {
     saveState(newState);
 };
 
-// Minimal UUID v4 generator
-function uuidv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
 
-export function onDeployContract(chainId: string, type: "erc20" | "erc3643", contractName: string, address: string, state: any) {
+export function onDeployContract(chainId: string, type: "erc20" | "erc3643", contractName: string, address: string) {
+    const newContract = { name: contractName, type, address, createdAt: Date.now() }
+
     updateState(state => ({
         ...state,
-        chains: state.chains.map(chain => chain.id === chainId ? { ...chain, contracts: [...chain.contracts, { name: contractName, type, address, createdAt: Date.now(), state }] } : chain)
+        chains: state.chains.map(chain => chain.id === chainId ? { ...chain, contracts: [...chain.contracts, newContract] } : chain)
     }));
 }
 
