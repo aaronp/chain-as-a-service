@@ -8,7 +8,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import "./input.css";
+import "./index.css";
+
 
 const elem = document.getElementById("root")!;
 const app = (
@@ -25,3 +26,4 @@ if (import.meta.hot) {
   // The hot module reloading API is not available in production.
   createRoot(elem).render(app);
 }
+

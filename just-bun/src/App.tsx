@@ -1,27 +1,24 @@
-import { APITester } from "./APITester";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import ChainDashboard from "./ui/ChainDashboard";
+import "./index.css";
 
-function AppBar() {
-  return (
-    <header className="w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container mx-auto flex h-16 items-center px-4 bg-red-50">
-        <span className="text-4xl font-bold tracking-tight">Chain as a Service</span>
-      </div>
-    </header>
-  );
-}
+import Chain from "./ui/Chain";
+import DeployContract from "./ui/DeployContract";
 
 export function App() {
   return (
-    <>
-      <AppBar />
+    <BrowserRouter basename="/">
       <div className="app">
-        <h1>Bun + React</h1>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-        <APITester />
+        <nav className="mb-8 flex gap-4 justify-center">
+          <Link to="/" className="text-blue-600 hover:underline">Home</Link>
+        </nav>
+        <Routes>
+          <Route path="/" element={<ChainDashboard />} />
+          <Route path="/chain/:id" element={<Chain />} />
+          <Route path="/chain/:id/add" element={<DeployContract />} />
+        </Routes>
       </div>
-    </>
+    </BrowserRouter>
   );
 }
 
