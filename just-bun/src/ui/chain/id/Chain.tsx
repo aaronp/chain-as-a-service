@@ -1,5 +1,6 @@
 import React from "react";
-import { chainForId, listContracts } from "./bff";
+import { chainForId, listContracts } from "../../bff";
+import { Link } from "react-router-dom";
 
 export default function Chain() {
     // Get the last segment from the URL path as the chainId
@@ -31,9 +32,8 @@ export default function Chain() {
                     {contracts?.map((c, i) => (
                         <li key={i}>
 
-                            <div className="text-bold text-2xl">{c.name}</div>
-                            <div className="font-mono text-gray-500">{c.address}</div>
-                            <div className="text-gray-500"> (added {new Date(c.createdAt).toLocaleString()})</div>
+                            <div className="text-bold text-2xl"><Link to={`/chain/${chain.id}/contract/${c.address}`}>{c.name}</Link><span className="text-gray-500"> (added {new Date(c.createdAt).toLocaleString()})</span></div>
+
                         </li>
                     ))}
                 </ul>

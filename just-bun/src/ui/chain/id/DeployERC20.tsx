@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
-import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "./bff";
+import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
 
 const api = edenTreaty('/api');
 
@@ -35,7 +35,7 @@ export default function DeployERC20() {
             updateEvmStateForContract(id!, response.state);
 
             setDeployResult(response);
-            // navigate(`/chain/${id}`);
+            navigate(`/chain/${id}/contract/${response.contractAddress}`);
         } catch (e: any) {
             setError(e.message || "Failed to deploy");
         } finally {

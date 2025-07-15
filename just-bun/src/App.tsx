@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import ChainDashboard from "./ui/ChainDashboard";
+import ChainDashboard from "./ui/chain/ChainDashboard";
 import "./index.css";
 
-import Chain from "./ui/Chain";
-import DeployContract from "./ui/DeployContract";
+import Chain from "./ui/chain/id/Chain";
+import DeployContract from "./ui/chain/id/DeployContract";
+import Contract from "./ui/chain/id/contract/Contract";
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<ChainDashboard />} />
           <Route path="/chain/:id" element={<Chain />} />
+          <Route path="/chain/:chainId/contract/:address" element={<Contract />} />
           <Route path="/chain/:id/add" element={<DeployContract />} />
         </Routes>
       </div>

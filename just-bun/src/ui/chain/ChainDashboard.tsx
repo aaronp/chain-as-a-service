@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { onAddChain, listChains } from "./bff";
+import { onAddChain, listChains } from "../bff";
 import { Link } from "react-router-dom";
 
 export default function ChainDashboard() {

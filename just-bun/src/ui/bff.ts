@@ -32,6 +32,12 @@ const stateForChain = (chainId: string) => {
         evmState: []
     };
 }
+
+export const contractStateForChain = (chainId: string, contractAddress: string) => {
+    const state = stateForChain(chainId);
+    return state.contracts.find(c => c.address === contractAddress);
+}
+
 export const evmStateForChain = (chainId: string) => {
     const evmChain = stateForChain(chainId).evmState
     if (evmChain.length === 0) {
@@ -40,15 +46,20 @@ export const evmStateForChain = (chainId: string) => {
     return evmChain[0];
 }
 
+export const contractForAddress = (chainId: string, contractAddress: string) => {
+    const chain = chainForId(chainId);
+    return chain ? chain.contracts.find(c => c.address === contractAddress) : undefined;
+}
+
 /**
  * TODO - take the SHA-256 of the previous state for a check
  * @param chainId 
  * @param newState 
  */
 export const updateEvmStateForContract = (chainId: string, newState: any) => {
-    const state = stateForChain(chainId);
-    state.evmState.unshift(newState);
-    localStorage.setItem(chainKey(chainId), JSON.stringify(state));
+    const chainState = stateForChain(chainId);
+    chainState.evmState.unshift(newState);
+    localStorage.setItem(chainKey(chainId), JSON.stringify(chainState));
 }
 
 const state = (): State => {
