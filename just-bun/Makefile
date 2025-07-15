@@ -1,4 +1,4 @@
-.PHONY: build run stop remove
+.PHONY: build run stop remove dev
 
 NAME=just-bun
 TAG=latest
@@ -14,3 +14,6 @@ stop:
 remove:
 	docker stop $(NAME) || true
 	docker rm $(NAME) || true
+
+dev:
+	bun dev
