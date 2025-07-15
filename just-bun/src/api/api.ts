@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { execRoute } from './exec';
 import swagger from "@elysiajs/swagger";
 import { chainRoutes } from "./chain";
+import { ERC20Routes } from "./erc20";
 
 const app = new Elysia({
     name: "Chain-as-a-Service",
@@ -34,6 +35,10 @@ const app = new Elysia({
                         name: "Execute",
                         description: "Execute commands",
                     },
+                    {
+                        name: "ERC20",
+                        description: "ERC20 commands",
+                    }
                 ],
             },
             exclude: ["/docs", "/"], // exclude our own swagger docs, including the root redirect
@@ -47,6 +52,7 @@ const app = new Elysia({
     })
     .use(execRoute)
     .use(chainRoutes)
+    .use(ERC20Routes)
     .get("/", ({ set, request }) => {
         console.log("Redirecting to swagger docs at /docs from root");
         set.headers["Location"] = "/api/docs";

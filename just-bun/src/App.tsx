@@ -5,6 +5,7 @@ import "./index.css";
 import Chain from "./ui/chain/id/Chain";
 import DeployContract from "./ui/chain/id/DeployContract";
 import Contract from "./ui/chain/id/contract/Contract";
+import Wallet from "./ui/wallet/Wallet";
 
 export function App() {
   return (
@@ -14,6 +15,7 @@ export function App() {
           <Link to="/" className="text-blue-600 hover:underline">Home</Link>
         </nav>
         <Routes>
+          <Route path="/wallet" element={<Wallet />} />
           <Route path="/" element={<ChainDashboard />} />
           <Route path="/chain/:id" element={<Chain />} />
           <Route path="/chain/:chainId/contract/:address" element={<Contract />} />
