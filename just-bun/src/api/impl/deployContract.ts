@@ -2,6 +2,7 @@ import { DeployRequest, DeployResponse } from '../chain';
 import { execute } from './execute';
 import { ErrorResponse, isErrorResponse } from '../error';
 import { withAnvil } from './anvil';
+import path from 'path';
 
 type DeployOutput = {
     contractAddress: string;
@@ -25,8 +26,10 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
     }
 
     const anvilResult = await withAnvil<DeployOutput>(previousState, async () => {
+        const erc20dir = path.resolve(process.cwd(), "contracts/erc20");
+        console.log("executing deploy in erc20dir", erc20dir);
         const result = await execute({
-            commandLine: `./deploy.sh ${name} ${symbol} ${decimals}`, timeout: 10000, dir: "./contracts/erc20"
+            commandLine: `./deploy.sh ${name} ${symbol} ${decimals}`, timeout: 10000, dir: erc20dir
         });
         const parsed = parseDeployOutput(result.stdout);
         return parsed;
@@ -49,6 +52,8 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
 
 
 const parseDeployOutput = (scriptStdout: string): DeployOutput | ErrorResponse => {
+
+    console.log("parsing deploy output", scriptStdout);
     const lines = scriptStdout.split("\n");
 
     const deployerAddressLine = lines.find(line => line.includes("Deployer:"));

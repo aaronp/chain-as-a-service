@@ -1,10 +1,6 @@
-import { DeployRequest, DeployResponse } from '../chain';
-import { writeFile } from 'fs/promises';
-import { execute } from './execute';
 import { ErrorResponse, isErrorResponse } from '../error';
 import path from 'path';
 import os from 'os';
-import { uuidv4 } from '@/lib/uuid';
 
 
 /**
@@ -14,16 +10,22 @@ import { uuidv4 } from '@/lib/uuid';
  */
 export const withAnvil = async <A>(initialState: any | undefined, fn: () => Promise<A | ErrorResponse>) => {
 
-    // const stateFilePath = await createAnvilStateFile(initialState);
+    const ad = anvilDir()
+    const anvilFQN = path.resolve(ad, "anvil");
 
-    // const anvilCmd = ["anvil"];
-    // if (stateFilePath) {
-    //     anvilCmd.push("--state", stateFilePath);
-    // }
-    const proc = Bun.spawn(["anvil"], {
+    // check if anvil exists
+    if (!Bun.file(anvilFQN).exists()) {
+        console.error("Anvil not found at " + anvilFQN);
+        console.error("Please install anvil: https://getfoundry.sh/anvil/");
+        throw new Error("Anvil not found at " + anvilFQN);
+    }
+
+    console.log("anvil dir", ad, "anvil fqn", anvilFQN);
+
+    const proc = Bun.spawn([anvilFQN], {
         stdout: 'pipe',
         stderr: 'pipe',
-        cwd: anvilDir()
+        cwd: ad
     });
 
     // Wait for Anvil to be ready by polling the REST endpoint
@@ -51,10 +53,6 @@ export const withAnvil = async <A>(initialState: any | undefined, fn: () => Prom
         throw e;
     } finally {
         proc.kill();
-        // if (stateFilePath) {
-        //     console.log("deleting state file", stateFilePath);
-        //     await Bun.file(stateFilePath).delete();
-        // }
     }
 
     if (isErrorResponse(result)) {
@@ -87,18 +85,6 @@ async function waitForAnvilReady() {
     }
     return ready;
 }
-
-/**
- * Writes the initial state to a temp file and returns the file path, or undefined if no state.
- */
-// async function createAnvilStateFile(initialState?: any): Promise<string | undefined> {
-//     if (!initialState) return undefined;
-//     const uuid = uuidv4();
-//     const stateFilePath = path.resolve(os.tmpdir(), `anvil-state-${uuid}.json`);
-//     await writeFile(stateFilePath, JSON.stringify(initialState));
-//     console.log("anvil using state file", stateFilePath);
-//     return stateFilePath;
-// }
 
 /**
  * Make an RPC call to anvil to get the state.
