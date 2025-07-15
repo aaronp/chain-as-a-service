@@ -14,8 +14,10 @@ const server = serve({
         });
       },
       async PUT(req) {
+        // Run 'which anvil' and return the result
+        const { stdout } = await Bun.$`which anvil`;
         return Response.json({
-          message: "Hello, world!",
+          result: stdout.toString().trim(),
           method: "PUT",
         });
       },
