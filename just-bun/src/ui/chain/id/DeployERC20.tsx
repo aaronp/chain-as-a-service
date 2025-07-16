@@ -3,6 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
 import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
+import { prepareERC20Deploy } from "@/ui/wallet/web3";
+import AccountSelect from "@/ui/account/AccountSelect";
+import { Account } from "@/ui/wallet/accounts";
 
 const api = edenTreaty('/api');
 
@@ -10,8 +13,9 @@ export default function DeployERC20() {
     const { id } = useParams(); // chain id
     const navigate = useNavigate();
     const [name, setName] = useState("");
+    const [account, setAccount] = useState<Account | null>(null);
     const [symbol, setSymbol] = useState("");
-    const [decimals, setDecimals] = useState(18);
+    const [initialSupply, setInitialSupply] = useState(1000);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [deployResult, setDeployResult] = useState<any>(null);
@@ -21,23 +25,31 @@ export default function DeployERC20() {
         setError(null);
         setDeployResult(null);
         try {
+
+            const template = await client().erc20();
+            const { signedTx, unsignedTx } = await prepareERC20Deploy(template.abi, template.bytecode, name, symbol, initialSupply);
+            console.log(signedTx, unsignedTx);
+
+            alert(JSON.stringify({ signedTx, unsignedTx }));
             const state = evmStateForChain(id!)
 
-            const response = await client(window.location.origin).deploy({
-                contractType: "ERC20",
-                name,
-                symbol,
-                decimals,
-                previousState: state
-            });
-            console.log(response);
 
-            onDeployContract(id!, "erc20", name, response.contractAddress);
-            updateEvmStateForContract(id!, response.state);
+            // const response = await client().deploy({
+            //     contractType: "ERC20",
+            //     name,
+            //     symbol,
+            //     initialSupply,
+            //     previousState: state
+            // });
+            // console.log(response);
 
-            setDeployResult(response);
-            navigate(`/chain/${id}/contract/${response.contractAddress}`);
+            // onDeployContract(id!, "erc20", name, response.contractAddress);
+            // updateEvmStateForContract(id!, response.state);
+
+            // setDeployResult(response);
+            // navigate(`/chain/${id}/contract/${response.contractAddress}`);
         } catch (e: any) {
+            console.error(e);
             setError(e.message || "Failed to deploy");
         } finally {
             setLoading(false);
@@ -51,13 +63,14 @@ export default function DeployERC20() {
     return (
         <div className="p-4 max-w-md mx-auto bg-white rounded shadow">
             <h2 className="text-xl font-semibold mb-4">Deploy ERC20 Token</h2>
+            <AccountSelect onSelectAccount={setAccount} />
             <label className="block mb-2 font-medium" htmlFor="token-name">Token Name</label>
             <input
                 id="token-name"
                 className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="MyToken"
+                placeholder="Name"
                 autoFocus
             />
             <label className="block mb-2 font-medium" htmlFor="token-symbol">Symbol</label>
@@ -66,17 +79,17 @@ export default function DeployERC20() {
                 className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={symbol}
                 onChange={e => setSymbol(e.target.value)}
-                placeholder="MTK"
+                placeholder="Symbol"
             />
-            <label className="block mb-2 font-medium" htmlFor="token-decimals">Decimals</label>
+            <label className="block mb-2 font-medium" htmlFor="token-initial-supply">Initial Supply</label>
             <input
-                id="token-decimals"
+                id="token-initial-supply"
                 type="number"
                 min={0}
                 max={255}
                 className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                value={decimals}
-                onChange={e => setDecimals(Number(e.target.value))}
+                value={initialSupply}
+                onChange={e => setInitialSupply(Number(e.target.value))}
             />
             {error && <div className="text-red-600 mb-2">{error}</div>}
             {deployResult && (

@@ -15,12 +15,12 @@ type DeployOutput = {
  * @param contractJsonPath Path to the contract JSON (e.g. /contracts/erc20/MyToken.sol:MyToken)
  * @param name Token name
  * @param symbol Token symbol
- * @param decimals Number of decimals (supply will be 10^decimals)
+ * @param initialSupply Initial supply for the token
  * @returns DeployResponse with result string (deployed address or error)
  */
 export async function deployContract(request: DeployRequest): Promise<DeployResponse | ErrorResponse> {
 
-    const { contractType, name, symbol, decimals, previousState } = request;
+    const { contractType, name, symbol, initialSupply, previousState } = request;
     if (contractType !== "ERC20") {
         return { error: "Unsupported contract type: " + contractType }
     }
@@ -29,7 +29,7 @@ export async function deployContract(request: DeployRequest): Promise<DeployResp
         const erc20dir = path.resolve(process.cwd(), "contracts/erc20");
         console.log("executing deploy in erc20dir", erc20dir);
         const result = await execute({
-            commandLine: `./deploy.sh ${name} ${symbol} ${decimals}`, timeout: 10000, dir: erc20dir
+            commandLine: `./deploy.sh ${name} ${symbol} ${initialSupply}`, timeout: 10000, dir: erc20dir
         });
         const parsed = parseDeployOutput(result.stdout);
         return parsed;

@@ -5,6 +5,12 @@ import { Api } from "./api";
 export class Client implements ChainService {
     constructor(private readonly url: string) {
     }
+
+    async erc20() {
+        const client = treaty<Api>(this.url);
+        const result = await client.api.erc20.get();
+        return result.data!;
+    }
     async deploy(request: DeployRequest): Promise<DeployResponse> {
         const client = treaty<Api>(this.url);
         console.log("deploying", request, "to", this.url);
@@ -28,7 +34,7 @@ export class Client implements ChainService {
     // }
 }
 
-export const client = (url: string): Client => {
+export const client = (url: string = window.location.origin): Client => {
     // const makeHeader = (request: any) => mkHeader(user, request)
     return new Client(url);
 }

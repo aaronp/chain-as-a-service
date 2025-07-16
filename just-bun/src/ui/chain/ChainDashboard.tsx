@@ -72,14 +72,13 @@ export default function ChainDashboard() {
             )}
             {/* Dashboard content (table/list) goes here */}
             <div className="mt-8">
-                <h2 className="text-xl font-semibold mb-2">Chain List</h2>
                 {chains.length === 0 ? (
                     <p className="text-gray-500">No chains added yet.</p>
                 ) : (
                     <ul className="divide-y divide-gray-200">
                         {chains.map((chain, idx) => (
                             <li key={idx} className="py-2">
-                                <Link to={`/chain/${chain.id}`}>{chain.name}</Link>
+                                <Link className="text-blue-600 hover:underline" to={`/chain/${chain.id}`}>{chain.name}</Link>
                             </li>
                         ))}
                     </ul>

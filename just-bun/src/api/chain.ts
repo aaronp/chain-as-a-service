@@ -7,7 +7,7 @@ export const DeployRequestSchema = t.Object({
     contractType: t.UnionEnum(['ERC20', 'ERC3643']),
     name: t.String(),
     symbol: t.String(),
-    decimals: t.Number(),
+    initialSupply: t.Number(),
     previousState: t.Optional(t.Any({ description: "The EVM state at the time of deployment" }))
 });
 export type DeployRequest = Static<typeof DeployRequestSchema>;
