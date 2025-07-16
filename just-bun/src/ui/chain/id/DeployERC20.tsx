@@ -5,10 +5,10 @@ import { client } from "@/api/client";
 import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
 import { prepareERC20Deploy } from "@/ui/wallet/web3";
 import AccountSelect from "@/ui/account/AccountSelect";
-import { Account, getProviderForAccount } from "@/ui/wallet/accounts";
+import { Account } from "@/ui/wallet/accounts";
 import { ethers } from "ethers";
 
-const api = edenTreaty('/api');
+// const api = edenTreaty('/api');
 
 export default function DeployERC20() {
     const { id } = useParams(); // chain id
@@ -47,9 +47,19 @@ export default function DeployERC20() {
             const signer = await provider.getSigner();
 
             const { signedTx, unsignedTx } = await prepareERC20Deploy(signer, template.abi, template.bytecode, name, symbol, initialSupply);
-            // console.log(signedTx, unsignedTx);
+            console.log(signedTx, unsignedTx);
 
-            alert(JSON.stringify({ signedTx, unsignedTx }));
+            // Submit the signed transaction
+            // ethers v6: use provider.broadcastTransaction for raw signed tx
+            console.log("broadcasting transaction", signedTx);
+            const txResponse = await provider.broadcastTransaction(signedTx);
+            console.log("txResponse", txResponse);
+            const txReceipt = await txResponse.wait();
+            console.log("txReceipt", txReceipt);
+            setDeployResult({ txHash: txResponse.hash, receipt: txReceipt });
+
+
+            // alert(JSON.stringify({ signedTx, unsignedTx }));
             // const state = evmStateForChain(id!)
 
             // const response = await client().deploy({

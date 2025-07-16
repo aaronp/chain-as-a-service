@@ -36,9 +36,8 @@ export const withAnvil = async <A>(initialState: any | undefined, fn: () => Prom
     }
 
     if (initialState) {
-        console.log("setting anvil state", initialState);
-        const result = await setAnvilState(initialState);
-        console.log("set state returned", result);
+        console.log("setting anvil state ...");
+        await setAnvilState(initialState)
     }
 
     let result: A | ErrorResponse;
