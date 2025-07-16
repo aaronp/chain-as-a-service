@@ -54,9 +54,22 @@ export default function DeployERC20() {
             console.log("broadcasting transaction", signedTx);
             const txResponse = await provider.broadcastTransaction(signedTx);
             console.log("txResponse", txResponse);
-            const txReceipt = await txResponse.wait();
-            console.log("txReceipt", txReceipt);
-            setDeployResult({ txHash: txResponse.hash, receipt: txReceipt });
+            // const txReceipt = await txResponse.wait();
+            // console.log("txReceipt", txReceipt);
+            setDeployResult({ txHash: txResponse.hash });
+
+            console.log("deployed contract", {
+                hash: txResponse.blockHash,
+                block: txResponse.blockNumber
+            });
+
+            const receipt = await provider.waitForTransaction(txResponse.hash);
+            console.log("receipt", receipt);
+            if (!receipt?.contractAddress) {
+                throw new Error("No receipt");
+            }
+            const contractAddress = receipt.contractAddress;
+
 
 
             // alert(JSON.stringify({ signedTx, unsignedTx }));
@@ -71,11 +84,10 @@ export default function DeployERC20() {
             // });
             // console.log(response);
 
-            // onDeployContract(id!, "erc20", name, response.contractAddress);
-            // updateEvmStateForContract(id!, response.state);
+            onDeployContract(id!, "erc20", name, contractAddress);
 
-            // setDeployResult(response);
-            // navigate(`/chain/${id}/contract/${response.contractAddress}`);
+            setDeployResult({ contractAddress, txHash: txResponse.hash });
+            navigate(`/chain/${id}/contract/${contractAddress}`);
         } catch (e: any) {
             console.error(e);
             setError(e.message || "Failed to deploy");

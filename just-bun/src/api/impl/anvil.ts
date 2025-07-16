@@ -3,6 +3,7 @@ import path from 'path';
 import os from 'os';
 
 
+let isAnvilRunning = false;
 /**
  * Runs a function with anvil running in the background.
  * @param fn The function to run.
@@ -22,22 +23,31 @@ export const withAnvil = async <A>(initialState: any | undefined, fn: () => Prom
 
     console.log("anvil dir", ad, "anvil fqn", anvilFQN);
 
-    const proc = Bun.spawn([anvilFQN], {
-        stdout: 'pipe',
-        stderr: 'pipe',
-        cwd: ad
-    });
+    if (!isAnvilRunning) {
 
-    // Wait for Anvil to be ready by polling the REST endpoint
-    const ready = await waitForAnvilReady();
-    if (!ready) {
-        proc.kill();
-        throw new Error("Anvil did not start in time");
-    }
+        const proc = Bun.spawn([anvilFQN], {
+            stdout: 'pipe',
+            stderr: 'pipe',
+            cwd: ad
+        });
 
-    if (initialState) {
-        console.log("setting anvil state ...");
-        await setAnvilState(initialState)
+        // Wait for Anvil to be ready by polling the REST endpoint
+        const ready = await waitForAnvilReady();
+        if (!ready) {
+            proc.kill();
+            throw new Error("Anvil did not start in time");
+        }
+
+        isAnvilRunning = true;
+
+
+
+        if (initialState) {
+            console.log("setting anvil state ...");
+            await setAnvilState(initialState)
+        }
+    } else {
+        console.log("anvil already running");
     }
 
     let result: A | ErrorResponse;
@@ -51,7 +61,7 @@ export const withAnvil = async <A>(initialState: any | undefined, fn: () => Prom
         console.error("anvil error", e);
         throw e;
     } finally {
-        proc.kill();
+        // proc.kill();
     }
 
     if (isErrorResponse(result)) {

@@ -51,12 +51,13 @@ export const chainStoreRoutes = new Elysia({
     },
 }).use(chainStore)
     .get('/', async ({ store }) => {
-        return { chains: store.chainData.list() };
+        return { chains: store.chainData.list(), data: store.chainData.dump() };
     },
         {
             response: {
                 200: t.Object({
                     chains: t.Array(t.String()),
+                    data: t.Any(),
                 }),
                 400: ErrorResponseSchema,
             },
