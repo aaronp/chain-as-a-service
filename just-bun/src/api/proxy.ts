@@ -16,9 +16,9 @@ const handler = async ({ body, params, store, request, path }: {
     const method = request.method;
     const chain = store.chainData.get(chainId);
 
-    console.log(`on ${method} ${subpath} for chain ${chainId} with path ${path}`);
+    console.log(`on ${method} ${subpath} for chain ${chainId} with path ${path}:\n${JSON.stringify(body)}`);
     const response = await chainProxyHandler(body, chain, { method, subpath, path });
-    console.log("proxy response", response);
+    console.log(`proxy ${method} ${subpath} response`, response.result);
     store.chainData.append(chainId, response.state);
     return response.result;
 };

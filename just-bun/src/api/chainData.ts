@@ -30,6 +30,7 @@ export const makeChainStore = () => {
             }
             return chain[0];
         },
+        dump: () => Object.fromEntries(chainData.entries()),
         list: () => {
             return Array.from(chainData.keys());
         }
