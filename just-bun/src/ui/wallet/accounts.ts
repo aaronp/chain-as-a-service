@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 
 export interface Account {
     name: string;

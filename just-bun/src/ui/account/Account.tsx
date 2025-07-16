@@ -23,7 +23,7 @@ export default function Account() {
             return;
         }
         const wallet = ethers.Wallet.createRandom();
-        const updated = { ...accounts, [name]: { address: wallet.address, privateKey: wallet.privateKey } };
+        const updated = { ...accounts, [name]: { name, address: wallet.address, privateKey: wallet.privateKey } };
         setAccounts(updated);
         saveAccounts(updated);
         setNewName("");
@@ -40,7 +40,7 @@ export default function Account() {
     return (
         <div className="p-6 max-w-md mx-auto bg-white rounded shadow mt-8">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                {/* <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> */}
                 Accounts
             </h2>
             <div className="mb-4 flex gap-2">

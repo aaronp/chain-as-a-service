@@ -5,7 +5,8 @@ import { client } from "@/api/client";
 import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
 import { prepareERC20Deploy } from "@/ui/wallet/web3";
 import AccountSelect from "@/ui/account/AccountSelect";
-import { Account } from "@/ui/wallet/accounts";
+import { Account, getProviderForAccount } from "@/ui/wallet/accounts";
+import { ethers } from "ethers";
 
 const api = edenTreaty('/api');
 
@@ -20,19 +21,36 @@ export default function DeployERC20() {
     const [error, setError] = useState<string | null>(null);
     const [deployResult, setDeployResult] = useState<any>(null);
 
+    const canDeploy = !loading && name.trim() && symbol.trim() && account;
+
     async function onDeployERC20() {
+        if (!account) {
+            setError("No account selected");
+            return;
+        }
         setLoading(true);
         setError(null);
         setDeployResult(null);
+
         try {
 
             const template = await client().erc20();
-            const { signedTx, unsignedTx } = await prepareERC20Deploy(template.abi, template.bytecode, name, symbol, initialSupply);
-            console.log(signedTx, unsignedTx);
+
+            const rpcUrl = window.location.origin + "/api/proxy/" + id;
+            console.log("rpcUrl", rpcUrl);
+            const provider = new ethers.JsonRpcProvider(rpcUrl);
+            const wallet = new ethers.Wallet(account.privateKey, provider);
+
+            const address = await wallet.getAddress();
+            console.log("address", address);
+
+            const signer = await provider.getSigner();
+
+            const { signedTx, unsignedTx } = await prepareERC20Deploy(signer, template.abi, template.bytecode, name, symbol, initialSupply);
+            // console.log(signedTx, unsignedTx);
 
             alert(JSON.stringify({ signedTx, unsignedTx }));
-            const state = evmStateForChain(id!)
-
+            // const state = evmStateForChain(id!)
 
             // const response = await client().deploy({
             //     contractType: "ERC20",
@@ -98,7 +116,7 @@ export default function DeployERC20() {
                     <pre className="whitespace-pre-wrap text-xs mt-1">{JSON.stringify(deployResult, null, 2)}</pre>
                 </div>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 items-center">
                 <button
                     className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
                     onClick={onCancel}
@@ -106,13 +124,24 @@ export default function DeployERC20() {
                 >
                     Cancel
                 </button>
-                <button
-                    className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={onDeployERC20}
-                    disabled={loading || !name.trim() || !symbol.trim()}
-                >
-                    {loading ? "Creating..." : "Create"}
-                </button>
+                <div className="relative group">
+                    <button
+                        className={`px-4 py-2 rounded text-white transition-colors ${!canDeploy
+                            ? 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700'}`}
+                        onClick={onDeployERC20}
+                        disabled={!canDeploy}
+                    >
+                        {loading ? "Creating..." : "Create"}
+                    </button>
+                    <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                        <div><strong>canDeploy:</strong> {String(canDeploy)}</div>
+                        <div><strong>loading:</strong> {String(loading)}</div>
+                        <div><strong>name:</strong> {name || <span className='text-gray-400'>[empty]</span>}</div>
+                        <div><strong>symbol:</strong> {symbol || <span className='text-gray-400'>[empty]</span>}</div>
+                        <div><strong>account:</strong> {account ? (account.name || account.address || '[selected]') : <span className='text-gray-400'>[none]</span>}</div>
+                    </div>
+                </div>
             </div>
         </div>
     );

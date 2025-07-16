@@ -22,21 +22,20 @@ export const browserProvider = async () => {
     return new ethers.BrowserProvider(metamask);
 }
 
-export const getWalletAddress = async () => {
-    const provider = await browserProvider();
-    const signer = await provider.getSigner();
-    return signer.getAddress();
-}
+// export const getWalletAddress = async () => {
+//     const provider = await browserProvider();
+//     const signer = await provider.getSigner();
+//     return signer.getAddress();
+// }
 
 export const prepareERC20Deploy = async (
+    signer: ethers.Signer,
     abi: any,
     bytecode: string,
     name: string,
     symbol: string,
     initialSupply: number) => {
 
-    const provider = await browserProvider();
-    const signer = await provider.getSigner();
 
     // Get contract ABI & bytecode
     console.log("creating factory with abi", JSON.stringify(abi).slice(0, 10), "... and bytecode", bytecode.slice(0, 100));

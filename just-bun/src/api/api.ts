@@ -3,6 +3,9 @@ import { execRoute } from './exec';
 import swagger from "@elysiajs/swagger";
 import { chainRoutes } from "./chain";
 import { ERC20Routes } from "./erc20";
+import { chainProxyHandler } from './impl/chainProxy';
+import { chainStoreRoutes } from "./chainData";
+import { chainProxyRoute } from "./proxy";
 
 const app = new Elysia({
     name: "Chain-as-a-Service",
@@ -38,7 +41,11 @@ const app = new Elysia({
                     {
                         name: "ERC20",
                         description: "ERC20 commands",
-                    }
+                    },
+                    {
+                        name: "chainProxy",
+                        description: "Proxy JSON-RPC requests to anvil for a given chainId (currently only localhost:8545 supported)",
+                    },
                 ],
             },
             exclude: ["/docs", "/"], // exclude our own swagger docs, including the root redirect
@@ -53,6 +60,8 @@ const app = new Elysia({
     .use(execRoute)
     .use(chainRoutes)
     .use(ERC20Routes)
+    .use(chainStoreRoutes)
+    .use(chainProxyRoute)
     .get("/", ({ set, request }) => {
         console.log("Redirecting to swagger docs at /docs from root");
         set.headers["Location"] = "/api/docs";

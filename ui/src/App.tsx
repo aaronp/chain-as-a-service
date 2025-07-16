@@ -11,7 +11,7 @@ export function App() {
   return (
     <BrowserRouter basename="/">
       <div className="app">
-        <nav className="mb-8 flex gap-4 justify-center">
+        <nav className="mb-8 flex gap-4 justify-center bg-gray-100 p-4">
           <Link to="/" className="text-blue-600 hover:underline">Home</Link>
         </nav>
         <Routes>
