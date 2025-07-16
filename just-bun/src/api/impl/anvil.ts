@@ -2,78 +2,28 @@ import { ErrorResponse, isErrorResponse } from '../error';
 import path from 'path';
 import os from 'os';
 
-
-let isAnvilRunning = false;
-/**
- * Runs a function with anvil running in the background.
- * @param fn The function to run.
- * @returns The result of the function, or an error response if the function fails.
- */
-export const withAnvil = async <A>(initialState: any | undefined, fn: () => Promise<A | ErrorResponse>) => {
+export const startAnvil = async () => {
 
     const ad = anvilDir()
     const anvilFQN = path.resolve(ad, "anvil");
+    const proc = Bun.spawn([anvilFQN], {
+        stdout: 'pipe',
+        stderr: 'pipe',
+        cwd: ad
+    });
 
-    // check if anvil exists
-    if (!Bun.file(anvilFQN).exists()) {
-        console.error("Anvil not found at " + anvilFQN);
-        console.error("Please install anvil: https://getfoundry.sh/anvil/");
-        throw new Error("Anvil not found at " + anvilFQN);
+    // Wait for Anvil to be ready by polling the REST endpoint
+    const ready = await waitForAnvilReady();
+    if (!ready) {
+        proc.kill();
+        throw new Error("Anvil did not start in time");
     }
-
-    console.log("anvil dir", ad, "anvil fqn", anvilFQN);
-
-    if (!isAnvilRunning) {
-
-        const proc = Bun.spawn([anvilFQN], {
-            stdout: 'pipe',
-            stderr: 'pipe',
-            cwd: ad
-        });
-
-        // Wait for Anvil to be ready by polling the REST endpoint
-        const ready = await waitForAnvilReady();
-        if (!ready) {
-            proc.kill();
-            throw new Error("Anvil did not start in time");
-        }
-
-        isAnvilRunning = true;
-
-
-
-        if (initialState) {
-            console.log("setting anvil state ...");
-            await setAnvilState(initialState)
-        }
-    } else {
-        console.log("anvil already running");
-    }
-
-    let result: A | ErrorResponse;
-    let dumpState: any = undefined;
-    try {
-        result = await fn();
-
-        dumpState = await getAnvilState();
-
-    } catch (e) {
-        console.error("anvil error", e);
-        throw e;
-    } finally {
-        // proc.kill();
-    }
-
-    if (isErrorResponse(result)) {
-        return { result, state: null };
-    }
-    return { result, state: dumpState };
+    return proc;
 }
-
 
 const anvilDir = () => path.resolve(os.homedir(), ".foundry/bin");
 
-async function waitForAnvilReady() {
+export async function waitForAnvilReady() {
     const url = "http://127.0.0.1:8545";
     const timeoutMs = 5000;
     const pollInterval = 100;
@@ -99,7 +49,7 @@ async function waitForAnvilReady() {
  * Make an RPC call to anvil to get the state.
  * @returns The state of the anvil instance.
  */
-async function getAnvilState(): Promise<any> {
+export async function snapshotAnvilState(): Promise<any> {
     // Send anvil_dumpState RPC to anvil
     try {
         const res = await fetch("http://127.0.0.1:8545", {
@@ -121,6 +71,7 @@ async function getAnvilState(): Promise<any> {
     } catch (e) {
         console.error("Error sending anvil_dumpState RPC", e);
     }
+    return undefined;
 }
 
 /**
@@ -129,7 +80,12 @@ async function getAnvilState(): Promise<any> {
  * @param state 
  * @returns 
  */
-async function setAnvilState(state: any): Promise<any> {
+export async function setAnvilState(state: any): Promise<any> {
+    console.log("setting anvil state ...", state);
+    if (!state) {
+        console.log("no state to set");
+        return;
+    }
     // Send anvil_dumpState RPC to anvil
     try {
         const res = await fetch("http://127.0.0.1:8545", {

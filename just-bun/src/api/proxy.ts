@@ -1,26 +1,34 @@
 import Elysia from 'elysia';
 import { chainProxyHandler } from './impl/chainProxy';
-import { chainStore } from './chainData';
+import { ChainStore, chainStore } from './chainData';
 import Request from 'elysia';
 
 const handler = async ({ body, params, store, request, path }: {
     body: any;
     params: Record<string, string>;
-    store: { chainData: any };
-    // request: any; // Let TypeScript infer the type
+    store: { chainData: ChainStore };
     path: string;
     request: any;
 }) => {
     const chainId = params.chainId;
     const subpath = params.subpath || "";
     const method = request.method;
-    const chain = store.chainData.get(chainId);
 
-    console.log(`on ${method} ${subpath} for chain ${chainId} with path ${path}:\n${JSON.stringify(body)}`);
-    const response = await chainProxyHandler(body, chain, { method, subpath, path });
+    console.log(`on ${method} ${subpath} for chain ${chainId} with path ${path} and request ${Object.keys(request)}:\n${JSON.stringify(body)}`);
+
+    await store.chainData.useChain(chainId);
+
+    // belt and braces
+    if (!store.chainData.isRunning()) {
+        return { error: 'Anvil is not running' };
+    } else if (store.chainData.currentChainId() !== chainId) {
+        return { error: 'Anvil is not running for this chain' };
+    }
+
+    const response = await chainProxyHandler(body, { method, subpath, path });
     console.log(`proxy ${method} ${subpath} response`, response.result);
     store.chainData.append(chainId, response.state);
-    return response.result;
+    return response;
 };
 
 export const chainProxyRoute = new Elysia({

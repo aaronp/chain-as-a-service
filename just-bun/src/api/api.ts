@@ -1,9 +1,6 @@
 import { Elysia } from "elysia";
 import { execRoute } from './exec';
 import swagger from "@elysiajs/swagger";
-import { chainRoutes } from "./chain";
-import { ERC20Routes } from "./erc20";
-import { chainProxyHandler } from './impl/chainProxy';
 import { chainStoreRoutes } from "./chainData";
 import { chainProxyRoute } from "./proxy";
 
@@ -58,8 +55,6 @@ const app = new Elysia({
         set.headers["Expires"] = "0";
     })
     .use(execRoute)
-    .use(chainRoutes)
-    .use(ERC20Routes)
     .use(chainStoreRoutes)
     .use(chainProxyRoute)
     .get("/", ({ set, request }) => {
@@ -77,13 +72,6 @@ const app = new Elysia({
         }
 
         return new Response("Internal Error", { status: 512 });
-    })
-    .get("/test", () => {
-        console.log("elysia GET /api");
-        return {
-            message: "Hello from Chain-as-a-Service!",
-            method: "GET",
-        };
     });
 
 export default app;

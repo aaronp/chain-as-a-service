@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
 import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
-import { prepareERC20Deploy } from "@/ui/wallet/web3";
+import { erc20Template, prepareERC20Deploy } from "@/ui/wallet/web3";
 import AccountSelect from "@/ui/account/AccountSelect";
 import { Account } from "@/ui/wallet/accounts";
 import { ethers } from "ethers";
@@ -34,8 +34,6 @@ export default function DeployERC20() {
 
         try {
 
-            const template = await client().erc20();
-
             const rpcUrl = window.location.origin + "/api/proxy/" + id;
             console.log("rpcUrl", rpcUrl);
             const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -46,6 +44,7 @@ export default function DeployERC20() {
 
             const signer = await provider.getSigner();
 
+            const template = erc20Template();
             const { signedTx, unsignedTx } = await prepareERC20Deploy(signer, template.abi, template.bytecode, name, symbol, initialSupply);
             console.log(signedTx, unsignedTx);
 
@@ -70,19 +69,6 @@ export default function DeployERC20() {
             }
             const contractAddress = receipt.contractAddress;
 
-
-
-            // alert(JSON.stringify({ signedTx, unsignedTx }));
-            // const state = evmStateForChain(id!)
-
-            // const response = await client().deploy({
-            //     contractType: "ERC20",
-            //     name,
-            //     symbol,
-            //     initialSupply,
-            //     previousState: state
-            // });
-            // console.log(response);
 
             onDeployContract(id!, "erc20", name, contractAddress);
 
