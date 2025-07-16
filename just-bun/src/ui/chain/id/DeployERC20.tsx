@@ -22,6 +22,7 @@ export default function DeployERC20() {
         setDeployResult(null);
         try {
             const state = evmStateForChain(id!)
+
             const response = await client(window.location.origin).deploy({
                 contractType: "ERC20",
                 name,
