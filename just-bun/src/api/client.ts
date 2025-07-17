@@ -1,20 +1,22 @@
+import { treaty } from "@elysiajs/eden";
+import { Api } from "./api";
+import { Contract } from "./contracts";
 
 export class Client {
     constructor(private readonly url: string) {
     }
 
+    async register(request: Contract) {
+        const client = treaty<Api>(this.url);
 
-    // async create(request: BFFCreateTokenRequest): Promise<Try<BFFCreateTokenResponse>> {
-    //     const client = treaty<NanoApi>(this.url);
+        // const header = await this.makeHeader(request);
 
-    //     const header = await this.makeHeader(request);
-
-    //     const response = await client.bff.token.post(request, { headers: header });
-    //     if (response.status !== 200 || !response.data) {
-    //         return fail(`Failed to create token: ${response.status}`);
-    //     }
-    //     return success(response.data);
-    // }
+        const response = await client.api.contracts.post(request);
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to create token: ${response.status}`, data: response.data };
+        }
+        return response.data;
+    }
 }
 
 export const client = (url: string = window.location.origin): Client => {

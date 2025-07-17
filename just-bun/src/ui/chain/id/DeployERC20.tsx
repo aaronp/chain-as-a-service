@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
 import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
-import { erc20Template, prepareERC20Deploy } from "@/ui/wallet/web3";
+import { deployERC20, erc20Template, prepareERC20Deploy } from "@/ui/wallet/web3";
 import AccountSelect from "@/ui/account/AccountSelect";
 import { Account } from "@/ui/wallet/accounts";
 import { ethers } from "ethers";
+import { isErrorResponse } from "@/api/error";
 
 // const api = edenTreaty('/api');
 
@@ -34,41 +35,15 @@ export default function DeployERC20() {
 
         try {
 
-            const rpcUrl = window.location.origin + "/api/proxy/" + id;
-            console.log("rpcUrl", rpcUrl);
-            const provider = new ethers.JsonRpcProvider(rpcUrl);
-            const wallet = new ethers.Wallet(account.privateKey, provider);
+            const response = await deployERC20(account, id!, name, symbol, initialSupply);
+            if (isErrorResponse(response)) {
+                setError(response.error);
+            }
 
-            const address = await wallet.getAddress();
-            console.log("address", address);
 
-            const signer = await provider.getSigner();
-
-            const template = erc20Template();
-            const { signedTx, unsignedTx } = await prepareERC20Deploy(signer, template.abi, template.bytecode, name, symbol, initialSupply);
-            console.log(signedTx, unsignedTx);
-
-            // Submit the signed transaction
-            // ethers v6: use provider.broadcastTransaction for raw signed tx
-            console.log("broadcasting transaction", signedTx);
-            const txResponse = await provider.broadcastTransaction(signedTx);
-            console.log("txResponse", txResponse);
             // const txReceipt = await txResponse.wait();
             // console.log("txReceipt", txReceipt);
             setDeployResult({ txHash: txResponse.hash });
-
-            console.log("deployed contract", {
-                hash: txResponse.blockHash,
-                block: txResponse.blockNumber
-            });
-
-            const receipt = await provider.waitForTransaction(txResponse.hash);
-            console.log("receipt", receipt);
-            if (!receipt?.contractAddress) {
-                throw new Error("No receipt");
-            }
-            const contractAddress = receipt.contractAddress;
-
 
             onDeployContract(id!, "erc20", name, contractAddress);
 

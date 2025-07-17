@@ -3,6 +3,7 @@ import { execRoute } from './exec';
 import swagger from "@elysiajs/swagger";
 import { chainStoreRoutes } from "./chainData";
 import { chainProxyRoute } from "./proxy";
+import { contractRoutes } from "./contracts";
 
 const app = new Elysia({
     name: "Chain-as-a-Service",
@@ -36,12 +37,12 @@ const app = new Elysia({
                         description: "Execute commands",
                     },
                     {
-                        name: "ERC20",
-                        description: "ERC20 commands",
-                    },
-                    {
                         name: "chainProxy",
                         description: "Proxy JSON-RPC requests to anvil for a given chainId (currently only localhost:8545 supported)",
+                    },
+                    {
+                        name: "contracts",
+                        description: "Contract management",
                     },
                 ],
             },
@@ -57,6 +58,7 @@ const app = new Elysia({
     .use(execRoute)
     .use(chainStoreRoutes)
     .use(chainProxyRoute)
+    .use(contractRoutes)
     .get("/", ({ set, request }) => {
         console.log("Redirecting to swagger docs at /docs from root");
         set.headers["Location"] = "/api/docs";

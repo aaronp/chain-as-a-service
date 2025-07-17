@@ -32,7 +32,7 @@ export default function Chain() {
                     {contracts?.map((c, i) => (
                         <li key={i}>
 
-                            <div className="text-bold text-2xl"><Link to={`/chain/${chain.id}/contract/${c.address}`}>{c.name}</Link><span className="text-gray-500"> (added {new Date(c.createdAt).toLocaleString()})</span></div>
+                            <div className="text-bold text-2xl"><Link className="hover:underline text-blue-600" to={`/chain/${chain.id}/contract/${c.address}`}>{c.name}</Link><span className="text-gray-500"> (added {new Date(c.createdAt).toLocaleString()})</span></div>
 
                         </li>
                     ))}

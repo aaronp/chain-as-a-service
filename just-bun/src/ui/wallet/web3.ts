@@ -1,5 +1,9 @@
-import { ethers } from 'ethers';
+import { ethers, id } from 'ethers';
 import MyToken from "contracts/erc20/out/MyToken.sol/MyToken.json";
+import { client } from '@/api/client';
+import { Account } from './accounts';
+import { StoredContract } from '@/api/contracts';
+import { ErrorResponse } from '@/api/error';
 
 // const erc20dir = path.resolve(process.cwd(), "contracts/erc20");
 // const abiPath = path.resolve(erc20dir, "out/MyToken.sol/MyToken.json"); // TODO: make this dynamic
@@ -33,12 +37,52 @@ export const browserProvider = async () => {
     return new ethers.BrowserProvider(metamask);
 }
 
-// export const getWalletAddress = async () => {
-//     const provider = await browserProvider();
-//     const signer = await provider.getSigner();
-//     return signer.getAddress();
-// }
+export const deployERC20 = async (
+    account: Account,
+    chainId: string,
+    name: string,
+    symbol: string,
+    initialSupply: number): Promise<StoredContract | ErrorResponse> => {
+    const rpcUrl = window.location.origin + "/api/proxy/" + id;
+    console.log("rpcUrl", rpcUrl);
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const wallet = new ethers.Wallet(account.privateKey, provider);
 
+    const address = await wallet.getAddress();
+    console.log("address", address);
+
+    const signer = await provider.getSigner();
+
+    const template = erc20Template();
+    const { signedTx, unsignedTx } = await prepareERC20Deploy(signer, template.abi, template.bytecode, name, symbol, initialSupply);
+    console.log(signedTx, unsignedTx);
+
+    // Submit the signed transaction
+    // ethers v6: use provider.broadcastTransaction for raw signed tx
+    console.log("broadcasting transaction", signedTx);
+    const txResponse = await provider.broadcastTransaction(signedTx);
+    console.log("txResponse", txResponse);
+    console.log("deployed contract", {
+        hash: txResponse.blockHash,
+        block: txResponse.blockNumber
+    });
+
+    const receipt = await provider.waitForTransaction(txResponse.hash);
+    console.log("receipt", receipt);
+    if (!receipt?.contractAddress) {
+        throw new Error("No receipt");
+    }
+    const contractAddress = receipt.contractAddress;
+    const registerResult = await client().register({
+        chainId,
+        issuerAddress: account.address,
+        contractAddress,
+        contractType: "ERC20",
+        name,
+        symbol,
+    })
+    return registerResult;
+}
 export const prepareERC20Deploy = async (
     signer: ethers.Signer,
     abi: any,
