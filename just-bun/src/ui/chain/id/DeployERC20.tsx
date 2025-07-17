@@ -1,13 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { edenTreaty } from "@elysiajs/eden";
-import { client } from "@/api/client";
-import { evmStateForChain, onDeployContract, updateEvmStateForContract } from "../../bff";
 import { deployERC20, erc20Template, prepareERC20Deploy } from "@/ui/wallet/web3";
 import AccountSelect from "@/ui/account/AccountSelect";
 import { Account } from "@/ui/wallet/accounts";
-import { ethers } from "ethers";
 import { isErrorResponse } from "@/api/error";
+import { StoredContract } from "@/api/contracts";
 
 // const api = edenTreaty('/api');
 
@@ -40,15 +37,11 @@ export default function DeployERC20() {
                 setError(response.error);
             }
 
-
             // const txReceipt = await txResponse.wait();
             // console.log("txReceipt", txReceipt);
-            setDeployResult({ txHash: txResponse.hash });
+            setDeployResult(response);
 
-            onDeployContract(id!, "erc20", name, contractAddress);
-
-            setDeployResult({ contractAddress, txHash: txResponse.hash });
-            navigate(`/chain/${id}/contract/${contractAddress}`);
+            navigate(`/chain/${id}/contract/${(response as StoredContract).contractAddress}`);
         } catch (e: any) {
             console.error(e);
             setError(e.message || "Failed to deploy");

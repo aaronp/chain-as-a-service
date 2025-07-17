@@ -7,6 +7,7 @@ import DeployContract from "./ui/chain/id/DeployContract";
 import Contract from "./ui/chain/id/contract/Contract";
 import Wallet from "./ui/wallet/Wallet";
 import Account from "./ui/account/Account";
+import AccountSelect from "./ui/account/AccountSelect";
 
 function AppContent() {
   const location = useLocation();
@@ -37,6 +38,8 @@ function AppContent() {
         >
           Account
         </Link>
+
+
       </nav>
       <Routes>
         <Route path="/wallet" element={<Wallet />} />

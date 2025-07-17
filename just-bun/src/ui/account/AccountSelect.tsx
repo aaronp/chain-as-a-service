@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Account, loadAccounts } from "../wallet/accounts";
+import { Link } from "react-router-dom";
 
 interface AccountSelectProps {
     onSelectAccount: (account: Account) => void;
@@ -9,7 +9,6 @@ interface AccountSelectProps {
 export default function AccountSelect({ onSelectAccount }: AccountSelectProps) {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [selected, setSelected] = useState<string>("");
-    const navigate = useNavigate();
 
     useEffect(() => {
         const loaded = loadAccounts();
@@ -41,7 +40,7 @@ export default function AccountSelect({ onSelectAccount }: AccountSelectProps) {
 
     if (accounts.length === 1) {
         // Only one account: show name and auto-select
-        return <div>Account: <a href={`/account?origin=${origin}`}><span className="font-semibold">{accounts[0].name || accounts[0].address.slice(0, 8) + "..." + accounts[0].address.slice(-8)}</span></a></div>;
+        return <div className="flex items-center gap-2">Account: <Link className="text-blue-600 hover:underline" to={`/account?origin=${origin}`}><span className="font-semibold">{accounts[0].name || accounts[0].address.slice(0, 8) + "..." + accounts[0].address.slice(-8)}</span></Link></div>;
     }
 
     // Multiple accounts: show dropdown

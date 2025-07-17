@@ -1,16 +1,35 @@
-import React, { useState } from "react";
-import { onAddChain, listChains } from "../bff";
+import { client } from "@/api/client";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { type StoredChain } from "@/api/chains";
+import AccountSelect from "../account/AccountSelect";
+import { Account } from "@/ui/wallet/accounts";
 
 export default function ChainDashboard() {
     const [modalOpen, setModalOpen] = useState(false);
     const [chainName, setChainName] = useState("");
-    const [chains, setChains] = useState(listChains());
+    const [chains, setChains] = useState<StoredChain[]>([]);
+    const [account, setAccount] = useState<Account | null>(null);
+
+    const refreshChains = () => {
+        client().listChains().then((chains: StoredChain[]) => {
+            if (chains && Array.isArray(chains)) {
+                setChains(chains);
+            }
+        });
+    }
+
+    useEffect(() => refreshChains(), []);
 
     const handleAdd = () => {
-        if (chainName.trim()) {
-            onAddChain(chainName.trim());
-            setChains(listChains());
+        if (account && chainName.trim()) {
+            client().registerChain({
+                name: chainName,
+                creatorAddress: account.address
+
+            })
+            // setChains(listChains());
+            refreshChains();
         }
         setChainName("");
         setModalOpen(false);
@@ -18,7 +37,7 @@ export default function ChainDashboard() {
 
     return (
         <div className="p-8 max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-start justify-between mb-8">
                 <h1 className="text-3xl font-bold">Chains</h1>
                 <button
                     type="button"
@@ -38,6 +57,9 @@ export default function ChainDashboard() {
                     </svg>
                     Add Chain
                 </button>
+            </div>
+            <div className="flex items-center gap-2 mb-8">
+                <AccountSelect onSelectAccount={setAccount} />
             </div>
             {/* Modal Dialog */}
             {modalOpen && (
@@ -76,9 +98,9 @@ export default function ChainDashboard() {
                     <p className="text-gray-500">No chains added yet.</p>
                 ) : (
                     <ul className="divide-y divide-gray-200">
-                        {chains.map((chain, idx) => (
-                            <li key={idx} className="py-2">
-                                <Link className="text-blue-600 hover:underline" to={`/chain/${chain.id}`}>{chain.name}</Link>
+                        {chains.map((chain) => (
+                            <li key={chain.chainId} className="py-2">
+                                <Link className="text-blue-600 hover:underline" to={`/chain/${chain.chainId}`}>{chain.name}</Link>
                             </li>
                         ))}
                     </ul>

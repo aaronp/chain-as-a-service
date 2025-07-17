@@ -1,5 +1,5 @@
+import { client } from "@/api/client";
 import React from "react";
-import { contractForAddress } from "../../../bff";
 import { Link } from "react-router-dom";
 
 export default function Contract() {
@@ -15,9 +15,24 @@ export default function Contract() {
         };
     }, []);
 
-    const contract = contractForAddress(chainId, contractId);
+    const [contract, setContract] = React.useState<any | null>(null);
+    const [loading, setLoading] = React.useState(true);
 
-    if (!contract) {
+    React.useEffect(() => {
+        let mounted = true;
+        setLoading(true);
+        client().contractForAddress(chainId, contractId).then((result) => {
+            if (mounted) setContract(result || null);
+            setLoading(false);
+        });
+        return () => { mounted = false; };
+    }, [chainId, contractId]);
+
+    if (loading) {
+        return <div>Loading contract...</div>;
+    }
+
+    if (!contract || contract.error) {
         return <div>Contract not found for address: {contractId} on chain: {chainId}</div>;
     }
 
@@ -25,9 +40,9 @@ export default function Contract() {
         <div className="p-8">
             <Link to={`/chain/${chainId}`} className="text-blue-600 hover:underline">Back to chain</Link>
             <h2 className="text-3xl font-bold">{contract.name}</h2>
-            <div className="text-gray-500">Address: <span className="font-mono">{contract.address}</span></div>
-            <div className="text-gray-500">Type: {contract.type}</div>
-            <div className="text-gray-500">Created: {new Date(contract.createdAt).toLocaleString()}</div>
+            <div className="text-gray-500">Address: <span className="font-mono">{contract.contractAddress}</span></div>
+            <div className="text-gray-500">Type: {contract.contractType}</div>
+            <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
         </div>
     );
 }

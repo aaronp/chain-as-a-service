@@ -4,6 +4,7 @@ import swagger from "@elysiajs/swagger";
 import { chainStoreRoutes } from "./chainData";
 import { chainProxyRoute } from "./proxy";
 import { contractRoutes } from "./contracts";
+import { chainRoutes } from "./chains";
 
 const app = new Elysia({
     name: "Chain-as-a-Service",
@@ -44,6 +45,10 @@ const app = new Elysia({
                         name: "contracts",
                         description: "Contract management",
                     },
+                    {
+                        name: "chains",
+                        description: "Chain management",
+                    },
                 ],
             },
             exclude: ["/docs", "/"], // exclude our own swagger docs, including the root redirect
@@ -58,6 +63,7 @@ const app = new Elysia({
     .use(execRoute)
     .use(chainStoreRoutes)
     .use(chainProxyRoute)
+    .use(chainRoutes)
     .use(contractRoutes)
     .get("/", ({ set, request }) => {
         console.log("Redirecting to swagger docs at /docs from root");
