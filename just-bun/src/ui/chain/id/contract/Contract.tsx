@@ -33,7 +33,10 @@ export default function Contract() {
     }
 
     if (!contract || contract.error) {
-        return <div>Contract not found for address: {contractId} on chain: {chainId}</div>;
+        return <>
+            <div>Contract not found for address: {contractId} on chain: {chainId}</div>
+            {contract?.error && <div className="text-red-500">{contract.error}</div>}
+        </>
     }
 
     return (
