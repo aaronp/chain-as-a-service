@@ -200,33 +200,35 @@ const Sidebar = ({ className, children }: SidebarProps) => {
         icon: <Home className="h-4 w-4" />,
         label: "Chains",
         actionButton: (
-            <Button
-                variant="default"
-                size="icon"
-                className="h-6 w-6 mr-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setAddChainModalOpen(true);
-                }}
-            >
-                <Plus className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+                <Button
+                    variant="default"
+                    size="icon"
+                    className="h-6 w-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setAddChainModalOpen(true);
+                    }}
+                >
+                    <Plus className="h-3 w-3" />
+                </Button>
+                {chains.length > 0 && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setChainsExpanded(!chainsExpanded);
+                        }}
+                    >
+                        {chainsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                    </Button>
+                )}
+            </div>
         ),
-        leftActionButton: chains.length > 0 ? (
-            <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 ml-2"
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setChainsExpanded(!chainsExpanded);
-                }}
-            >
-                {chainsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            </Button>
-        ) : undefined,
     },
     ...(chainsExpanded ? chains.flatMap((chain) => {
         const chainContracts = getContractsForChain(chain.chainId);
