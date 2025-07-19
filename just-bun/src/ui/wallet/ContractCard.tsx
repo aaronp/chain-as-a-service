@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
 import { Account } from "@/ui/wallet/accounts";
 import { getBalance } from "@/ui/wallet/web3";
+import { retryUntil } from "@/lib/retryUntil";
 
 interface ContractCardProps {
     contract: StoredContract;
@@ -18,7 +19,11 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
         setLoading(true);
         setError(null);
 
-        getBalance(contract.chainId, contract.contractAddress, account)
+        retryUntil(
+            () => getBalance(contract.chainId, contract.contractAddress, account),
+            2000, // max 2 seconds
+            500   // 500ms delay between retries
+        )
             .then((balance) => {
                 if (mounted) {
                     setBalance(balance);
@@ -27,7 +32,7 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
             })
             .catch((error) => {
                 if (mounted) {
-                    console.error("Error getting balance:", error);
+                    console.error("Error getting balance after retries:", error);
                     setError(error.message || "Failed to get balance");
                     setLoading(false);
                 }

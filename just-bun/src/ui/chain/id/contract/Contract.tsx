@@ -1,5 +1,6 @@
 import { client } from "@/api/client";
 import { useAccount } from "@/ui/account/AccountContext";
+import ContractCard from "@/ui/wallet/ContractCard";
 import { getBalance } from "@/ui/wallet/web3";
 import React from "react";
 import { Link, useParams } from "react-router-dom";
@@ -12,9 +13,7 @@ export default function Contract() {
     const [loading, setLoading] = React.useState(true);
     const [contractError, setContractError] = React.useState<string | null>(null);
     const { currentAccount } = useAccount();
-    const [balance, setBalance] = React.useState<string | null>(null);
-    const [balanceLoading, setBalanceLoading] = React.useState(false);
-    const [balanceError, setBalanceError] = React.useState<string | null>(null);
+
 
     React.useEffect(() => {
         if (!chainId || !contractId) return;
@@ -41,31 +40,6 @@ export default function Contract() {
         return () => { mounted = false; };
     }, [chainId, contractId]);
 
-    React.useEffect(() => {
-        if (!currentAccount || !chainId || !contractId) return;
-
-        let mounted = true;
-        setBalanceLoading(true);
-        setBalanceError(null);
-
-        getBalance(chainId, contractId, currentAccount)
-            .then((balance) => {
-                console.log("balance", balance);
-                if (mounted) {
-                    setBalance(balance);
-                    setBalanceLoading(false);
-                }
-            })
-            .catch((error) => {
-                if (mounted) {
-                    console.error("Error getting balance:", error);
-                    setBalanceError(error.message || "Failed to get balance");
-                    setBalanceLoading(false);
-                }
-            });
-
-        return () => { mounted = false; };
-    }, [chainId, contractId, currentAccount]);
 
     if (loading) {
         return <div className="p-8">Loading contract...</div>;
@@ -103,25 +77,8 @@ export default function Contract() {
     return (
         <div className="p-8">
             <Link to={`/chain/${chainId}`} className="text-blue-600 hover:underline">Back to chain</Link>
-            <h2 className="text-3xl font-bold">{contract.name}</h2>
-            <div className="flex flex-col gap-2 pt-2">
-                <div className="text-gray-500">Address: <span className="font-mono">{contract.contractAddress}</span></div>
-                <div className="text-gray-500">Type: {contract.contractType}</div>
-                <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
-            </div>
-
-            <div className="mt-4">
-                <h3 className="text-lg font-semibold">{currentAccount?.name} Balance</h3>
-                {balanceLoading && <div className="text-gray-500">Loading balance...</div>}
-                {balanceError && (
-                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                        <p className="text-red-600 text-sm">{balanceError}</p>
-                    </div>
-                )}
-                {!balanceLoading && !balanceError && balance !== null && (
-                    <span className="text-2xl font-bold text-primary">{balance} {contract.symbol}</span>
-                )}
-            </div>
+            {currentAccount && <ContractCard contract={contract} account={currentAccount} />}
+            <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
         </div>
     );
 }
