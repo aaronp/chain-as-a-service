@@ -3,7 +3,9 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "tailwind": "cd just-bun && bun run tailwind",
+    "tailwind-watch": "cd just-bun && bun run tailwind-watch"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
