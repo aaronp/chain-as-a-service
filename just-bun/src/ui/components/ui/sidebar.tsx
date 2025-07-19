@@ -26,16 +26,18 @@ const SidebarItem = ({ href, icon, children, onClick }: SidebarItemProps) => {
             to={href}
             onClick={onClick}
             className={cn(
-                "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[40px]",
+                "flex items-center rounded-lg py-2 text-sm font-medium transition-colors min-h-[40px]",
                 isActive
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
         >
-            <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+            <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center ml-2">
                 {icon}
             </div>
-            {children}
+            <div className="ml-3">
+                {children}
+            </div>
         </Link>
     )
 }
