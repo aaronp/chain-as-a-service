@@ -1,16 +1,15 @@
 import { client } from "@/api/client";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { type StoredChain } from "@/api/chains";
-import AccountSelect from "../account/AccountSelect";
-import { Account } from "@/ui/wallet/accounts";
 import { Button } from "@/ui/components/ui/button";
+import { useAccount } from "@/ui/account/AccountContext";
 
 export default function ChainDashboard() {
     const [modalOpen, setModalOpen] = useState(false);
     const [chainName, setChainName] = useState("");
     const [chains, setChains] = useState<StoredChain[]>([]);
-    const [account, setAccount] = useState<Account | null>(null);
+    const { currentAccount } = useAccount();
 
     const refreshChains = () => {
         client().listChains().then((chains: StoredChain[]) => {
@@ -23,13 +22,12 @@ export default function ChainDashboard() {
     useEffect(() => refreshChains(), []);
 
     const handleAdd = () => {
-        if (account && chainName.trim()) {
+        if (currentAccount && chainName.trim()) {
             client().registerChain({
                 name: chainName,
-                creatorAddress: account.address
+                creatorAddress: currentAccount.address
 
             })
-            // setChains(listChains());
             refreshChains();
         }
         setChainName("");
@@ -40,6 +38,7 @@ export default function ChainDashboard() {
         <div className="p-8 max-w-4xl mx-auto">
             <div className="flex items-start justify-between mb-8">
                 <h1 className="text-3xl font-bold text-foreground">Chains</h1>
+                <h2>currentAccount: {currentAccount?.name}</h2>
                 <Button
                     variant="theme"
                     onClick={() => setModalOpen(true)}
@@ -57,9 +56,6 @@ export default function ChainDashboard() {
                     </svg>
                     Add Chain
                 </Button>
-            </div>
-            <div className="flex items-center gap-2 mb-8">
-                <AccountSelect onSelectAccount={setAccount} />
             </div>
             {/* Modal Dialog */}
             {modalOpen && (

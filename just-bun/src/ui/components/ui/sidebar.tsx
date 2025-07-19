@@ -1,8 +1,12 @@
 import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
-import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X, Plus } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { client } from "@/api/client"
+import { StoredChain } from "@/api/chains"
+import { useAccount } from "@/ui/account/AccountContext"
+import { useEffect, useState } from "react"
 
 // Create context for sidebar state
 const SidebarContext = React.createContext<{
@@ -71,32 +75,40 @@ interface SidebarItemProps {
     children: React.ReactNode
     onClick?: () => void
     showText?: boolean
+    actionButton?: React.ReactNode
 }
 
-const SidebarItem = ({ href, icon, children, onClick, showText = true }: SidebarItemProps) => {
+const SidebarItem = ({ href, icon, children, onClick, showText = true, actionButton }: SidebarItemProps) => {
     const location = useLocation()
     const isActive = location.pathname === href
 
     return (
-        <Link
-            to={href}
-            onClick={onClick}
-            className={cn(
-                "flex items-center rounded-lg py-2 text-sm font-medium transition-colors min-h-[40px]",
-                isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            )}
-        >
-            <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center ml-2">
-                {icon}
-            </div>
-            {showText && (
-                <div className="ml-3">
-                    {children}
+        <div className="flex items-center justify-between group">
+            <Link
+                to={href}
+                onClick={onClick}
+                className={cn(
+                    "flex items-center rounded-lg py-2 text-sm font-medium transition-colors min-h-[40px] flex-1",
+                    isActive
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+            >
+                <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center ml-2">
+                    {icon}
+                </div>
+                {showText && (
+                    <div className="ml-3">
+                        {children}
+                    </div>
+                )}
+            </Link>
+            {actionButton && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    {actionButton}
                 </div>
             )}
-        </Link>
+        </div>
     )
 }
 
@@ -107,23 +119,56 @@ const Sidebar = ({ className, children }: SidebarProps) => {
     const location = useLocation()
     const params = new URLSearchParams(location.search)
     const origin = params.get("origin")
+    const [chains, setChains] = useState<StoredChain[]>([]);
+    const { currentAccount } = useAccount();
 
     const toggleTheme = () => {
         setTheme(theme === 'light' ? 'dark' : 'light')
     }
 
+    const refreshChains = () => {
+        client().listChains().then((chains: StoredChain[]) => {
+            if (chains && Array.isArray(chains)) {
+                setChains(chains);
+            }
+        });
+    }
 
+    useEffect(() => refreshChains(), []);
+
+    const chainItems = currentAccount ? [{
+        href: "/",
+        icon: <Home className="h-4 w-4" />,
+        label: "Chains",
+        actionButton: (
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 mr-2"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // TODO: Add chain functionality
+                }}
+            >
+                <Plus className="h-3 w-3" />
+            </Button>
+        ),
+    },
+    ...chains.map((chain) => ({
+        href: `/chain/${chain.chainId}`,
+        icon: <div className="h-4 w-4 pl-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+            {chain.name.charAt(0).toUpperCase()}
+        </div>,
+        label: chain.name,
+    }))] : []
 
     const navigationItems = [
-        {
-            href: "/",
-            icon: <Home className="h-4 w-4" />,
-            label: "Chains",
-        },
+        ...chainItems,
         {
             href: "/account",
             icon: <User className="h-4 w-4" />,
-            label: "Account",
+            label: "Accounts",
         },
         {
             href: "/wallet",
