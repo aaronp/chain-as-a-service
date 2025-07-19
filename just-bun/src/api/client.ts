@@ -28,6 +28,13 @@ export class Client {
         return chains.find(c => c.chainId === chainId) || undefined;
     }
 
+    async listContracts() {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.contracts.get();
+        return response.data?.contracts || [];
+    }
+
+
     async listContractsForChain(chainId: string) {
         const client = treaty<Api>(this.url);
         const response = await client.api.contracts.get();
