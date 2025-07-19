@@ -38,10 +38,10 @@ export default function ChainDashboard() {
     return (
         <div className="p-8 max-w-4xl mx-auto">
             <div className="flex items-start justify-between mb-8">
-                <h1 className="text-3xl font-bold">Chains</h1>
+                <h1 className="text-3xl font-bold text-foreground">Chains</h1>
                 <button
                     type="button"
-                    className="flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white shadow transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex items-center gap-2 px-4 py-2 rounded bg-primary hover:bg-primary/90 text-primary-foreground shadow transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                     aria-label="Add Chain"
                     onClick={() => setModalOpen(true)}
                 >
@@ -63,12 +63,12 @@ export default function ChainDashboard() {
             </div>
             {/* Modal Dialog */}
             {modalOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-                    <div className="bg-white rounded shadow-lg p-6 w-full max-w-sm">
+                <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+                    <div className="bg-card text-card-foreground rounded-lg shadow-lg p-6 w-full max-w-sm border">
                         <h2 className="text-xl font-semibold mb-4">Add Chain</h2>
                         <input
                             type="text"
-                            className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            className="w-full border border-input rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
                             placeholder="Chain name"
                             value={chainName}
                             onChange={e => setChainName(e.target.value)}
@@ -76,13 +76,13 @@ export default function ChainDashboard() {
                         />
                         <div className="flex justify-end gap-2">
                             <button
-                                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                className="px-4 py-2 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                                 onClick={() => { setModalOpen(false); setChainName(""); }}
                             >
                                 Cancel
                             </button>
                             <button
-                                className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+                                className="px-4 py-2 rounded bg-primary hover:bg-primary/90 text-primary-foreground"
                                 onClick={handleAdd}
                                 disabled={!chainName.trim()}
                             >
@@ -95,12 +95,12 @@ export default function ChainDashboard() {
             {/* Dashboard content (table/list) goes here */}
             <div className="mt-8">
                 {chains.length === 0 ? (
-                    <p className="text-gray-500">No chains added yet.</p>
+                    <p className="text-muted-foreground">No chains added yet.</p>
                 ) : (
-                    <ul className="divide-y divide-gray-200">
+                    <ul className="divide-y divide-border">
                         {chains.map((chain) => (
                             <li key={chain.chainId} className="py-2">
-                                <Link className="text-blue-600 hover:underline" to={`/chain/${chain.chainId}`}>{chain.name}</Link>
+                                <Link className="text-primary hover:underline" to={`/chain/${chain.chainId}`}>{chain.name}</Link>
                             </li>
                         ))}
                     </ul>

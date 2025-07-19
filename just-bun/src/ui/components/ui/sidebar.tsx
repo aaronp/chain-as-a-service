@@ -13,7 +13,52 @@ const SidebarContext = React.createContext<{
     setMobileOpen: () => { },
 });
 
+// Create context for theme state
+const ThemeContext = React.createContext<{
+    theme: 'light' | 'dark';
+    setTheme: (theme: 'light' | 'dark') => void;
+}>({
+    theme: 'light',
+    setTheme: () => { },
+});
+
 export const useSidebar = () => React.useContext(SidebarContext);
+export const useTheme = () => React.useContext(ThemeContext);
+
+// Theme provider component
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+    const [theme, setTheme] = React.useState<'light' | 'dark'>(() => {
+        // Check localStorage for saved theme, or system preference, default to light
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            return saved as 'light' | 'dark';
+        }
+        // Check system preference
+        if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
+    });
+
+    React.useEffect(() => {
+        // Save theme to localStorage
+        localStorage.setItem('theme', theme);
+
+        // Apply theme to document
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }, [theme]);
+
+    return (
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+};
 
 interface SidebarProps {
     className?: string
@@ -58,7 +103,7 @@ const SidebarItem = ({ href, icon, children, onClick, showText = true }: Sidebar
 const Sidebar = ({ className, children }: SidebarProps) => {
     const [open, setOpen] = React.useState(false)
     const [desktopOpen, setDesktopOpen] = React.useState(true)
-    const [theme, setTheme] = React.useState<'light' | 'dark'>('light')
+    const { theme, setTheme } = useTheme()
     const location = useLocation()
     const params = new URLSearchParams(location.search)
     const origin = params.get("origin")
@@ -92,7 +137,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                 "lg:hidden flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
                 open ? "w-64" : "w-16"
             )}>
-                <div className="flex h-full flex-col bg-blue-200">
+                <div className="flex h-full flex-col bg-background">
                     <div className="flex items-center justify-between border-b p-4 h-16">
                         <div className="flex items-center gap-3">
                             <Button
@@ -151,7 +196,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             {origin && (
                                 <a
                                     href={decodeURIComponent(origin)}
-                                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary/80 hover:bg-accent transition-colors"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
                                     Back
@@ -212,7 +257,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                         <div className="p-4 border-t">
                             <a
                                 href={decodeURIComponent(origin)}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary/80 hover:bg-accent transition-colors"
                             >
                                 <ArrowLeft className="h-4 w-4" />
                                 Back

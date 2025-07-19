@@ -7,7 +7,7 @@ import DeployContract from "./ui/chain/id/DeployContract";
 import Contract from "./ui/chain/id/contract/Contract";
 import Wallet from "./ui/wallet/Wallet";
 import Account from "./ui/account/Account";
-import { Sidebar, useSidebar } from "./ui/components/ui/sidebar";
+import { Sidebar, useSidebar, ThemeProvider } from "./ui/components/ui/sidebar";
 import { cn } from "./lib/utils";
 
 function AppContent() {
@@ -37,9 +37,11 @@ function AppContent() {
 
 export function App() {
   return (
-    <BrowserRouter basename="/">
-      <AppContent />
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter basename="/">
+        <AppContent />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
