@@ -184,7 +184,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                 <Plus className="h-3 w-3" />
             </Button>
         ),
-        leftActionButton: (
+        leftActionButton: chains.length > 0 ? (
             <Button
                 variant="ghost"
                 size="icon"
@@ -197,7 +197,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
             >
                 {chainsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
             </Button>
-        ),
+        ) : undefined,
     },
     ...(chainsExpanded ? chains.map((chain) => ({
         href: `/chain/${chain.chainId}`,
