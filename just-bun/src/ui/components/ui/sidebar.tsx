@@ -131,7 +131,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
     ]
 
     return (
-        <SidebarContext.Provider value={{ mobileOpen: open, setMobileOpen: setOpen }}>
+        <>
             {/* Mobile Sidebar - Part of flex layout */}
             <div className={cn(
                 "lg:hidden flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
@@ -253,20 +253,35 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             </SidebarItem>
                         ))}
                     </nav>
-                    {origin && desktopOpen && (
-                        <div className="p-4 border-t">
-                            <a
-                                href={decodeURIComponent(origin)}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary/80 hover:bg-accent transition-colors"
+                    {desktopOpen && (
+                        <div className="p-4 border-t space-y-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={toggleTheme}
+                                className="w-full justify-start"
                             >
-                                <ArrowLeft className="h-4 w-4" />
-                                Back
-                            </a>
+                                {theme === 'light' ? (
+                                    <Moon className="h-4 w-4 mr-2" />
+                                ) : (
+                                    <Sun className="h-4 w-4 mr-2" />
+                                )}
+                                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                            </Button>
+                            {origin && (
+                                <a
+                                    href={decodeURIComponent(origin)}
+                                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary/80 hover:bg-accent transition-colors"
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Back
+                                </a>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
-        </SidebarContext.Provider>
+        </>
     )
 }
 
