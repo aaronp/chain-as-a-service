@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { type StoredChain } from "@/api/chains";
 import AccountSelect from "../account/AccountSelect";
 import { Account } from "@/ui/wallet/accounts";
+import { Button } from "@/ui/components/ui/button";
 
 export default function ChainDashboard() {
     const [modalOpen, setModalOpen] = useState(false);
@@ -39,11 +40,10 @@ export default function ChainDashboard() {
         <div className="p-8 max-w-4xl mx-auto">
             <div className="flex items-start justify-between mb-8">
                 <h1 className="text-3xl font-bold text-foreground">Chains</h1>
-                <button
-                    type="button"
-                    className="flex items-center gap-2 px-4 py-2 rounded bg-primary hover:bg-primary/90 text-primary-foreground shadow transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-                    aria-label="Add Chain"
+                <Button
+                    variant="theme"
                     onClick={() => setModalOpen(true)}
+                    className="flex items-center gap-2"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -56,7 +56,7 @@ export default function ChainDashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                     Add Chain
-                </button>
+                </Button>
             </div>
             <div className="flex items-center gap-2 mb-8">
                 <AccountSelect onSelectAccount={setAccount} />
@@ -75,19 +75,18 @@ export default function ChainDashboard() {
                             autoFocus
                         />
                         <div className="flex justify-end gap-2">
-                            <button
-                                className="px-4 py-2 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                            <Button
+                                variant="secondary"
                                 onClick={() => { setModalOpen(false); setChainName(""); }}
                             >
                                 Cancel
-                            </button>
-                            <button
-                                className="px-4 py-2 rounded bg-primary hover:bg-primary/90 text-primary-foreground"
+                            </Button>
+                            <Button
                                 onClick={handleAdd}
                                 disabled={!chainName.trim()}
                             >
                                 Add
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

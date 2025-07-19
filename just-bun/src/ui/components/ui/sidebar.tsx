@@ -112,11 +112,13 @@ const Sidebar = ({ className, children }: SidebarProps) => {
         setTheme(theme === 'light' ? 'dark' : 'light')
     }
 
+
+
     const navigationItems = [
         {
             href: "/",
             icon: <Home className="h-4 w-4" />,
-            label: "Dashboard",
+            label: "Chains",
         },
         {
             href: "/account",
