@@ -1,15 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { client } from "@/api/client";
 import { StoredChain } from "@/api/chains";
 import { Button } from "@/ui/components/ui/button";
 
 export default function Chain() {
-    // Get the last segment from the URL path as the chainId
-    const chainId = React.useMemo(() => {
-        const segments = window.location.pathname.split("/").filter(Boolean);
-        return segments[segments.length - 1] || "";
-    }, []);
+    const { id: chainId } = useParams<{ id: string }>();
 
 
     const [contracts, setContracts] = React.useState<any[]>([]);
@@ -17,6 +13,8 @@ export default function Chain() {
     const [chain, setChain] = React.useState<StoredChain | null>(null);
 
     React.useEffect(() => {
+        if (!chainId) return;
+
         let mounted = true;
         setLoading(true);
         client().chainForId(chainId).then((c) => {
