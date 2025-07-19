@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { AccountMap, loadAccounts, saveAccounts } from "../wallet/accounts";
 import { useTheme } from "../components/ui/sidebar";
+import { Button } from "../components/ui/button";
 
 export default function Account() {
     const [accounts, setAccounts] = useState<AccountMap>({});
     const [newName, setNewName] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const { theme } = useTheme();
 
     useEffect(() => {
@@ -36,6 +38,15 @@ export default function Account() {
         delete updated[name];
         setAccounts(updated);
         saveAccounts(updated);
+        setDeleteConfirm(null);
+    };
+
+    const confirmDelete = (name: string) => {
+        setDeleteConfirm(name);
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirm(null);
     };
 
     return (
@@ -52,17 +63,14 @@ export default function Account() {
                     onChange={e => { setNewName(e.target.value); setError(null); }}
                     onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
                 />
-                <button
-                    className={`flex items-center gap-1 px-3 py-2 rounded-md text-white shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${theme === 'dark'
-                            ? 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800 focus:ring-purple-500'
-                            : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500'
-                        }`}
+                <Button
+                    variant="theme"
                     aria-label="Add Account"
                     onClick={handleAdd}
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                     Add
-                </button>
+                </Button>
             </div>
             {error && <div className="text-destructive mb-2">{error}</div>}
             <ul className="divide-y divide-border">
@@ -71,17 +79,38 @@ export default function Account() {
                 ) : (
                     Object.entries(accounts).map(([name, { address }]) => (
                         <li key={name} className="flex items-center justify-between py-2 group">
-                            <div>
-                                {/* <button
-                                    className="opacity-0 hover:opacity-100 transition-opacity text-red-600 hover:text-red-800 p-1 w-6"
-                                    aria-label={`Delete ${name}`}
-                                    onClick={() => handleDelete(name)}
-                                >
-                                    <span className="text-xs">&nbsp;</span>
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m5 0H4" /></svg>
-                                </button> */}
-                                <span className="font-semibold text-card-foreground">{name}</span>
-                                <span className="ml-2 text-xs text-muted-foreground font-mono">{address.slice(0, 8)}...{address.slice(-6)}</span>
+                            <div className="flex items-center gap-2">
+                                {deleteConfirm === name ? (
+                                    <>
+                                        <span className="pl-12 text-sm text-muted-foreground">Delete "{name}"?</span>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDelete(name)}
+                                        >
+                                            Yes
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={cancelDelete}
+                                        >
+                                            No
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            aria-label={`Delete ${name}`}
+                                            onClick={() => confirmDelete(name)}
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m5 0H4" /></svg>
+                                        </Button>
+                                        <span className="font-semibold text-card-foreground">{name}</span>
+                                        <span className="text-xs text-muted-foreground font-mono">{address.slice(0, 8)}...{address.slice(-6)}</span>
+                                    </>
+                                )}
                             </div>
                         </li>
                     ))
