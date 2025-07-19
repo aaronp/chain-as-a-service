@@ -6,6 +6,7 @@ import { Account } from "@/ui/wallet/accounts";
 import { isErrorResponse } from "@/api/error";
 import { StoredContract } from "@/api/contracts";
 import { Button } from "@/ui/components/ui/button";
+import { useAccount } from "@/ui/account/AccountContext";
 
 // const api = edenTreaty('/api');
 
@@ -19,11 +20,12 @@ export default function DeployERC20() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [deployResult, setDeployResult] = useState<any>(null);
+    const { currentAccount } = useAccount();
 
-    const canDeploy = !loading && name.trim() && symbol.trim() && account;
+    const canDeploy = !loading && name.trim() && symbol.trim() && currentAccount;
 
     async function onDeployERC20() {
-        if (!account) {
+        if (!currentAccount) {
             setError("No account selected");
             return;
         }
@@ -33,7 +35,7 @@ export default function DeployERC20() {
 
         try {
 
-            const response = await deployERC20(account, id!, name, symbol, initialSupply);
+            const response = await deployERC20(currentAccount, id!, name, symbol, initialSupply);
             if (isErrorResponse(response)) {
                 setError(response.error);
             }
@@ -58,7 +60,7 @@ export default function DeployERC20() {
     return (
         <div className="p-4 max-w-md mx-auto bg-card rounded-lg shadow-lg border border-border">
             <h2 className="text-xl font-semibold mb-4 text-card-foreground">Deploy ERC20 Token</h2>
-            <AccountSelect onSelectAccount={setAccount} />
+
             <label className="block mb-2 font-medium text-card-foreground" htmlFor="token-name">Token Name</label>
             <input
                 id="token-name"

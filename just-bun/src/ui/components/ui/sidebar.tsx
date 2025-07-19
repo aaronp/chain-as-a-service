@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
-import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X, Plus } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X, Plus, ChevronDown, ChevronRight } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { client } from "@/api/client"
 import { StoredChain } from "@/api/chains"
@@ -76,9 +76,18 @@ interface SidebarItemProps {
     onClick?: () => void
     showText?: boolean
     actionButton?: React.ReactNode
+    leftActionButton?: React.ReactNode
 }
 
-const SidebarItem = ({ href, icon, children, onClick, showText = true, actionButton }: SidebarItemProps) => {
+interface NavigationItem {
+    href: string
+    icon: React.ReactNode
+    label: string
+    actionButton?: React.ReactNode
+    leftActionButton?: React.ReactNode
+}
+
+const SidebarItem = ({ href, icon, children, onClick, showText = true, actionButton, leftActionButton }: SidebarItemProps) => {
     const location = useLocation()
     const isActive = location.pathname === href
 
@@ -94,6 +103,11 @@ const SidebarItem = ({ href, icon, children, onClick, showText = true, actionBut
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}
             >
+                {leftActionButton && showText && (
+                    <div className="mr-2">
+                        {leftActionButton}
+                    </div>
+                )}
                 <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center ml-2">
                     {icon}
                 </div>
@@ -103,8 +117,8 @@ const SidebarItem = ({ href, icon, children, onClick, showText = true, actionBut
                     </div>
                 )}
             </Link>
-            {actionButton && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            {actionButton && showText && (
+                <div className="ml-2">
                     {actionButton}
                 </div>
             )}
@@ -115,6 +129,9 @@ const SidebarItem = ({ href, icon, children, onClick, showText = true, actionBut
 const Sidebar = ({ className, children }: SidebarProps) => {
     const [open, setOpen] = React.useState(false)
     const [desktopOpen, setDesktopOpen] = React.useState(true)
+    const [chainsExpanded, setChainsExpanded] = React.useState(true)
+    const [addChainModalOpen, setAddChainModalOpen] = React.useState(false)
+    const [chainName, setChainName] = React.useState("")
     const { theme, setTheme } = useTheme()
     const location = useLocation()
     const params = new URLSearchParams(location.search)
@@ -134,6 +151,19 @@ const Sidebar = ({ className, children }: SidebarProps) => {
         });
     }
 
+    const handleAddChain = () => {
+        if (currentAccount && chainName.trim()) {
+            client().registerChain({
+                name: chainName,
+                creatorAddress: currentAccount.address
+            }).then(() => {
+                refreshChains();
+                setChainName("");
+                setAddChainModalOpen(false);
+            });
+        }
+    };
+
     useEffect(() => refreshChains(), []);
 
     const chainItems = currentAccount ? [{
@@ -142,26 +172,40 @@ const Sidebar = ({ className, children }: SidebarProps) => {
         label: "Chains",
         actionButton: (
             <Button
-                variant="ghost"
+                variant="default"
                 size="icon"
-                className="h-6 w-6 mr-2"
+                className="h-6 w-6 mr-2 bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    // TODO: Add chain functionality
+                    setAddChainModalOpen(true);
                 }}
             >
                 <Plus className="h-3 w-3" />
             </Button>
         ),
+        leftActionButton: (
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 ml-2"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setChainsExpanded(!chainsExpanded);
+                }}
+            >
+                {chainsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            </Button>
+        ),
     },
-    ...chains.map((chain) => ({
+    ...(chainsExpanded ? chains.map((chain) => ({
         href: `/chain/${chain.chainId}`,
         icon: <svg className="h-4 w-4 pl-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 5.656l-1.1 1.1" />
         </svg>,
         label: chain.name,
-    }))] : []
+    })) : [])] : []
 
     const navigationItems = [
         ...chainItems,
@@ -207,12 +251,14 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                         </div>
                     </div>
                     <nav className="flex-1 p-4 space-y-2">
-                        {navigationItems.map((item) => (
+                        {navigationItems.map((item: NavigationItem) => (
                             <SidebarItem
                                 key={item.href}
                                 href={item.href}
                                 icon={item.icon}
                                 showText={open}
+                                actionButton={item.actionButton}
+                                leftActionButton={item.leftActionButton}
                             >
                                 <span className={cn(
                                     "transition-all duration-300",
@@ -282,12 +328,14 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                         </div>
                     </div>
                     <nav className="flex-1 p-4 space-y-2">
-                        {navigationItems.map((item) => (
+                        {navigationItems.map((item: NavigationItem) => (
                             <SidebarItem
                                 key={item.href}
                                 href={item.href}
                                 icon={item.icon}
                                 showText={desktopOpen}
+                                actionButton={item.actionButton}
+                                leftActionButton={item.leftActionButton}
                             >
                                 <span className={cn(
                                     "transition-all duration-300",
@@ -328,6 +376,37 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                     )}
                 </div>
             </div>
+
+            {/* Add Chain Modal */}
+            {addChainModalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+                    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg p-6 w-full max-w-sm border">
+                        <h2 className="text-xl font-semibold mb-4">Add Chain</h2>
+                        <input
+                            type="text"
+                            className="w-full border border-input rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
+                            placeholder="Chain name"
+                            value={chainName}
+                            onChange={e => setChainName(e.target.value)}
+                            autoFocus
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="secondary"
+                                onClick={() => { setAddChainModalOpen(false); setChainName(""); }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleAddChain}
+                                disabled={!chainName.trim()}
+                            >
+                                Add
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }
