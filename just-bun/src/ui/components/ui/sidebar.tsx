@@ -4,6 +4,17 @@ import { Button } from "./button"
 import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
+// Create context for sidebar state
+const SidebarContext = React.createContext<{
+    mobileOpen: boolean;
+    setMobileOpen: (open: boolean) => void;
+}>({
+    mobileOpen: false,
+    setMobileOpen: () => { },
+});
+
+export const useSidebar = () => React.useContext(SidebarContext);
+
 interface SidebarProps {
     className?: string
     children?: React.ReactNode
@@ -75,10 +86,10 @@ const Sidebar = ({ className, children }: SidebarProps) => {
     ]
 
     return (
-        <>
-            {/* Mobile Sidebar - Always Visible */}
+        <SidebarContext.Provider value={{ mobileOpen: open, setMobileOpen: setOpen }}>
+            {/* Mobile Sidebar - Part of flex layout */}
             <div className={cn(
-                "lg:hidden fixed inset-y-0 left-0 z-50 bg-background border-r transition-all duration-300 ease-in-out",
+                "lg:hidden flex flex-col border-r bg-background transition-all duration-300 ease-in-out",
                 open ? "w-64" : "w-16"
             )}>
                 <div className="flex h-full flex-col bg-blue-200">
@@ -210,7 +221,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                     )}
                 </div>
             </div>
-        </>
+        </SidebarContext.Provider>
     )
 }
 

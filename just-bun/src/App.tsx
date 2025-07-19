@@ -7,9 +7,12 @@ import DeployContract from "./ui/chain/id/DeployContract";
 import Contract from "./ui/chain/id/contract/Contract";
 import Wallet from "./ui/wallet/Wallet";
 import Account from "./ui/account/Account";
-import { Sidebar } from "./ui/components/ui/sidebar";
+import { Sidebar, useSidebar } from "./ui/components/ui/sidebar";
+import { cn } from "./lib/utils";
 
 function AppContent() {
+  const { mobileOpen } = useSidebar();
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -17,7 +20,7 @@ function AppContent() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6 ml-16 lg:ml-0">
+        <main className="flex-1 overflow-auto p-4 lg:p-6">
           <Routes>
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/account" element={<Account />} />
