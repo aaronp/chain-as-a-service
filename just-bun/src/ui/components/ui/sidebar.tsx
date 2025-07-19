@@ -26,13 +26,15 @@ const SidebarItem = ({ href, icon, children, onClick }: SidebarItemProps) => {
             to={href}
             onClick={onClick}
             className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[40px]",
                 isActive
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
         >
-            {icon}
+            <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                {icon}
+            </div>
             {children}
         </Link>
     )
@@ -136,10 +138,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             </h2>
                         </div>
                     </div>
-                    <nav className={cn(
-                        "flex-1 space-y-2",
-                        desktopOpen ? "p-4" : "p-2"
-                    )}>
+                    <nav className="flex-1 p-4 space-y-2">
                         {navigationItems.map((item) => (
                             <SidebarItem
                                 key={item.href}
