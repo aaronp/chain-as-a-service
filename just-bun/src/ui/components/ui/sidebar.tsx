@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
 import { Sheet, SheetContent, SheetTrigger } from "./sheet"
-import { Menu, Home, User, Wallet, ArrowLeft } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
 interface SidebarProps {
@@ -45,9 +45,14 @@ const SidebarItem = ({ href, icon, children, onClick }: SidebarItemProps) => {
 const Sidebar = ({ className, children }: SidebarProps) => {
     const [open, setOpen] = React.useState(false)
     const [desktopOpen, setDesktopOpen] = React.useState(true)
+    const [theme, setTheme] = React.useState<'light' | 'dark'>('light')
     const location = useLocation()
     const params = new URLSearchParams(location.search)
     const origin = params.get("origin")
+
+    const toggleTheme = () => {
+        setTheme(theme === 'light' ? 'dark' : 'light')
+    }
 
     const navigationItems = [
         {
@@ -82,7 +87,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
-                    <div className="flex h-full flex-col">
+                    <div className="flex h-full flex-col bg-blue-200">
                         <div className="flex items-center justify-between border-b">
                             <h2 className="text-lg font-semibold">Chain Service</h2>
                         </div>
@@ -98,8 +103,21 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                                 </SidebarItem>
                             ))}
                         </nav>
-                        {origin && (
-                            <div className="p-4 border-t">
+                        <div className="p-4 border-t space-y-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={toggleTheme}
+                                className="w-full justify-start"
+                            >
+                                {theme === 'light' ? (
+                                    <Moon className="h-4 w-4 mr-2" />
+                                ) : (
+                                    <Sun className="h-4 w-4 mr-2" />
+                                )}
+                                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                            </Button>
+                            {origin && (
                                 <a
                                     href={decodeURIComponent(origin)}
                                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
@@ -107,8 +125,8 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                                     <ArrowLeft className="h-4 w-4" />
                                     Back
                                 </a>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </SheetContent>
             </Sheet>
