@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
-import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X, Plus, ChevronDown, ChevronRight } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X, Plus, ChevronDown, ChevronRight, Network } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { client } from "@/api/client"
 import { StoredChain } from "@/api/chains"
@@ -237,9 +237,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
 
         const chainMenuItem = {
             href: `/chain/${chain.chainId}`,
-            icon: <svg className="h-4 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 5.656l-1.1 1.1" />
-            </svg>,
+            icon: <Network className="h-4 w-4" />,
             label: chain.name,
             actionButton: hasContracts ? (
                 <Button
