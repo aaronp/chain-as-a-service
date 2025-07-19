@@ -79,7 +79,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
                     <div className="flex h-full flex-col">
-                        <div className="flex items-center justify-between p-4 border-b">
+                        <div className="flex items-center justify-between border-b">
                             <h2 className="text-lg font-semibold">Chain Service</h2>
                         </div>
                         <nav className="flex-1 p-4 space-y-2">
@@ -115,7 +115,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                     "flex h-full flex-col border-r bg-background transition-all duration-300 ease-in-out",
                     desktopOpen ? "w-64" : "w-16"
                 )}>
-                    <div className="flex items-center justify-between p-4 border-b">
+                    <div className="flex items-center justify-between p-4 border-b h-16">
                         <div className="flex items-center gap-3">
                             <Button
                                 variant="ghost"
@@ -126,17 +126,34 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             >
                                 <Menu className="h-4 w-4" />
                             </Button>
-                            {desktopOpen && <h2 className="text-lg font-semibold">Chain Service</h2>}
+                            <h2 className={cn(
+                                "text-lg font-semibold transition-all duration-300",
+                                desktopOpen
+                                    ? "opacity-100 delay-150"
+                                    : "opacity-0 w-0 overflow-hidden delay-0"
+                            )}>
+                                Chain Service
+                            </h2>
                         </div>
                     </div>
-                    <nav className="flex-1 p-4 space-y-2">
+                    <nav className={cn(
+                        "flex-1 space-y-2",
+                        desktopOpen ? "p-4" : "p-2"
+                    )}>
                         {navigationItems.map((item) => (
                             <SidebarItem
                                 key={item.href}
                                 href={item.href}
                                 icon={item.icon}
                             >
-                                {desktopOpen && item.label}
+                                <span className={cn(
+                                    "transition-all duration-300",
+                                    desktopOpen
+                                        ? "opacity-100 delay-150"
+                                        : "opacity-0 w-0 overflow-hidden delay-0"
+                                )}>
+                                    {item.label}
+                                </span>
                             </SidebarItem>
                         ))}
                     </nav>

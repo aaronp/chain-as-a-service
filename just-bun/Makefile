@@ -16,7 +16,7 @@ remove:
 	docker rm $(NAME) || true
 
 tailwind:
-	bunx tailwindcss -i ./src/input.css -o ./dist/output.css --watch &
+	bunx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
 dev: tailwind
 	bun dev
