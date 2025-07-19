@@ -100,7 +100,8 @@ const SidebarItem = ({ href, icon, children, onClick, showText = true, actionBut
                 to={href}
                 onClick={onClick}
                 className={cn(
-                    "flex items-center rounded-lg py-2 text-sm font-medium transition-colors min-h-[40px] flex-1",
+                    "flex items-center rounded-lg text-sm font-medium transition-colors flex-1",
+                    indent ? "py-1 min-h-[32px]" : "py-2 min-h-[40px]",
                     isActive
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -234,7 +235,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
 
         const chainMenuItem = {
             href: `/chain/${chain.chainId}`,
-            icon: <svg className="h-4 w-4 pl-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            icon: <svg className="h-4 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 5.656l-1.1 1.1" />
             </svg>,
             label: chain.name,
@@ -309,27 +310,29 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             </h2>
                         </div>
                     </div>
-                    <nav className="flex-1 p-4 space-y-2">
-                        {navigationItems.map((item: NavigationItem) => (
-                            <SidebarItem
-                                key={item.href}
-                                href={item.href}
-                                icon={item.icon}
-                                showText={open}
-                                actionButton={item.actionButton}
-                                leftActionButton={item.leftActionButton}
-                                indent={item.indent}
-                            >
-                                <span className={cn(
-                                    "transition-all duration-300",
-                                    open
-                                        ? "opacity-100 delay-150"
-                                        : "opacity-0 w-0 overflow-hidden delay-0"
-                                )}>
-                                    {item.label}
-                                </span>
-                            </SidebarItem>
-                        ))}
+                    <nav className="flex-1 p-4">
+                        <div className="space-y-0.5">
+                            {navigationItems.map((item: NavigationItem) => (
+                                <SidebarItem
+                                    key={item.href}
+                                    href={item.href}
+                                    icon={item.icon}
+                                    showText={open}
+                                    actionButton={item.actionButton}
+                                    leftActionButton={item.leftActionButton}
+                                    indent={item.indent}
+                                >
+                                    <span className={cn(
+                                        "transition-all duration-300",
+                                        open
+                                            ? "opacity-100 delay-150"
+                                            : "opacity-0 w-0 overflow-hidden delay-0"
+                                    )}>
+                                        {item.label}
+                                    </span>
+                                </SidebarItem>
+                            ))}
+                        </div>
                     </nav>
                     {open && (
                         <div className="p-4 border-t space-y-2">
@@ -387,27 +390,29 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             </h2>
                         </div>
                     </div>
-                    <nav className="flex-1 p-4 space-y-2">
-                        {navigationItems.map((item: NavigationItem) => (
-                            <SidebarItem
-                                key={item.href}
-                                href={item.href}
-                                icon={item.icon}
-                                showText={desktopOpen}
-                                actionButton={item.actionButton}
-                                leftActionButton={item.leftActionButton}
-                                indent={item.indent}
-                            >
-                                <span className={cn(
-                                    "transition-all duration-300",
-                                    desktopOpen
-                                        ? "opacity-100 delay-150"
-                                        : "opacity-0 w-0 overflow-hidden delay-0"
-                                )}>
-                                    {item.label}
-                                </span>
-                            </SidebarItem>
-                        ))}
+                    <nav className="flex-1 p-4">
+                        <div className="space-y-0.5">
+                            {navigationItems.map((item: NavigationItem) => (
+                                <SidebarItem
+                                    key={item.href}
+                                    href={item.href}
+                                    icon={item.icon}
+                                    showText={desktopOpen}
+                                    actionButton={item.actionButton}
+                                    leftActionButton={item.leftActionButton}
+                                    indent={item.indent}
+                                >
+                                    <span className={cn(
+                                        "transition-all duration-300",
+                                        desktopOpen
+                                            ? "opacity-100 delay-150"
+                                            : "opacity-0 w-0 overflow-hidden delay-0"
+                                    )}>
+                                        {item.label}
+                                    </span>
+                                </SidebarItem>
+                            ))}
+                        </div>
                     </nav>
                     {desktopOpen && (
                         <div className="p-4 border-t space-y-2">
