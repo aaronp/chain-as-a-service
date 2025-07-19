@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { AccountMap, loadAccounts, saveAccounts } from "../wallet/accounts";
 import { useTheme } from "../components/ui/sidebar";
 import { Button } from "../components/ui/button";
+import { useAccount } from "./AccountContext";
 
 export default function Account() {
     const [accounts, setAccounts] = useState<AccountMap>({});
@@ -10,6 +11,7 @@ export default function Account() {
     const [error, setError] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const { theme } = useTheme();
+    const { currentAccount, setCurrentAccount } = useAccount();
 
     useEffect(() => {
         setAccounts(loadAccounts());
@@ -47,6 +49,10 @@ export default function Account() {
 
     const cancelDelete = () => {
         setDeleteConfirm(null);
+    };
+
+    const handleSelectAccount = (account: any) => {
+        setCurrentAccount(account);
     };
 
     return (
@@ -107,7 +113,16 @@ export default function Account() {
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m5 0H4" /></svg>
                                         </Button>
-                                        <span className="font-semibold text-card-foreground">{name}</span>
+                                        <button
+                                            className={`font-semibold text-card-foreground hover:underline cursor-pointer transition-colors ${currentAccount?.name === name ? 'text-blue-600 dark:text-blue-400' : ''
+                                                }`}
+                                            onClick={() => handleSelectAccount(accounts[name])}
+                                        >
+                                            {name}
+                                            {/* {currentAccount?.name === name && (
+                                                <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(current)</span>
+                                            )} */}
+                                        </button>
                                         <span className="text-xs text-muted-foreground font-mono">{address.slice(0, 8)}...{address.slice(-6)}</span>
                                     </>
                                 )}
