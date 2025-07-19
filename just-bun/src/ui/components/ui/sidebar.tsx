@@ -1,8 +1,7 @@
 import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
-import { Sheet, SheetContent, SheetTrigger } from "./sheet"
-import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
 interface SidebarProps {
@@ -15,9 +14,10 @@ interface SidebarItemProps {
     icon: React.ReactNode
     children: React.ReactNode
     onClick?: () => void
+    showText?: boolean
 }
 
-const SidebarItem = ({ href, icon, children, onClick }: SidebarItemProps) => {
+const SidebarItem = ({ href, icon, children, onClick, showText = true }: SidebarItemProps) => {
     const location = useLocation()
     const isActive = location.pathname === href
 
@@ -35,9 +35,11 @@ const SidebarItem = ({ href, icon, children, onClick }: SidebarItemProps) => {
             <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center ml-2">
                 {icon}
             </div>
-            <div className="ml-3">
-                {children}
-            </div>
+            {showText && (
+                <div className="ml-3">
+                    {children}
+                </div>
+            )}
         </Link>
     )
 }
@@ -74,35 +76,53 @@ const Sidebar = ({ className, children }: SidebarProps) => {
 
     return (
         <>
-            {/* Mobile Sidebar */}
-            <Sheet open={open} onOpenChange={setOpen}>
-                <SheetTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="lg:hidden"
-                        aria-label="Open menu"
-                    >
-                        <Menu className="h-5 w-5" />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0">
-                    <div className="flex h-full flex-col bg-blue-200">
-                        <div className="flex items-center justify-between border-b">
-                            <h2 className="text-lg font-semibold">Chain Service</h2>
+            {/* Mobile Sidebar - Always Visible */}
+            <div className={cn(
+                "lg:hidden fixed inset-y-0 left-0 z-50 bg-background border-r transition-all duration-300 ease-in-out",
+                open ? "w-64" : "w-16"
+            )}>
+                <div className="flex h-full flex-col bg-blue-200">
+                    <div className="flex items-center justify-between border-b p-4 h-16">
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setOpen(!open)}
+                                className="h-8 w-8"
+                                aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+                            >
+                                <Menu className="h-4 w-4" />
+                            </Button>
+                            <h2 className={cn(
+                                "text-lg font-semibold transition-all duration-300",
+                                open
+                                    ? "opacity-100 delay-150"
+                                    : "opacity-0 w-0 overflow-hidden delay-0"
+                            )}>
+                                Chain Service
+                            </h2>
                         </div>
-                        <nav className="flex-1 p-4 space-y-2">
-                            {navigationItems.map((item) => (
-                                <SidebarItem
-                                    key={item.href}
-                                    href={item.href}
-                                    icon={item.icon}
-                                    onClick={() => setOpen(false)}
-                                >
+                    </div>
+                    <nav className="flex-1 p-4 space-y-2">
+                        {navigationItems.map((item) => (
+                            <SidebarItem
+                                key={item.href}
+                                href={item.href}
+                                icon={item.icon}
+                                showText={open}
+                            >
+                                <span className={cn(
+                                    "transition-all duration-300",
+                                    open
+                                        ? "opacity-100 delay-150"
+                                        : "opacity-0 w-0 overflow-hidden delay-0"
+                                )}>
                                     {item.label}
-                                </SidebarItem>
-                            ))}
-                        </nav>
+                                </span>
+                            </SidebarItem>
+                        ))}
+                    </nav>
+                    {open && (
                         <div className="p-4 border-t space-y-2">
                             <Button
                                 variant="ghost"
@@ -127,9 +147,9 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                                 </a>
                             )}
                         </div>
-                    </div>
-                </SheetContent>
-            </Sheet>
+                    )}
+                </div>
+            </div>
 
             {/* Desktop Sidebar */}
             <div className={cn("hidden lg:block", className)}>
@@ -164,6 +184,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                                 key={item.href}
                                 href={item.href}
                                 icon={item.icon}
+                                showText={desktopOpen}
                             >
                                 <span className={cn(
                                     "transition-all duration-300",

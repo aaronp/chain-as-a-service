@@ -16,16 +16,8 @@ function AppContent() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top app bar for mobile */}
-        <header className="lg:hidden bg-background border-b px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold">Chain Service</h1>
-            <Sidebar />
-          </div>
-        </header>
-
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 ml-16 lg:ml-0">
           <Routes>
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/account" element={<Account />} />
