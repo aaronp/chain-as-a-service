@@ -4,53 +4,68 @@ import { StoredContract } from "@/api/contracts";
 import { StoredChain } from "@/api/chains";
 import { useAccount } from "@/ui/account/AccountContext";
 import ContractCard from "./ContractCard";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/ui/components/ui/button";
+import { useTheme } from "@/ui/components/ui/sidebar";
 
 export default function Wallet() {
     const [contracts, setContracts] = useState<StoredContract[]>([]);
     const [chains, setChains] = useState<StoredChain[]>([]);
     const [loading, setLoading] = useState(true);
-    const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
+    const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
+    const [selectedChainContracts, setSelectedChainContracts] = useState<StoredContract[]>([]);
+    const [contractsLoading, setContractsLoading] = useState(false);
     const { currentAccount } = useAccount();
+    const { theme } = useTheme();
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchChains = async () => {
             try {
-                const [contractsData, chainsData] = await Promise.all([
-                    client().listContracts(),
-                    client().listChains()
-                ]);
-
-                if (contractsData && Array.isArray(contractsData)) {
-                    setContracts(contractsData);
-                }
+                const chainsData = await client().listChains();
 
                 if (chainsData && Array.isArray(chainsData)) {
                     setChains(chainsData);
 
-                    const chainIds = chainsData.map((chain) => chain.chainId);
-                    setExpandedChains(new Set(chainIds));
+                    // Auto-select the first chain if available
+                    if (chainsData.length > 0) {
+                        setSelectedChainId(chainsData[0].chainId);
+                    }
                 }
-
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching chains:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
+        fetchChains();
     }, []);
 
-    const toggleChainExpanded = (chainId: string) => {
-        const newExpanded = new Set(expandedChains);
-        if (newExpanded.has(chainId)) {
-            newExpanded.delete(chainId);
-        } else {
-            newExpanded.add(chainId);
+    // Load contracts when chain selection changes
+    useEffect(() => {
+        if (!selectedChainId) {
+            setSelectedChainContracts([]);
+            return;
         }
-        setExpandedChains(newExpanded);
-    };
+
+        const fetchContractsForChain = async () => {
+            setContractsLoading(true);
+            try {
+                const contractsData = await client().listContractsForChain(selectedChainId);
+                if (contractsData && Array.isArray(contractsData)) {
+                    setSelectedChainContracts(contractsData);
+                } else {
+                    setSelectedChainContracts([]);
+                }
+            } catch (error) {
+                console.error("Error fetching contracts for chain:", error);
+                setSelectedChainContracts([]);
+            } finally {
+                setContractsLoading(false);
+            }
+        };
+
+        fetchContractsForChain();
+    }, [selectedChainId]);
 
     const getContractsForChain = (chainId: string) => {
         return contracts.filter(contract => contract.chainId === chainId);
@@ -74,6 +89,8 @@ export default function Wallet() {
         );
     }
 
+    const selectedChain = chains.find(chain => chain.chainId === selectedChainId);
+
     return (
         <div className="p-8">
             <div className="mb-6">
@@ -88,55 +105,65 @@ export default function Wallet() {
                     No chains found. Create a chain first to see contracts.
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {chains.map((chain) => {
-                        const chainContracts = getContractsForChain(chain.chainId);
-                        const isExpanded = expandedChains.has(chain.chainId);
-                        const hasContracts = chainContracts.length > 0;
+                <div className="space-y-6">
+                    {/* Chain Selection Row */}
+                    <div>
+                        <h2 className="text-lg font-semibold text-foreground mb-3">Chain:</h2>
+                        <div className="flex flex-wrap gap-2">
+                            {chains.map((chain) => {
+                                const isSelected = selectedChainId === chain.chainId;
 
-                        return (
-                            <div key={chain.chainId} className="border border-border rounded-lg bg-card">
-                                <button
-                                    onClick={() => toggleChainExpanded(chain.chainId)}
-                                    className="w-full p-4 flex items-center justify-between hover:bg-accent transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        {isExpanded ? (
-                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                        ) : (
-                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                return (
+                                    <Button
+                                        key={chain.chainId}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedChainId(chain.chainId)}
+                                        className={`flex items-center gap-2 ${isSelected
+                                                ? theme === 'dark'
+                                                    ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600'
+                                                    : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
+                                                : ''
+                                            }`}
+                                    >
+                                        {chain.name}
+                                        {isSelected && contractsLoading && (
+                                            <span className="text-xs">...</span>
                                         )}
-                                        <div>
-                                            <h2 className="text-lg font-semibold text-foreground">{chain.name}</h2>
-                                            <p className="text-sm text-muted-foreground">
-                                                {chainContracts.length} contract{chainContracts.length !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </button>
+                                    </Button>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                                {isExpanded && (
-                                    <div className="border-t border-border p-4">
-                                        {hasContracts ? (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {chainContracts.map((contract) => (
-                                                    <ContractCard
-                                                        key={contract.contractAddress}
-                                                        contract={contract}
-                                                        account={currentAccount}
-                                                    />
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center text-muted-foreground py-8">
-                                                No contracts on this chain yet.
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                    {/* Selected Chain Contracts */}
+                    {selectedChain && (
+                        <div>
+                            <h3 className="text-lg font-semibold text-foreground mb-4">
+                                Contracts on {selectedChain.name}
+                            </h3>
+
+                            {contractsLoading ? (
+                                <div className="text-center text-muted-foreground py-8">
+                                    Loading contracts...
+                                </div>
+                            ) : selectedChainContracts.length === 0 ? (
+                                <div className="text-center text-muted-foreground py-8">
+                                    No contracts on this chain yet.
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {selectedChainContracts.map((contract) => (
+                                        <ContractCard
+                                            key={contract.contractAddress}
+                                            contract={contract}
+                                            account={currentAccount}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
