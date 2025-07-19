@@ -75,7 +75,7 @@ export const chainRoutes = new Elysia({
         response: { 200: ChainsListResponseSchema },
     })
     // Add a chain
-    .post('/', ({ body, store, set }) => {
+    .post('/', ({ body, store }) => {
         const stored = store.chainRegistry.add(body);
         if (!stored) {
             return new Response(JSON.stringify({ error: 'Chain name already exists' }), {

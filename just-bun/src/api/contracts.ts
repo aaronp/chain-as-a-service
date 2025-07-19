@@ -12,12 +12,15 @@ export const ContractSchema = t.Object({
 export type Contract = Static<typeof ContractSchema>;
 
 // Contract with created time for storage/response
-export const StoredContractSchema = t.Intersect([
-    ContractSchema,
-    t.Object({
-        created: t.Number(), // timestamp (ms since epoch)
-    })
-]);
+export const StoredContractSchema = t.Object({
+    chainId: t.String(), // chain id
+    issuerAddress: t.String(), // issuer address
+    contractAddress: t.String(), // contract address
+    contractType: t.String(), // contract type (e.g. erc20)
+    name: t.String(),
+    symbol: t.String(),
+    created: t.Number(), // timestamp (ms since epoch)
+});
 export type StoredContract = Static<typeof StoredContractSchema>;
 
 // Response for GET /contracts

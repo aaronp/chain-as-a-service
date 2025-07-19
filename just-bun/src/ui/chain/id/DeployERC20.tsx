@@ -5,6 +5,7 @@ import AccountSelect from "@/ui/account/AccountSelect";
 import { Account } from "@/ui/wallet/accounts";
 import { isErrorResponse } from "@/api/error";
 import { StoredContract } from "@/api/contracts";
+import { Button } from "@/ui/components/ui/button";
 
 // const api = edenTreaty('/api');
 
@@ -55,67 +56,65 @@ export default function DeployERC20() {
     }
 
     return (
-        <div className="p-4 max-w-md mx-auto bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Deploy ERC20 Token</h2>
+        <div className="p-4 max-w-md mx-auto bg-card rounded-lg shadow-lg border border-border">
+            <h2 className="text-xl font-semibold mb-4 text-card-foreground">Deploy ERC20 Token</h2>
             <AccountSelect onSelectAccount={setAccount} />
-            <label className="block mb-2 font-medium" htmlFor="token-name">Token Name</label>
+            <label className="block mb-2 font-medium text-card-foreground" htmlFor="token-name">Token Name</label>
             <input
                 id="token-name"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-input rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Name"
                 autoFocus
             />
-            <label className="block mb-2 font-medium" htmlFor="token-symbol">Symbol</label>
+            <label className="block mb-2 font-medium text-card-foreground" htmlFor="token-symbol">Symbol</label>
             <input
                 id="token-symbol"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-input rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
                 value={symbol}
                 onChange={e => setSymbol(e.target.value)}
                 placeholder="Symbol"
             />
-            <label className="block mb-2 font-medium" htmlFor="token-initial-supply">Initial Supply</label>
+            <label className="block mb-2 font-medium text-card-foreground" htmlFor="token-initial-supply">Initial Supply</label>
             <input
                 id="token-initial-supply"
                 type="number"
                 min={0}
                 max={255}
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-input rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
                 value={initialSupply}
                 onChange={e => setInitialSupply(Number(e.target.value))}
             />
-            {error && <div className="text-red-600 mb-2">{error}</div>}
+            {error && <div className="text-destructive mb-2">{error}</div>}
             {deployResult && (
-                <div className="text-green-700 bg-green-100 rounded p-2 mb-2 break-all">
+                <div className="text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/20 rounded-md p-2 mb-2 break-all">
                     <strong>Deployment Result:</strong>
                     <pre className="whitespace-pre-wrap text-xs mt-1">{JSON.stringify(deployResult, null, 2)}</pre>
                 </div>
             )}
             <div className="flex justify-end gap-2 items-center">
                 <button
-                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                    className="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
                     onClick={onCancel}
                     disabled={loading}
                 >
                     Cancel
                 </button>
                 <div className="relative group">
-                    <button
-                        className={`px-4 py-2 rounded text-white transition-colors ${!canDeploy
-                            ? 'bg-gray-300 text-gray-400 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700'}`}
+                    <Button
+                        variant="theme"
                         onClick={onDeployERC20}
                         disabled={!canDeploy}
                     >
                         {loading ? "Creating..." : "Create"}
-                    </button>
-                    <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                    </Button>
+                    <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none border border-border">
                         <div><strong>canDeploy:</strong> {String(canDeploy)}</div>
                         <div><strong>loading:</strong> {String(loading)}</div>
-                        <div><strong>name:</strong> {name || <span className='text-gray-400'>[empty]</span>}</div>
-                        <div><strong>symbol:</strong> {symbol || <span className='text-gray-400'>[empty]</span>}</div>
-                        <div><strong>account:</strong> {account ? (account.name || account.address || '[selected]') : <span className='text-gray-400'>[none]</span>}</div>
+                        <div><strong>name:</strong> {name || <span className='text-muted-foreground'>[empty]</span>}</div>
+                        <div><strong>symbol:</strong> {symbol || <span className='text-muted-foreground'>[empty]</span>}</div>
+                        <div><strong>account:</strong> {account ? (account.name || account.address || '[selected]') : <span className='text-muted-foreground'>[none]</span>}</div>
                     </div>
                 </div>
             </div>

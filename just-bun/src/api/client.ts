@@ -48,7 +48,7 @@ export class Client {
         return response.data.contracts.find(c => c.chainId === chainId && c.contractAddress === contractAddress);
     }
 
-    async register(request: Contract) {
+    async registerContract(request: Contract) {
         const client = treaty<Api>(this.url);
 
         // const header = await this.makeHeader(request);

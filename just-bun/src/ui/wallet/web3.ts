@@ -73,7 +73,7 @@ export const deployERC20 = async (
         throw new Error("No receipt");
     }
     const contractAddress = receipt.contractAddress;
-    const registerResult = await client().register({
+    const registerResult = await client().registerContract({
         chainId,
         issuerAddress: account.address,
         contractAddress,

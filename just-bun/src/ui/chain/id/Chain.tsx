@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { client } from "@/api/client";
 import { StoredChain } from "@/api/chains";
+import { Button } from "@/ui/components/ui/button";
 
 export default function Chain() {
     // Get the last segment from the URL path as the chainId
@@ -41,6 +42,8 @@ export default function Chain() {
         <div className="p-8">
             <h2 className="text-3xl font-bold">{chain.name}</h2>
             <div className="text-gray-500">({chain.chainId})</div>
+            <div className="text-gray-500">Creator: {chain.creatorAddress}</div>
+
             <div className="text-gray-500">Created: {new Date(chain.created).toLocaleString()}</div>
 
             <h3 className="mt-6 text-2xl font-semibold">Contracts</h3>
@@ -60,12 +63,13 @@ export default function Chain() {
                     ))}
                 </ul>
             )}
-            <button
-                className="mt-4 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+            <Button
+
+                variant="theme"
                 onClick={() => window.location.assign(`/chain/${chain.chainId}/add`)}
             >
                 Add Contract
-            </button>
+            </Button>
         </div>
     );
 }

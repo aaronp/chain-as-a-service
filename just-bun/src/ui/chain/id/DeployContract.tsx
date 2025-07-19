@@ -6,14 +6,14 @@ export default function DeployContract() {
     const [type, setType] = useState("ERC20");
 
     return (
-        <div className="p-4 max-w-md mx-auto bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Deploy Contract</h2>
-            <label className="block mb-2 font-medium" htmlFor="contract-type">
+        <div className="p-4 max-w-md mx-auto bg-card rounded-lg shadow-lg border border-border">
+            <h2 className="text-xl font-semibold mb-4 text-card-foreground">Deploy Contract</h2>
+            <label className="block mb-2 font-medium text-card-foreground" htmlFor="contract-type">
                 Type
             </label>
             <select
                 id="contract-type"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-input rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
                 value={type}
                 onChange={e => setType(e.target.value)}
             >
