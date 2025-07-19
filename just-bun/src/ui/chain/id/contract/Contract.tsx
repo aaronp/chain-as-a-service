@@ -104,12 +104,14 @@ export default function Contract() {
         <div className="p-8">
             <Link to={`/chain/${chainId}`} className="text-blue-600 hover:underline">Back to chain</Link>
             <h2 className="text-3xl font-bold">{contract.name}</h2>
-            <div className="text-gray-500">Address: <span className="font-mono">{contract.contractAddress}</span></div>
-            <div className="text-gray-500">Type: {contract.contractType}</div>
-            <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
+            <div className="flex flex-col gap-2 pt-2">
+                <div className="text-gray-500">Address: <span className="font-mono">{contract.contractAddress}</span></div>
+                <div className="text-gray-500">Type: {contract.contractType}</div>
+                <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
+            </div>
 
             <div className="mt-4">
-                <h3 className="text-lg font-semibold">Balance</h3>
+                <h3 className="text-lg font-semibold">{currentAccount?.name} Balance</h3>
                 {balanceLoading && <div className="text-gray-500">Loading balance...</div>}
                 {balanceError && (
                     <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -117,7 +119,7 @@ export default function Contract() {
                     </div>
                 )}
                 {!balanceLoading && !balanceError && balance !== null && (
-                    <div className="text-gray-700">{balance}</div>
+                    <span className="text-2xl font-bold text-primary">{balance} {contract.symbol}</span>
                 )}
             </div>
         </div>
