@@ -43,9 +43,7 @@ export const deployERC20 = async (
     name: string,
     symbol: string,
     initialSupply: number): Promise<StoredContract | ErrorResponse> => {
-    const rpcUrl = window.location.origin + "/api/proxy/" + id;
-    console.log("rpcUrl", rpcUrl);
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const provider = providerForChain(chainId);
     const wallet = new ethers.Wallet(account.privateKey, provider);
 
     const address = await wallet.getAddress();
@@ -83,6 +81,10 @@ export const deployERC20 = async (
     })
     return registerResult;
 }
+
+
+
+
 export const prepareERC20Deploy = async (
     signer: ethers.Signer,
     abi: any,
@@ -117,3 +119,55 @@ export const prepareERC20Deploy = async (
     // const data = await res.json();
     // console.log('Deployed contract at:', data.contractAddress);
 }
+
+const providerForChain = async (chainId: string) => {
+    const rpcUrl = window.location.origin + "/api/proxy/" + chainId;
+    return new ethers.JsonRpcProvider(rpcUrl);
+}
+
+const getERC20 = async (
+    chainId: string,
+    contractAddress: string
+) => {
+    const provider = await providerForChain(chainId);
+
+    // Get the ERC20 contract ABI (we only need the balanceOf function)
+    const template = erc20Template();
+    return new ethers.Contract(contractAddress, template.abi, provider);
+}
+
+
+export const getBalance = async (
+    chainId: string,
+    contractAddress: string,
+    account: Account,
+): Promise<string> => {
+    const contract = await getERC20(chainId, contractAddress);
+    const balance = await contract.balanceOf(account.address);
+    return balance.toString();
+}
+
+export const transferTokens = async (
+    account: Account,
+    contractAddress: string,
+    chainId: string,
+    toAddress: string,
+    amount: string
+): Promise<string> => {
+    const provider = await providerForChain(chainId);
+    const wallet = new ethers.Wallet(account.privateKey, provider);
+    const contract = new ethers.Contract(contractAddress, erc20Template().abi, wallet);
+
+    console.log(`Transferring ${amount} tokens from ${account.address} to ${toAddress}`);
+
+    const tx = await contract.transfer(toAddress, amount);
+    console.log("Transfer transaction hash:", tx.hash);
+
+    const receipt = await tx.wait();
+    console.log("Transfer receipt:", receipt);
+
+    return tx.hash;
+}
+
+
+

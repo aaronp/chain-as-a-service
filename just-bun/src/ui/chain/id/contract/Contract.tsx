@@ -1,30 +1,34 @@
 import { client } from "@/api/client";
+import { useAccount } from "@/ui/account/AccountContext";
+import { getBalance } from "@/ui/wallet/web3";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+
 
 export default function Contract() {
-    // Parse /chain/:chainId/contract/:contractId from the URL
-    const { chainId, contractId } = React.useMemo(() => {
-        const segments = window.location.pathname.split("/").filter(Boolean);
-        // Expect: ["chain", chainId, "contract", contractId]
-        const chainIdx = segments.indexOf("chain");
-        const contractIdx = segments.indexOf("contract");
-        return {
-            chainId: chainIdx !== -1 ? segments[chainIdx + 1] : "",
-            contractId: contractIdx !== -1 ? segments[contractIdx + 1] : ""
-        };
-    }, []);
+    const { chainId, address: contractId } = useParams<{ chainId: string; address: string }>();
 
     const [contract, setContract] = React.useState<any | null>(null);
     const [loading, setLoading] = React.useState(true);
-
+    const { currentAccount } = useAccount();
+    const [balance, setBalance] = React.useState<string | null>(null);
     React.useEffect(() => {
+        if (!chainId || !contractId) return;
+
         let mounted = true;
         setLoading(true);
         client().contractForAddress(chainId, contractId).then((result) => {
             if (mounted) setContract(result || null);
             setLoading(false);
         });
+
+        if (currentAccount) {
+
+            getBalance(chainId, contractId, currentAccount!).then((balance) => {
+                if (mounted) setBalance(balance);
+            });
+        }
+
         return () => { mounted = false; };
     }, [chainId, contractId]);
 
@@ -46,6 +50,7 @@ export default function Contract() {
             <div className="text-gray-500">Address: <span className="font-mono">{contract.contractAddress}</span></div>
             <div className="text-gray-500">Type: {contract.contractType}</div>
             <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
+            <div className="text-gray-500">Balance: {balance}</div>
         </div>
     );
 }
