@@ -92,7 +92,50 @@ interface NavigationItem {
 
 const SidebarItem = ({ href, icon, children, onClick, showText = true, actionButton, leftActionButton, indent = false }: SidebarItemProps) => {
     const location = useLocation()
-    const isActive = location.pathname === href
+
+    // Enhanced URL matching logic
+    const isActive = (() => {
+        const pathname = location.pathname
+
+        // Handle root path
+        if (href === "/" && pathname === "/") {
+            return true
+        }
+
+        // Handle account path
+        if (href === "/account" && pathname === "/account") {
+            return true
+        }
+
+        // Handle wallet path
+        if (href === "/wallet" && pathname === "/wallet") {
+            return true
+        }
+
+        // Handle chain paths
+        if (href.startsWith("/chain/")) {
+            const hrefChainId = href.split("/")[2]
+            const pathChainId = pathname.split("/")[2]
+
+            // Exact match for chain
+            if (href === pathname) {
+                return true
+            }
+
+            // Contract within chain - only highlight if this is the exact contract
+            if (pathname.includes("/contract/") && href === pathname) {
+                return true
+            }
+        }
+
+        return false
+    })()
+
+
+
+    // Determine if this is a contract item (indented)
+    const isContract = indent
+    const isChain = href.startsWith("/chain/") && !indent
 
     return (
         <div className={cn("flex items-center justify-between group", indent && "ml-4")}>
@@ -103,8 +146,12 @@ const SidebarItem = ({ href, icon, children, onClick, showText = true, actionBut
                     "flex items-center rounded-lg text-sm font-medium transition-colors flex-1",
                     indent ? "py-1 min-h-[32px]" : "py-2 min-h-[40px]",
                     isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        ? isContract
+                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800"
+                            : isChain
+                                ? "bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 border border-green-200 dark:border-green-800"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700"
+                        : "text-muted-foreground hover:text-foreground hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
                 )}
             >
                 {leftActionButton && showText && (
