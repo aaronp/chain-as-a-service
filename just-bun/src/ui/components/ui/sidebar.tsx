@@ -272,7 +272,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
         {
             href: "/account",
             icon: <User className="h-4 w-4" />,
-            label: "Accounts",
+            label: currentAccount?.name ?? "Accounts",
         },
         {
             href: "/wallet",

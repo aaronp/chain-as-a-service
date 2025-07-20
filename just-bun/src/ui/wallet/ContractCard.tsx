@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
 import { Account } from "@/ui/wallet/accounts";
-import { getBalance } from "@/ui/wallet/web3";
+import { getBalance, transferTokens } from "@/ui/wallet/web3";
 import { retryUntil } from "@/lib/retryUntil";
+import { createPortal } from "react-dom";
+import { Button } from "@/ui/components/ui/button";
 
 interface ContractCardProps {
     contract: StoredContract;
@@ -18,9 +20,10 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
     const [transferAmount, setTransferAmount] = useState("");
     const [transferLoading, setTransferLoading] = useState(false);
     const [transferError, setTransferError] = useState<string | null>(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [transferResult, setTransferResult] = useState<string | null>(null);
 
-    useEffect(() => {
-        let mounted = true;
+    const refreshBalance = () => {
         setLoading(true);
         setError(null);
 
@@ -30,20 +33,18 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
             500   // 500ms delay between retries
         )
             .then((balance) => {
-                if (mounted) {
-                    setBalance(balance);
-                    setLoading(false);
-                }
+                setBalance(balance);
+                setLoading(false);
             })
             .catch((error) => {
-                if (mounted) {
-                    console.error("Error getting balance after retries:", error);
-                    setError(error.message || "Failed to get balance");
-                    setLoading(false);
-                }
+                console.error("Error getting balance after retries:", error);
+                setError(error.message || "Failed to get balance");
+                setLoading(false);
             });
+    };
 
-        return () => { mounted = false; };
+    useEffect(() => {
+        refreshBalance();
     }, [contract.chainId, contract.contractAddress, account]);
 
     const handleTransfer = async () => {
@@ -56,16 +57,25 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
         setTransferError(null);
 
         try {
-            // TODO: Implement actual transfer logic here
-            console.log("Transferring", transferAmount, contract.symbol, "to", destinationAddress);
+            const result = await transferTokens(account, contract.contractAddress, contract.chainId, destinationAddress, transferAmount);
+            console.log("Transfer result:", result);
 
-            // Simulate transfer delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Store the result and show success modal
+            setTransferResult(result);
+            setShowSuccessModal(true);
 
-            // Close modal and reset form
+            // Close transfer modal and reset form
             setTransferModalOpen(false);
             setDestinationAddress("");
             setTransferAmount("");
+
+            // Auto-hide success modal after 1 second and refresh balance
+            setTimeout(() => {
+                setShowSuccessModal(false);
+                setTransferResult(null);
+                refreshBalance();
+            }, 2000);
+
         } catch (error: any) {
             setTransferError(error.message || "Transfer failed");
         } finally {
@@ -80,8 +90,38 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
         setTransferError(null);
     };
 
+    const successModalContent = showSuccessModal && (
+        <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 9999,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)'
+            }}
+        >
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                    <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <div>
+                        <span className="text-lg font-semibold text-gray-900 dark:text-white">Transfer Successful!</span>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Transaction hash: {transferResult?.slice(0, 10)}...{transferResult?.slice(-8)}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <>
+            {showSuccessModal && createPortal(successModalContent, document.body)}
             <div className="p-4 border border-border rounded-lg bg-card shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                     <div>
@@ -114,9 +154,10 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
                             )}
                         </div>
                         {!loading && !error && balance !== null && (
-                            <button
+                            <Button
+                                variant="theme"
                                 onClick={() => setTransferModalOpen(true)}
-                                className="px-3 py-1.5 text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary rounded-md transition-all duration-200 hover:scale-105 flex items-center gap-1"
+
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -129,7 +170,7 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                                 </svg>
                                 Transfer
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
