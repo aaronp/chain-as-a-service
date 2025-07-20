@@ -1,5 +1,6 @@
 import { ethers, id } from 'ethers';
 import MyToken from "contracts/erc20/out/MyToken.sol/MyToken.json";
+import AtomicSwap from "contracts/swap/AtomicSwap.json";
 import { client } from '@/api/client';
 import { Account } from './accounts';
 import { StoredContract } from '@/api/contracts';
@@ -66,6 +67,12 @@ export const erc20Template = () => {
     return { abi, bytecode };
 }
 
+export const atomicSwapTemplate = () => {
+    const abi = AtomicSwap.abi;
+    const bytecode = AtomicSwap.bytecode.object;
+    return { abi, bytecode };
+}
+
 export const hasWallet = async () => {
     const metamask = (window as any).ethereum;
     if (!metamask) {
@@ -128,6 +135,75 @@ export const deployERC20 = async (
         symbol,
     })
     return registerResult;
+}
+
+export const deployAtomicSwap = async (
+    account: Account,
+    chainId: string
+): Promise<StoredContract | ErrorResponse> => {
+    const provider = await providerForChain(chainId);
+
+    // Check if account has enough ETH, fund if needed (skip for Anvil accounts)
+    if (!isAnvilAccount(account)) {
+        const balance = await provider.getBalance(account.address);
+        if (balance < ethers.parseEther("0.1")) {
+            console.log("Account has insufficient ETH, funding...");
+            await fundAccount(account, chainId);
+        }
+    }
+
+    const signer = new ethers.Wallet(account.privateKey, provider);
+
+    const template = atomicSwapTemplate();
+    const factory = new ethers.ContractFactory(template.abi, template.bytecode, signer);
+
+    console.log("Deploying AtomicSwap contract...");
+    const contract = await factory.deploy();
+
+    console.log("Waiting for deployment...");
+    await contract.waitForDeployment();
+
+    const contractAddress = await contract.getAddress();
+    console.log("AtomicSwap contract deployed at:", contractAddress);
+
+    const registerResult = await client().registerContract({
+        chainId,
+        issuerAddress: account.address,
+        contractAddress,
+        contractType: "AtomicSwap",
+        name: "AtomicSwap",
+        symbol: "",
+    })
+    return registerResult;
+}
+
+export type SwapParams = {
+    address: string;
+    amount: string;
+}
+export const executeSwap = async (
+    account: Account,
+    chainId: string,
+    swapContractAddress: string,
+    partyB: string,
+    tokenA: SwapParams,
+    tokenB: SwapParams
+): Promise<string> => {
+    console.log(`Executing swap on contract ${swapContractAddress}`);
+
+    const provider = await providerForChain(chainId);
+    const wallet = new ethers.Wallet(account.privateKey, provider);
+    const contract = new ethers.Contract(swapContractAddress, atomicSwapTemplate().abi, wallet);
+
+    console.log(`Executing swap: ${tokenA.amount} of token ${tokenA.address} for ${tokenB.amount} of token ${tokenB.address} with party ${partyB}`);
+
+    const tx = await contract.swap(partyB, tokenA.address, tokenA.amount, tokenB.address, tokenB.amount);
+    console.log("Swap transaction hash:", tx.hash);
+
+    const receipt = await tx.wait();
+    console.log("Swap receipt:", receipt);
+
+    return tx.hash;
 }
 
 const providerForChain = async (chainId: string) => {

@@ -57,7 +57,7 @@ export default function DeployERC20() {
     }
 
     return (
-        <div className="p-4 max-w-md mx-auto bg-card rounded-lg shadow-lg border border-border">
+        <div className="p-4 max-w-md bg-card rounded-lg shadow-lg border border-border">
             <h2 className="text-xl font-semibold mb-4 text-card-foreground">Deploy ERC20 Token</h2>
 
             <label className="block mb-2 font-medium text-card-foreground" htmlFor="token-name">Token Name</label>

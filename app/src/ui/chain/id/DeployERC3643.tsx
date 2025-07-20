@@ -38,7 +38,7 @@ export default function DeployERC3643() {
     }
 
     return (
-        <div className="p-4 max-w-md mx-auto bg-white rounded shadow">
+        <div className="p-4 max-w-md bg-white rounded shadow">
             <h2 className="text-xl font-semibold mb-4">Deploy ERC3643 Token</h2>
             <label className="block mb-2 font-medium" htmlFor="token-name">Token Name</label>
             <input

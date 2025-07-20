@@ -501,6 +501,11 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                             placeholder="Chain name"
                             value={chainName}
                             onChange={e => setChainName(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                    handleAddChain();
+                                }
+                            }}
                             autoFocus
                         />
                         <div className="flex justify-end gap-2">
@@ -511,6 +516,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
                                 Cancel
                             </Button>
                             <Button
+                                variant="outline"
                                 onClick={handleAddChain}
                                 disabled={!chainName.trim()}
                             >
