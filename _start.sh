@@ -1,1 +1,0 @@
-anvil --dump-state anvil-state-test.json

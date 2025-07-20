@@ -1,6 +1,0 @@
-[submodule "cntrcts/erc20-demo/lib/forge-std"]
-	path = cntrcts/erc20-demo/lib/forge-std
-	url = https://github.com/foundry-rs/forge-std
-[submodule "cntrcts/erc20-demo/lib/openzeppelin-contracts"]
-	path = cntrcts/erc20-demo/lib/openzeppelin-contracts
-	url = https://github.com/OpenZeppelin/openzeppelin-contracts

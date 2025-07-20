@@ -1,1 +1,0 @@
-anvil --dump-state anvil-state.json --gas-price 0 --gas-limit 0

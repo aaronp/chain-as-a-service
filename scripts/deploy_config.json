@@ -1,7 +1,0 @@
-{
-  "idFile": "/project/id.json",
-  "contractPath": "/contracts/erc20/MyToken.sol:MyToken",
-  "name": "Aaron",
-  "symbol": "ABP",
-  "supply": 10000
-}
