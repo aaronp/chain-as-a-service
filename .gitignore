@@ -46,3 +46,6 @@ src/contracts/openzeppelin-contracts
 state
 
 **/anvil-state-*json
+
+# Foundry dependencies
+cntrcts/src/lib/
