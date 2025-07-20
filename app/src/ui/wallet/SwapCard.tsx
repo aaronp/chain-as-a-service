@@ -13,6 +13,7 @@ import {
     SheetTitle,
     SheetTrigger
 } from "@/ui/components/ui/sheet";
+import ChooseAccount from "../account/ChooseAccount";
 
 interface SwapCardProps {
     contract: StoredContract;
@@ -240,13 +241,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                 <label className="block text-sm font-medium mb-2">
                                     With:
                                 </label>
-                                <input
-                                    type="text"
-                                    className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
-                                    placeholder="0x..."
-                                    value={withAddress}
-                                    onChange={(e) => setWithAddress(e.target.value)}
-                                />
+                                <ChooseAccount onAccountSelected={setWithAddress} />
                             </div>
 
                             {/* Bottom row: Button bar */}

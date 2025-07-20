@@ -5,6 +5,7 @@ import { useTheme } from "../components/ui/sidebar";
 import { Button } from "../components/ui/button";
 import { useAccount } from "./AccountContext";
 import { createPortal } from "react-dom";
+import { client } from "@/api/client";
 
 export default function Account() {
     const [accounts, setAccounts] = useState<AccountMap>({});
@@ -12,14 +13,49 @@ export default function Account() {
     const [error, setError] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [showCopiedModal, setShowCopiedModal] = useState(false);
-    const { theme } = useTheme();
     const { currentAccount, setCurrentAccount } = useAccount();
 
+    /**
+     * ATM our server restarts are all in-memory and lose data, so this 'hack' updates 
+     * the remote accounts to match the local accounts.
+     * @param localAccounts 
+     */
+    const reconcileAccounts = async (localAccounts: AccountMap) => {
+        try {
+            const remoteAccounts = await client().listAccounts();
+            const remoteAccountNames = new Set(remoteAccounts.map(acc => acc.name));
+
+            // Find local accounts that don't exist remotely and create them
+            for (const [name, localAccount] of Object.entries(localAccounts)) {
+                if (!remoteAccountNames.has(name)) {
+                    client().registerAccount({
+                        name: localAccount.name,
+                        address: localAccount.address,
+                        publicKey: "", // Local accounts don't have public keys
+                        additionalData: {}
+                    }).then(() => {
+                        console.log(`Created remote account for: ${name}`);
+                    }).catch(err => {
+                        console.error(`Failed to create remote account for ${name}:`, err);
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Error syncing accounts:", err);
+        }
+    };
     useEffect(() => {
-        setAccounts(loadAccounts());
+        const syncAccounts = async () => {
+            const localAccounts = loadAccounts();
+            setAccounts(localAccounts);
+
+            reconcileAccounts(localAccounts);
+        };
+
+        syncAccounts();
     }, []);
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         const name = newName.trim();
         if (!name) {
             setError("Name required");
@@ -30,7 +66,13 @@ export default function Account() {
             return;
         }
         const wallet = ethers.Wallet.createRandom();
-        const updated = { ...accounts, [name]: { name, address: wallet.address, privateKey: wallet.privateKey } };
+        const newAccount = { name, address: wallet.address, privateKey: wallet.privateKey };
+        const response = await client().registerAccount({ name, address: wallet.address, publicKey: wallet.publicKey });
+        if ('error' in response) {
+            setError(response.error);
+            return;
+        }
+        const updated = { ...accounts, [name]: newAccount };
         setAccounts(updated);
         saveAccounts(updated);
         setNewName("");
@@ -94,8 +136,6 @@ export default function Account() {
             setTimeout(() => setShowCopiedModal(false), 2000);
         }
     };
-
-    console.log('showCopiedModal state:', showCopiedModal);
 
     const modalContent = showCopiedModal && (
         <div

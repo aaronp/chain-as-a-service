@@ -2,11 +2,14 @@ import { treaty } from "@elysiajs/eden";
 import { Api } from "./api";
 import { Contract } from "./contracts";
 import { Chain, StoredChain } from "./chains";
+import { Account, StoredAccount, UpdateAccount } from "./accounts";
 
 export class Client {
 
     constructor(private readonly url: string) {
     }
+
+
 
     async registerChain(request: Chain) {
         const client = treaty<Api>(this.url);
@@ -65,6 +68,42 @@ export class Client {
             return { error: `Failed to create token: ${response.status}`, data: response.data };
         }
         return response.data;
+    }
+
+    // Account methods
+    async listAccounts() {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.accounts.get();
+        return response.data?.accounts || [];
+    }
+
+    async registerAccount(request: Account) {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.accounts.post(request);
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to register account: ${response.status}`, data: response.data };
+        }
+        return response.data;
+    }
+
+    async updateAccount(name: string, updates: UpdateAccount) {
+        const response = await fetch(`${this.url}/api/accounts/${encodeURIComponent(name)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            return { error: `Failed to update account: ${response.status}`, data: errorData };
+        }
+
+        return await response.json();
+    }
+
+    async getAccountByName(name: string): Promise<StoredAccount | undefined> {
+        const accounts = await this.listAccounts();
+        return accounts.find(a => a.name === name) || undefined;
     }
 }
 
