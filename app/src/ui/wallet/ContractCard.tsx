@@ -2,6 +2,7 @@ import React from "react";
 import { StoredContract } from "@/api/contracts";
 import { Account } from "@/ui/wallet/accounts";
 import ERC20Card from "./ERC20Card";
+import SwapCard from "./SwapCard";
 
 interface ContractCardProps {
     contract: StoredContract;
@@ -12,6 +13,8 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
     // Use ERC20Card for ERC20 contracts
     if (contract.contractType === "ERC20") {
         return <ERC20Card contract={contract} account={account} />;
+    } else if (contract.contractType === "ATOMICSWAP") {
+        return <SwapCard contract={contract} account={account} />;
     }
 
     // Generic fallback for other contract types
