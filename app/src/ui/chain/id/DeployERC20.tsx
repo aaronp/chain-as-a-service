@@ -58,8 +58,6 @@ export default function DeployERC20() {
 
     return (
         <div className="p-4 max-w-md bg-card rounded-lg shadow-lg border border-border">
-            <h2 className="text-xl font-semibold mb-4 text-card-foreground">Deploy ERC20 Token</h2>
-
             <label className="block mb-2 font-medium text-card-foreground" htmlFor="token-name">Token Name</label>
             <input
                 id="token-name"
@@ -94,14 +92,14 @@ export default function DeployERC20() {
                     <pre className="whitespace-pre-wrap text-xs mt-1">{JSON.stringify(deployResult, null, 2)}</pre>
                 </div>
             )}
-            <div className="flex justify-end gap-2 items-center">
-                <button
-                    className="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
+            <div className="flex justify-start gap-2 items-center">
+                <Button
+                    variant="outline"
                     onClick={onCancel}
                     disabled={loading}
                 >
                     Cancel
-                </button>
+                </Button>
                 <div className="relative group">
                     <Button
                         variant="theme"

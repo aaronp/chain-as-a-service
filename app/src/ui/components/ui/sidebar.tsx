@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
-import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, X, Plus, ChevronDown, ChevronRight, Network } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, Plus, ChevronDown, ChevronRight, Link2, LinkIcon } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { client } from "@/api/client"
 import { StoredChain } from "@/api/chains"
@@ -244,7 +244,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
 
     const chainItems = currentAccount ? [{
         href: "/",
-        icon: <Home className="h-4 w-4" />,
+        icon: <LinkIcon className="h-4 w-4" />,
         label: "Chains",
         actionButton: (
             <div className="flex items-center gap-1">
@@ -284,7 +284,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
 
         const chainMenuItem = {
             href: `/chain/${chain.chainId}`,
-            icon: <Network className="h-4 w-4" />,
+            icon: <Link2 className="h-4 w-4" />,
             label: chain.name,
             actionButton: hasContracts ? (
                 <Button
@@ -315,7 +315,6 @@ const Sidebar = ({ className, children }: SidebarProps) => {
     }) : [])] : []
 
     const navigationItems = [
-        ...chainItems,
         {
             href: "/account",
             icon: <User className="h-4 w-4" />,
@@ -326,6 +325,8 @@ const Sidebar = ({ className, children }: SidebarProps) => {
             icon: <Wallet className="h-4 w-4" />,
             label: "Wallet",
         },
+        ...chainItems,
+
     ]
 
     return (

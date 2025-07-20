@@ -75,10 +75,10 @@ export default function Contract() {
     }
 
     return (
-        <div className="p-8">
-            <Link to={`/chain/${chainId}`} className="text-blue-600 hover:underline">Back to chain</Link>
+        <div >
+            <Link to={`/chain/${chainId}`} className="text-blue-600 hover:underline">Chain</Link>
             {currentAccount && <ContractCard contract={contract} account={currentAccount} />}
-            <div className="text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
+            <div className="p-2 text-gray-500">Created: {new Date(contract.created).toLocaleString()}</div>
         </div>
     );
 }

@@ -44,7 +44,7 @@ export default function Chain() {
 
             <div className="text-gray-500">Created: {new Date(chain.created).toLocaleString()}</div>
 
-            <h3 className="mt-6 text-2xl font-semibold">Contracts</h3>
+            <h3 className="mt-6 mb-2 text-2xl font-semibold">Contracts</h3>
             {loading ? (
                 <div className="text-gray-500">Loading contracts...</div>
             ) : contracts?.length === 0 ? (
@@ -52,17 +52,17 @@ export default function Chain() {
             ) : (
                 <ul className="list-disc ml-6">
                     {contracts?.map((c, i) => (
-                        <li key={i}>
-                            <div className="text-bold text-2xl">
-                                <Link className="hover:underline text-blue-600" to={`/chain/${chain.chainId}/contract/${c.contractAddress}`}>{c.name}</Link>
-                                <span className="text-gray-500"> (added {new Date(c.created).toLocaleString()})</span>
+                        <li key={i} className="group">
+                            <div className="text-bold text-2xl p-1">
+                                <Link className="hover:underline text-secondary-600" to={`/chain/${chain.chainId}/contract/${c.contractAddress}`}>{c.name}</Link>
+                                <span className="text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"> ({c.contractType}, added {new Date(c.created).toLocaleString()})</span>
                             </div>
                         </li>
                     ))}
                 </ul>
             )}
             <Button
-
+                className="mt-4"
                 variant="theme"
                 onClick={() => window.location.assign(`/chain/${chain.chainId}/add`)}
             >

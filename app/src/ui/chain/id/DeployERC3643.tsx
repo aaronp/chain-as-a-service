@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { edenTreaty } from "@elysiajs/eden";
 import { client } from "@/api/client";
+import { Button } from "@/ui/components/ui/button";
 
 const api = edenTreaty('/api');
 
@@ -38,8 +39,7 @@ export default function DeployERC3643() {
     }
 
     return (
-        <div className="p-4 max-w-md bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Deploy ERC3643 Token</h2>
+        <div className="p-4 max-w-md bg-card rounded-lg shadow-lg border border-border">
             <label className="block mb-2 font-medium" htmlFor="token-name">Token Name</label>
             <input
                 id="token-name"
@@ -68,21 +68,21 @@ export default function DeployERC3643() {
                 onChange={e => setDecimals(Number(e.target.value))}
             />
             {error && <div className="text-red-600 mb-2">{error}</div>}
-            <div className="flex justify-end gap-2">
-                <button
-                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+            <div className="flex justify-start gap-2">
+                <Button
+                    variant="outline"
                     onClick={onCancel}
                     disabled={loading}
                 >
                     Cancel
-                </button>
-                <button
-                    className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+                </Button>
+                <Button
+                    variant="theme"
                     onClick={onDeployERC20}
                     disabled={loading || !name.trim() || !symbol.trim()}
                 >
                     {loading ? "Creating..." : "Create"}
-                </button>
+                </Button>
             </div>
         </div>
     );

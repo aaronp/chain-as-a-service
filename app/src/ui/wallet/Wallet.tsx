@@ -6,6 +6,7 @@ import { useAccount } from "@/ui/account/AccountContext";
 import ContractCard from "./ContractCard";
 import { Button } from "@/ui/components/ui/button";
 import { useTheme } from "@/ui/components/ui/sidebar";
+import { Link } from "react-router-dom";
 
 export default function Wallet() {
     const [contracts, setContracts] = useState<StoredContract[]>([]);
@@ -51,8 +52,11 @@ export default function Wallet() {
             setContractsLoading(true);
             try {
                 const contractsData = await client().listContractsForChain(selectedChainId);
+
                 if (contractsData && Array.isArray(contractsData)) {
-                    setSelectedChainContracts(contractsData);
+                    const walletContractTypes = ["ERC20", "ERC3643"];
+                    const walletContracts = contractsData.filter(contract => walletContractTypes.includes(contract.contractType));
+                    setSelectedChainContracts(walletContracts);
                 } else {
                     setSelectedChainContracts([]);
                 }
@@ -96,7 +100,8 @@ export default function Wallet() {
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-foreground">Wallet</h1>
                 <p className="text-muted-foreground mt-2">
-                    Account: {currentAccount.name} ({currentAccount.address.slice(0, 8)}...{currentAccount.address.slice(-8)})
+
+                    Account: <Link to={`/account`}>{currentAccount.name} <span className="text-xs text-muted-foreground">({currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)})</span></Link>
                 </p>
             </div>
 
@@ -120,10 +125,10 @@ export default function Wallet() {
                                         size="sm"
                                         onClick={() => setSelectedChainId(chain.chainId)}
                                         className={`flex items-center gap-2 ${isSelected
-                                                ? theme === 'dark'
-                                                    ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600'
-                                                    : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-                                                : ''
+                                            ? theme === 'dark'
+                                                ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600'
+                                                : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
+                                            : ''
                                             }`}
                                     >
                                         {chain.name}
@@ -139,9 +144,6 @@ export default function Wallet() {
                     {/* Selected Chain Contracts */}
                     {selectedChain && (
                         <div>
-                            <h3 className="text-lg font-semibold text-foreground mb-4">
-                                Contracts on {selectedChain.name}
-                            </h3>
 
                             {contractsLoading ? (
                                 <div className="text-center text-muted-foreground py-8">
@@ -152,7 +154,7 @@ export default function Wallet() {
                                     No contracts on this chain yet.
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                     {selectedChainContracts.map((contract) => (
                                         <ContractCard
                                             key={contract.contractAddress}

@@ -118,7 +118,7 @@ export default function Account() {
                     <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">Account Copied!</span>
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">Address Copied!</span>
                 </div>
             </button>
         </div>
@@ -127,29 +127,11 @@ export default function Account() {
     return (
         <>
             {showCopiedModal && createPortal(modalContent, document.body)}
-            <div className="p-6 max-w-md mx-auto bg-card rounded-lg shadow-lg mt-8 border border-border">
+            <div className="max-w-md bg-card rounded-lg shadow-lg mt-2 p-8">
                 <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-card-foreground">
                     {/* <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> */}
                     Accounts
                 </h2>
-                <div className="mb-4 flex gap-2">
-                    <input
-                        className="flex-1 border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-white dark:bg-gray-100 text-gray-900 placeholder:text-gray-500 transition-colors"
-                        placeholder="Account name"
-                        value={newName}
-                        onChange={e => { setNewName(e.target.value); setError(null); }}
-                        onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
-                    />
-                    <Button
-                        variant="theme"
-                        aria-label="Add Account"
-                        onClick={handleAdd}
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                        Add
-                    </Button>
-                </div>
-                {error && <div className="text-destructive mb-2">{error}</div>}
                 <ul className="divide-y divide-border">
                     {Object.entries(accounts).length === 0 ? (
                         <li className="text-muted-foreground py-2">No accounts yet.</li>
@@ -213,6 +195,25 @@ export default function Account() {
                         ))
                     )}
                 </ul>
+
+                <div className="mb-4 mt-2 flex gap-2">
+                    <input
+                        className="flex-1 border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-white dark:bg-gray-100 text-gray-900 placeholder:text-gray-500 transition-colors"
+                        placeholder="Account name"
+                        value={newName}
+                        onChange={e => { setNewName(e.target.value); setError(null); }}
+                        onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
+                    />
+                    <Button
+                        variant="theme"
+                        aria-label="Add Account"
+                        onClick={handleAdd}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        Add
+                    </Button>
+                </div>
+                {error && <div className="text-destructive mb-2">{error}</div>}
             </div>
         </>
     );
