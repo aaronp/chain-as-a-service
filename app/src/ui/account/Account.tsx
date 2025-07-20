@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { AccountMap, loadAccounts, saveAccounts } from "../wallet/accounts";
+import { AccountMap, createNewAccount, loadAccounts, saveAccounts } from "../wallet/accounts";
 import { useTheme } from "../components/ui/sidebar";
 import { Button } from "../components/ui/button";
 import { useAccount } from "./AccountContext";
@@ -65,13 +65,9 @@ export default function Account() {
             setError("Name already exists");
             return;
         }
-        const wallet = ethers.Wallet.createRandom();
-        const newAccount = { name, address: wallet.address, privateKey: wallet.privateKey };
-        const response = await client().registerAccount({ name, address: wallet.address, publicKey: wallet.publicKey });
-        if ('error' in response) {
-            setError(response.error);
-            return;
-        }
+
+        const newAccount = await createNewAccount(name);
+
         const updated = { ...accounts, [name]: newAccount };
         setAccounts(updated);
         saveAccounts(updated);

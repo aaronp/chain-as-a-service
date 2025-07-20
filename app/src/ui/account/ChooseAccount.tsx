@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { client } from "@/api/client";
 import { StoredAccount } from "@/api/accounts";
-import { useAccount } from "./AccountContext";
 import { Button } from "../components/ui/button";
 import { ChevronDown, Search, Plus, User } from "lucide-react";
+import { useAccount } from "./AccountContext";
 
 interface ChooseAccountProps {
-    onAccountSelect?: (account: StoredAccount) => void;
-    onAccountSelected?: (address: string) => void;
+    onAccountSelected: (account: StoredAccount) => void;
     className?: string;
     placeholder?: string;
 }
 
 export default function ChooseAccount({
-    onAccountSelect,
     onAccountSelected,
     className = "",
     placeholder = "Select or create account..."
@@ -23,8 +21,9 @@ export default function ChooseAccount({
     const [filterText, setFilterText] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedAccount, setSelectedAccount] = useState<StoredAccount | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const { currentAccount, setCurrentAccount } = useAccount();
+    const { currentAccount } = useAccount();
 
     // Load accounts from API
     useEffect(() => {
@@ -33,7 +32,9 @@ export default function ChooseAccount({
             setError(null);
             try {
                 const accountsData = await client().listAccounts();
-                setAccounts(accountsData || []);
+                const data = accountsData || [];
+                const filtered = data.filter(account => account.address !== currentAccount?.address);
+                setAccounts(filtered);
             } catch (err) {
                 console.error("Error loading accounts:", err);
                 setError("Failed to load accounts");
@@ -69,57 +70,15 @@ export default function ChooseAccount({
     );
 
     const handleAccountSelect = (account: StoredAccount) => {
-        // Convert StoredAccount to the Account type expected by context
-        const accountForContext = {
-            name: account.name,
-            address: account.address,
-            privateKey: "", // API accounts don't have private keys
-        };
-
-        setCurrentAccount(accountForContext);
-        onAccountSelect?.(account);
-        onAccountSelected?.(account.address);
+        setSelectedAccount(account);
+        onAccountSelected(account);
         setIsOpen(false);
         setFilterText("");
     };
 
-    const handleCreateAccount = async () => {
-        if (!filterText.trim() || exactMatch) return;
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            // For now, we'll create a placeholder account
-            // In a real implementation, you might want to generate a proper keypair
-            const newAccount = await client().registerAccount({
-                name: filterText.trim(),
-                address: `0x${Math.random().toString(16).slice(2, 42)}`, // Placeholder address
-                publicKey: `0x${Math.random().toString(16).slice(2, 66)}`, // Placeholder public key
-                additionalData: {}
-            });
-
-            if ('error' in newAccount) {
-                setError(newAccount.error);
-                return;
-            }
-
-            // Add to local state
-            setAccounts(prev => [...prev, newAccount]);
-
-            // Select the new account
-            handleAccountSelect(newAccount);
-        } catch (err) {
-            console.error("Error creating account:", err);
-            setError("Failed to create account");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const getDisplayText = () => {
-        if (currentAccount) {
-            return `${currentAccount.name} (${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)})`;
+        if (selectedAccount) {
+            return `${selectedAccount.name} (${selectedAccount.address.slice(0, 6)}...${selectedAccount.address.slice(-4)})`;
         }
         return placeholder;
     };
@@ -140,7 +99,7 @@ export default function ChooseAccount({
             </Button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-60 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-60 overflow-hidden backdrop-blur-sm" style={{ backgroundColor: 'hsl(var(--background))' }}>
                     {/* Search input */}
                     <div className="p-2 border-b border-border">
                         <div className="relative">
@@ -181,7 +140,8 @@ export default function ChooseAccount({
                                 <button
                                     key={account.name}
                                     onClick={() => handleAccountSelect(account)}
-                                    className="w-full px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+                                    className={`w-full px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 ${selectedAccount?.name === account.name ? 'bg-accent text-accent-foreground' : ''
+                                        }`}
                                 >
                                     <User className="h-4 w-4 flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
@@ -195,7 +155,7 @@ export default function ChooseAccount({
                         )}
                     </div>
 
-                    {/* Create new account option */}
+                    {/* Create new account option
                     {filterText && !exactMatch && !loading && (
                         <div className="border-t border-border">
                             <button
@@ -206,7 +166,7 @@ export default function ChooseAccount({
                                 <span>Create "{filterText}"</span>
                             </button>
                         </div>
-                    )}
+                    )} */}
                 </div>
             )}
         </div>

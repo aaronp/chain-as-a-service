@@ -14,6 +14,7 @@ import {
     SheetTrigger
 } from "@/ui/components/ui/sheet";
 import ChooseAccount from "../account/ChooseAccount";
+import { StoredAccount } from "@/api/accounts";
 
 interface SwapCardProps {
     contract: StoredContract;
@@ -28,7 +29,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
     const [selectedTargetContract, setSelectedTargetContract] = useState<string>("");
     const [amount, setAmount] = useState("");
     const [forAmount, setForAmount] = useState("");
-    const [withAddress, setWithAddress] = useState("");
+    const [withAccount, setWithAccount] = useState<StoredAccount | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
             return;
         }
 
-        if (!selectedTargetContract || !amount || !forAmount || !withAddress) {
+        if (!selectedTargetContract || !amount || !forAmount || !withAccount) {
             setError("Please fill in all fields");
             return;
         }
@@ -80,7 +81,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 currentAccount,
                 contract.chainId,
                 contract.contractAddress,
-                withAddress,
+                withAccount.address,
                 {
                     address: contract.contractAddress,
                     amount: amount
@@ -94,7 +95,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
             setSuccess(`Swap executed successfully! Transaction hash: ${txHash}`);
             setAmount("");
             setForAmount("");
-            setWithAddress("");
+            setWithAccount(null);
             setSelectedTargetContract("");
             setSelectedSourceContract("");
         } catch (err: any) {
@@ -107,7 +108,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
     const resetForm = () => {
         setAmount("");
         setForAmount("");
-        setWithAddress("");
+        setWithAccount(null);
         setSelectedTargetContract("");
         setSelectedSourceContract("");
         setError(null);
@@ -182,10 +183,9 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                     </label>
                                     <select
                                         className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
-                                        value={selectedTargetContract}
+                                        value={selectedSourceContract}
                                         onChange={(e) => {
-                                            setSelectedSourceContract("");
-                                            setSelectedTargetContract(e.target.value);
+                                            setSelectedSourceContract(e.target.value);
                                         }}
                                     >
                                         <option value="">Select a token</option>
@@ -223,7 +223,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                     </label>
                                     <select
                                         className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
-                                        value={selectedSourceContract}
+                                        value={selectedTargetContract}
                                         onChange={(e) => setSelectedTargetContract(e.target.value)}
                                     >
                                         <option value="">Select a token</option>
@@ -241,7 +241,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                 <label className="block text-sm font-medium mb-2">
                                     With:
                                 </label>
-                                <ChooseAccount onAccountSelected={setWithAddress} />
+                                <ChooseAccount onAccountSelected={setWithAccount} />
                             </div>
 
                             {/* Bottom row: Button bar */}
@@ -258,8 +258,9 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                     Cancel
                                 </Button>
                                 <Button
+                                    variant="theme"
                                     onClick={handleSwap}
-                                    disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAddress}
+                                    disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
                                     className="flex-1"
                                 >
                                     {loading ? "Executing..." : "Trade"}

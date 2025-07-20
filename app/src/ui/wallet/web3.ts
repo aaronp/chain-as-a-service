@@ -193,15 +193,79 @@ export const executeSwap = async (
 
     const provider = await providerForChain(chainId);
     const wallet = new ethers.Wallet(account.privateKey, provider);
-    const contract = new ethers.Contract(swapContractAddress, atomicSwapTemplate().abi, wallet);
+    const swapContract = new ethers.Contract(swapContractAddress, atomicSwapTemplate().abi, wallet);
 
     console.log(`Executing swap: ${tokenA.amount} of token ${tokenA.address} for ${tokenB.amount} of token ${tokenB.address} with party ${partyB}`);
 
-    const tx = await contract.swap(partyB, tokenA.address, tokenA.amount, tokenB.address, tokenB.amount);
+    // Check balances and approve tokens for the swap contract
+    const tokenAContract = new ethers.Contract(tokenA.address, erc20Template().abi, wallet);
+    const tokenBContract = new ethers.Contract(tokenB.address, erc20Template().abi, wallet);
+
+    // Check if partyA (current account) has enough tokenA
+    const tokenABalance = await tokenAContract.balanceOf(account.address);
+    console.log(`Party A (${account.address}) has ${tokenABalance} of token A`);
+
+    if (tokenABalance < tokenA.amount) {
+        throw new Error(`Insufficient token A balance. Have: ${tokenABalance}, Need: ${tokenA.amount}`);
+    }
+
+    // Check if partyB has enough tokenB
+    const tokenBBalance = await tokenBContract.balanceOf(partyB);
+    console.log(`Party B (${partyB}) has ${tokenBBalance} of token B`);
+
+    if (tokenBBalance < tokenB.amount) {
+        throw new Error(`Party B has insufficient token B balance. Have: ${tokenBBalance}, Need: ${tokenB.amount}`);
+    }
+
+    // Approve the swap contract to spend tokenA from partyA
+    console.log(`Approving swap contract to spend ${tokenA.amount} of token A from party A`);
+    const approveTokenATx = await tokenAContract.approve(swapContractAddress, tokenA.amount);
+    await approveTokenATx.wait();
+    console.log("Token A approval confirmed");
+
+    // For a real atomic swap, partyB would also need to approve tokenB
+    // But since we're simulating, we'll assume partyB has already approved
+    // In a real scenario, partyB would need to call approve() on tokenB contract
+
+    // Execute the swap
+    console.log("Executing atomic swap...");
+    const tx = await swapContract.swap(partyB, tokenA.address, tokenA.amount, tokenB.address, tokenB.amount);
     console.log("Swap transaction hash:", tx.hash);
 
     const receipt = await tx.wait();
     console.log("Swap receipt:", receipt);
+
+    return tx.hash;
+}
+
+export const approveTokensForSwap = async (
+    account: Account,
+    chainId: string,
+    tokenContractAddress: string,
+    swapContractAddress: string,
+    amount: string
+): Promise<string> => {
+    console.log(`Approving swap contract ${swapContractAddress} to spend ${amount} tokens from ${account.address}`);
+
+    const provider = await providerForChain(chainId);
+    const wallet = new ethers.Wallet(account.privateKey, provider);
+    const tokenContract = new ethers.Contract(tokenContractAddress, erc20Template().abi, wallet);
+
+    // Check current allowance
+    const currentAllowance = await tokenContract.allowance(account.address, swapContractAddress);
+    console.log(`Current allowance: ${currentAllowance}`);
+
+    if (currentAllowance >= amount) {
+        console.log("Sufficient allowance already exists");
+        return "Already approved";
+    }
+
+    console.log(`Approving ${amount} tokens for swap contract`);
+    const tx = await tokenContract.approve(swapContractAddress, amount);
+    console.log("Approval transaction hash:", tx.hash);
+
+    const receipt = await tx.wait();
+    console.log("Approval receipt:", receipt);
 
     return tx.hash;
 }
@@ -263,6 +327,38 @@ export const transferTokens = async (
 
     const receipt = await tx.wait();
     console.log("Transfer receipt:", receipt);
+
+    return tx.hash;
+}
+
+export const fundAccountWithTokens = async (
+    fromAccount: Account,
+    toAccount: Account,
+    chainId: string,
+    tokenContractAddress: string,
+    amount: string
+): Promise<string> => {
+    console.log(`Funding account ${toAccount.address} with ${amount} tokens from ${fromAccount.address}`);
+
+    const provider = await providerForChain(chainId);
+    const fromWallet = new ethers.Wallet(fromAccount.privateKey, provider);
+    const contract = new ethers.Contract(tokenContractAddress, erc20Template().abi, fromWallet);
+
+    // Check if fromAccount has enough tokens
+    const balance = await contract.balanceOf(fromAccount.address);
+    console.log(`From account has ${balance} tokens`);
+
+    if (balance < amount) {
+        throw new Error(`Insufficient token balance. Have: ${balance}, Need: ${amount}`);
+    }
+
+    console.log(`Transferring ${amount} tokens from ${fromAccount.address} to ${toAccount.address}`);
+
+    const tx = await contract.transfer(toAccount.address, amount);
+    console.log("Funding transaction hash:", tx.hash);
+
+    const receipt = await tx.wait();
+    console.log("Funding receipt:", receipt);
 
     return tx.hash;
 }

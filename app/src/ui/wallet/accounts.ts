@@ -1,3 +1,6 @@
+import { client } from "@/api/client";
+import { ethers } from "ethers";
+
 export interface Account {
     name: string;
     address: string;
@@ -19,6 +22,13 @@ export function loadAccounts(): AccountMap {
     } catch {
         return {};
     }
+}
+
+export async function createNewAccount(name: string) {
+    const wallet = ethers.Wallet.createRandom();
+    const newAccount = { name, address: wallet.address, privateKey: wallet.privateKey };
+    await client().registerAccount({ name, address: wallet.address, publicKey: wallet.publicKey });
+    return newAccount;
 }
 
 export function saveAccounts(accounts: AccountMap) {

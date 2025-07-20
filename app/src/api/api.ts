@@ -6,6 +6,7 @@ import { chainProxyRoute } from "./proxy";
 import { contractRoutes } from "./contracts";
 import { chainRoutes } from "./chains";
 import { accountRoutes } from "./accounts";
+import { messageRoutes } from "./messages";
 
 const app = new Elysia({
     name: "Chain-as-a-Service",
@@ -54,6 +55,10 @@ const app = new Elysia({
                         name: "accounts",
                         description: "Account management",
                     },
+                    {
+                        name: "messages",
+                        description: "Message management",
+                    },
                 ],
             },
             exclude: ["/docs", "/"], // exclude our own swagger docs, including the root redirect
@@ -71,6 +76,7 @@ const app = new Elysia({
     .use(chainRoutes)
     .use(contractRoutes)
     .use(accountRoutes)
+    .use(messageRoutes)
     .get("/", ({ set, request }) => {
         console.log("Redirecting to swagger docs at /docs from root");
         set.headers["Location"] = "/api/docs";
