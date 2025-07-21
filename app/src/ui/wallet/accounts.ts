@@ -1,18 +1,17 @@
 import { client } from "@/api/client";
 import { ethers } from "ethers";
-import { Account } from "@/api/accounts";
-// export interface Account {
-//     name: string;
-//     address: string;
-//     privateKey: string;
-// }
+
+export interface PrivateAccount {
+    name: string;
+    address: string;
+    privateKey: string;
+}
 
 export interface AccountMap {
-    [name: string]: Account;
+    [name: string]: PrivateAccount;
 }
 
 const ACCOUNTS_KEY = "accounts";
-
 
 
 export function loadAccounts(): AccountMap {

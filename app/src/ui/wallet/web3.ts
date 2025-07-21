@@ -1,8 +1,8 @@
-import { ethers, id } from 'ethers';
-import MyToken from "contracts/erc20/out/MyToken.sol/MyToken.json";
-import AtomicSwap from "contracts/swap/AtomicSwap.json";
+import { ethers } from 'ethers';
+import Token from "contracts/Token.sol/Token.json";
+import AtomicSwap from "contracts/AtomicSwap.sol/AtomicSwap.json";
 import { client } from '@/api/client';
-import { Account } from './accounts';
+import { PrivateAccount as Account } from './accounts';
 import { StoredContract } from '@/api/contracts';
 import { ErrorResponse } from '@/api/error';
 
@@ -37,20 +37,20 @@ export const getAnvilAccount = (index: number = 0): Account => {
     };
 };
 
-export const isAnvilAccount = (account: Account): boolean => {
-    return ANVIL_ACCOUNTS.some(anvilAccount => anvilAccount.address === account.address);
+const isAnvilAccount = (address: string): boolean => {
+    return ANVIL_ACCOUNTS.some(anvilAccount => anvilAccount.address === address);
 };
 
-export const fundAccount = async (account: Account, chainId: string, amount: string = "1000000000000000000") => {
+export const fundAccount = async (address: string, chainId: string, amount: string = "1000000000000000000") => {
     const provider = await providerForChain(chainId);
 
     // Use the first Anvil account as the funder
     const funder = new ethers.Wallet(ANVIL_ACCOUNTS[0].privateKey, provider);
 
-    console.log(`Funding account ${account.address} with ${amount} wei from ${funder.address}`);
+    console.log(`Funding account ${address} with ${amount} wei from ${funder.address}`);
 
     const tx = await funder.sendTransaction({
-        to: account.address,
+        to: address,
         value: amount
     });
 
@@ -61,55 +61,25 @@ export const fundAccount = async (account: Account, chainId: string, amount: str
     return tx.hash;
 };
 
-export const ensureETH = async (account: Account, chainId: string, minEth: string = "0.1") => {
+export const ensureETH = async (address: string, chainId: string, minEth: string = "0.1") => {
     const provider = await providerForChain(chainId);
-    if (!isAnvilAccount(account)) {
-        console.log("Checking ETH balance for account", account.address);
-        const balance = await provider.getBalance(account.address);
+    if (!isAnvilAccount(address)) {
+        console.log("Checking ETH balance for account", address);
+        const balance = await provider.getBalance(address);
         if (balance < ethers.parseEther(minEth)) {
-            console.log("Account has insufficient ETH for gas, funding...");
-            await fundAccount(account, chainId);
+            console.log(`${address} has insufficient ETH for gas, funding...`);
+            await fundAccount(address, chainId);
         } else {
-            console.log("ETH balance", balance, " ok for account", account.address);
+            console.log(`${address} has ${balance} ETH, ok for gas`);
         }
     } else {
-        console.log("Skipping ETH check for Anvil account", account.address);
+        console.log("Skipping ETH check for Anvil account", address);
     }
 };
 
-export const erc20Template = () => {
-    const abi = MyToken.abi;
-    const bytecode = MyToken.bytecode.object;
-    return { abi, bytecode };
-}
+export const erc20Template = () => ({ abi: Token.abi, bytecode: Token.bytecode.object })
 
-export const atomicSwapTemplate = () => {
-    const abi = AtomicSwap.abi;
-    const bytecode = AtomicSwap.bytecode.object;
-    return { abi, bytecode };
-}
-
-export const hasWallet = async () => {
-    const metamask = (window as any).ethereum;
-    if (!metamask) {
-        return false;
-    }
-    try {
-        const provider = new ethers.BrowserProvider(metamask);
-        const signer = await provider.getSigner();
-        return !!signer.getAddress();
-    } catch (e) {
-        return false;
-    }
-}
-
-export const browserProvider = async () => {
-    const metamask = (window as any).ethereum;
-    if (!metamask) {
-        throw new Error("Metamask not found");
-    }
-    return new ethers.BrowserProvider(metamask);
-}
+export const atomicSwapTemplate = () => ({ abi: AtomicSwap.abi, bytecode: AtomicSwap.bytecode.object })
 
 export const deployERC20 = async (
     account: Account,
@@ -119,7 +89,7 @@ export const deployERC20 = async (
     initialSupply: number): Promise<StoredContract | ErrorResponse> => {
     const provider = await providerForChain(chainId);
 
-    await ensureETH(account, chainId);
+    await ensureETH(account.address, chainId);
 
     const signer = new ethers.Wallet(account.privateKey, provider);
 
@@ -153,13 +123,7 @@ export const deployAtomicSwap = async (
     const provider = await providerForChain(chainId);
 
     // Check if account has enough ETH, fund if needed (skip for Anvil accounts)
-    if (!isAnvilAccount(account)) {
-        const balance = await provider.getBalance(account.address);
-        if (balance < ethers.parseEther("0.1")) {
-            console.log("Account has insufficient ETH, funding...");
-            await fundAccount(account, chainId);
-        }
-    }
+    await ensureETH(account.address, chainId);
 
     const signer = new ethers.Wallet(account.privateKey, provider);
 
@@ -222,7 +186,7 @@ export const approveSwap = async (
     const wallet = new ethers.Wallet(account.privateKey, provider);
 
 
-    await ensureETH(account, chainId);
+    await ensureETH(account.address, chainId);
 
     // Check balances and approve tokens for the swap contract
     const tokenContract = new ethers.Contract(token.address, erc20Template().abi, wallet);
@@ -286,9 +250,12 @@ export const executeSwap = async (
     const wallet = new ethers.Wallet(account.privateKey, provider);
     const swapContract = new ethers.Contract(swapContractAddress, atomicSwapTemplate().abi, wallet);
 
+    await ensureETH(account.address, chainId);
+    await ensureETH(swapContractAddress, chainId);
+
     console.log(`Executing swap: ${tokenA.amount} of token ${tokenA.address} for ${tokenB.amount} of token ${tokenB.address} with party ${partyB}`);
     // Execute the swap
-    const tx = await swapContract.swap(partyB, tokenA.address, tokenA.amount, tokenB.address, tokenB.amount);
+    const tx = await swapContract.swap(tokenB.address, tokenB.amount, partyB, tokenA.address, tokenA.amount);
     console.log("Swap transaction hash:", tx.hash);
 
     const receipt = await tx.wait();
@@ -389,38 +356,3 @@ export const transferTokens = async (
 
     return tx.hash;
 }
-
-export const fundAccountWithTokens = async (
-    fromAccount: Account,
-    toAccount: Account,
-    chainId: string,
-    tokenContractAddress: string,
-    amount: string
-): Promise<string> => {
-    console.log(`Funding account ${toAccount.address} with ${amount} tokens from ${fromAccount.address}`);
-
-    const provider = await providerForChain(chainId);
-    const fromWallet = new ethers.Wallet(fromAccount.privateKey, provider);
-    const contract = new ethers.Contract(tokenContractAddress, erc20Template().abi, fromWallet);
-
-    // Check if fromAccount has enough tokens
-    const balance = await contract.balanceOf(fromAccount.address);
-    console.log(`From account has ${balance} tokens`);
-
-    if (balance < amount) {
-        throw new Error(`Insufficient token balance. Have: ${balance}, Need: ${amount}`);
-    }
-
-    console.log(`Transferring ${amount} tokens from ${fromAccount.address} to ${toAccount.address}`);
-
-    const tx = await contract.transfer(toAccount.address, amount);
-    console.log("Funding transaction hash:", tx.hash);
-
-    const receipt = await tx.wait();
-    console.log("Funding receipt:", receipt);
-
-    return tx.hash;
-}
-
-
-

@@ -16,9 +16,9 @@ contract AtomicSwap {
     );
 
     function swap(
-        address partyB,
         address tokenA,
         uint256 amountA,
+        address partyB,
         address tokenB,
         uint256 amountB
     ) external {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { loadAccounts } from "../wallet/accounts";
-import { Account } from "@/api/accounts";
+import { PrivateAccount as Account } from "../wallet/accounts";
 
 const CURRENT_ACCOUNT_KEY = "currentAccountName";
 
