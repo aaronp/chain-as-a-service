@@ -5,9 +5,10 @@ import { Chain, StoredChain } from "./chains";
 import { Account, StoredAccount, UpdateAccount } from "./accounts";
 import { Account as AccountType } from "./accounts";
 import { Message, StoredMessage, MessagesListResponse, CreateMessageResponse, MessageContent } from "./messages";
+import { PrivateAccount } from "@/ui/wallet/accounts";
 
 export class MessagesClient {
-    constructor(private readonly url: string, private readonly account: Account) { }
+    constructor(private readonly url: string, private readonly account: PrivateAccount) { }
 
     async getAll(): Promise<StoredMessage[] | { error: string; data?: any }> {
         const client = treaty<Api>(this.url);
@@ -74,7 +75,7 @@ export class Client {
     constructor(private readonly url: string) {
     }
 
-    messages = (account: Account) => new MessagesClient(this.url, account);
+    messages = (account: PrivateAccount) => new MessagesClient(this.url, account);
 
 
     async registerChain(request: Chain) {
