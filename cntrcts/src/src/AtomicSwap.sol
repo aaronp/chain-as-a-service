@@ -24,7 +24,6 @@ contract AtomicSwap {
     ) external {
         address partyA = msg.sender;
 
-        require(partyA != partyB, "Cannot swap with self");
         require(amountA > 0 && amountB > 0, "Amounts must be > 0");
 
         // Transfer Token A from A to B

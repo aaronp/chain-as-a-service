@@ -1,6 +1,6 @@
 import { StoredMessage, SwapContent } from "@/api/messages";
 import { useEffect, useState } from "react";
-import { approveSwap, erc20 } from "../wallet/web3";
+import { approveSwap, erc20, executeSwap } from "../wallet/web3";
 import { useAccount } from "../account/AccountContext";
 import { client } from "@/api/client";
 import { Button } from "@/ui/components/ui/button";
@@ -27,7 +27,6 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
     useEffect(() => {
         if (currentAccount) {
             const sourceToken = erc20(currentAccount, content.chainId, content.sourceContractAddress);
-            const targetToken = erc20(currentAccount, content.chainId, content.counterparty.tokenContractAddress);
             sourceToken.then((contract) => {
                 Promise.all([
                     contract.symbol(),
@@ -45,6 +44,8 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
                     });
                 });
             });
+
+            const targetToken = erc20(currentAccount, content.chainId, content.counterparty.tokenContractAddress);
             targetToken.then((contract) => {
                 Promise.all([
                     contract.symbol(),
@@ -85,7 +86,7 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
             }
             const chainId = swapContract.chainId;
             // Approve the token from the source contract for the swap contract
-            const result = await approveSwap(
+            const approveResult = await approveSwap(
                 currentAccount,
                 chainId,
                 content.swapContractAddress,
@@ -94,7 +95,38 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
                     amount: content.amount
                 }
             );
-            setSuccess(result);
+
+            console.log("approveResult:", approveResult);
+
+            const swapResult = await executeSwap(
+                currentAccount,
+                chainId,
+                content.swapContractAddress,
+                content.counterparty.recipientAddress,
+                {
+                    address: content.sourceContractAddress,
+                    amount: content.amount
+                },
+                {
+                    address: content.counterparty.tokenContractAddress,
+                    amount: content.counterparty.amount
+                }
+            );
+
+
+            // const mailResponse = client().messages(account).send(withAccount.address, {
+            //     type: "swap",
+            //     chainId: content.chainId,
+            //     amount: content.amount,
+            //     swapContractAddress: contract.contractAddress,
+            //     sourceContractAddress: selectedSourceContract,
+            //     counterparty: {
+            //         amount: forAmount,
+            //         tokenContractAddress: selectedTargetContract,
+            //         recipientAddress: withAccount.address
+            //     },
+            // });
+            setSuccess(swapResult);
             setShowModal(true);
             setTimeout(() => setShowModal(false), 2000);
         } catch (e: any) {
@@ -106,14 +138,15 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
 
     return (
         <div className="p-4">
-            <h2 className="font-bold text-lg mb-2">Swap Message</h2>
-
-            <pre className="bg-muted p-2 rounded text-xs overflow-x-auto">{JSON.stringify(content, null, 2)}</pre>
-
             <div className="flex flex-col gap-2">
                 {sourceAsset && targetAsset && (
                     <div className="mb-2 text-sm text-muted-foreground">
-                        swapping {content.counterparty.amount} {targetAsset.symbol} of {targetAsset.name} for {content.amount} {sourceAsset.symbol} of {sourceAsset.name} (current balance: {sourceAsset.accountBalance})
+                        <div className="font-semibold text-lg pb-2">Swap:</div>
+                        <div className="font-bold text-2xl">{content.counterparty.amount} {targetAsset.symbol}</div>
+                        <div className="text-sm text-muted-foreground">(current balance: {targetAsset.accountBalance})</div>
+                        <div className="text-semibold p-4">for</div>
+                        <div className="font-bold text-2xl">{content.amount} {sourceAsset.symbol}</div>
+                        <div className="text-sm text-muted-foreground">(current balance: {sourceAsset.accountBalance})</div>
                     </div>
                 )}
             </div>

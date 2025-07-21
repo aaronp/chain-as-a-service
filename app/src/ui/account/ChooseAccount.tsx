@@ -34,7 +34,7 @@ export default function ChooseAccount({
             try {
                 const accountsData = await client().listAccounts();
                 const data = accountsData || [];
-                const filtered = data.filter(account => account.address !== currentAccount?.address);
+                const filtered = data; //.filter(account => account.address !== currentAccount?.address);
                 setAccounts(filtered);
             } catch (err) {
                 console.error("Error loading accounts:", err);

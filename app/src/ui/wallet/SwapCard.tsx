@@ -91,12 +91,12 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 chainId: contract.chainId,
                 amount: amount,
                 swapContractAddress: contract.contractAddress,
+                sourceContractAddress: selectedSourceContract,
                 counterparty: {
                     amount: forAmount,
                     tokenContractAddress: selectedTargetContract,
                     recipientAddress: withAccount.address
                 },
-                sourceContractAddress: contract.contractAddress,
             });
             console.log("mailResponse:", mailResponse);
 
