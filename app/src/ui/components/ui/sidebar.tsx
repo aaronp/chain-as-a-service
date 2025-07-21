@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "../../../lib/utils"
 import { Button } from "./button"
-import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, Plus, ChevronDown, ChevronRight, Link2, LinkIcon } from "lucide-react"
+import { Menu, Home, User, Wallet, ArrowLeft, Sun, Moon, Plus, ChevronDown, ChevronRight, Link2, LinkIcon, Mail } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { client } from "@/api/client"
 import { StoredChain } from "@/api/chains"
@@ -191,6 +191,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
     const [chains, setChains] = useState<StoredChain[]>([]);
     const [contracts, setContracts] = useState<any[]>([]);
     const { currentAccount } = useAccount();
+    const [unreadCount, setUnreadCount] = useState<number>(0);
 
     const toggleTheme = () => {
         setTheme(theme === 'light' ? 'dark' : 'light')
@@ -241,6 +242,19 @@ const Sidebar = ({ className, children }: SidebarProps) => {
     };
 
     useEffect(() => refreshChains(), []);
+    useEffect(() => {
+        if (!currentAccount) {
+            setUnreadCount(0);
+            return;
+        }
+        client().messages(currentAccount).count().then((result) => {
+            if (result && !('error' in result) && typeof result.unread === 'number') {
+                setUnreadCount(result.unread);
+            } else {
+                setUnreadCount(0);
+            }
+        });
+    }, [currentAccount]);
 
     const chainItems = currentAccount ? [{
         href: "/",
@@ -324,6 +338,20 @@ const Sidebar = ({ className, children }: SidebarProps) => {
             href: "/wallet",
             icon: <Wallet className="h-4 w-4" />,
             label: "Wallet",
+        },
+        {
+            href: "/messages",
+            icon: (
+                <span className="relative inline-block">
+                    <Mail className="h-4 w-4" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-1 min-w-[16px] h-4 flex items-center justify-center border border-white dark:border-gray-900 z-10">
+                            {unreadCount}
+                        </span>
+                    )}
+                </span>
+            ),
+            label: "Messages",
         },
         ...chainItems,
 

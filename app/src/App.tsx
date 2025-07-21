@@ -7,6 +7,7 @@ import DeployContract from "./ui/chain/id/DeployContract";
 import Contract from "./ui/chain/id/contract/Contract";
 import Wallet from "./ui/wallet/Wallet";
 import Account from "./ui/account/Account";
+import Messages from "./ui/messages/Messages";
 import { Sidebar, ThemeProvider } from "./ui/components/ui/sidebar";
 import { AccountProvider } from "./ui/account/AccountContext";
 import { cn } from "./lib/utils";
@@ -23,6 +24,7 @@ function AppContent() {
           <main className="flex-1 overflow-auto p-4 lg:p-6">
             <Routes>
               <Route path="/wallet" element={<Wallet />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/account" element={<Account />} />
               <Route path="/" element={<ChainDashboard />} />
               <Route path="/chain/:id" element={<Chain />} />
