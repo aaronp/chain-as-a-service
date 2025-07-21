@@ -4,6 +4,7 @@ import { StoredAccount } from "@/api/accounts";
 import { Button } from "../components/ui/button";
 import { ChevronDown, Search, Plus, User } from "lucide-react";
 import { useAccount } from "./AccountContext";
+import { Link } from "react-router-dom";
 
 interface ChooseAccountProps {
     onAccountSelected: (account: StoredAccount) => void;
@@ -99,7 +100,7 @@ export default function ChooseAccount({
             </Button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-60 overflow-hidden backdrop-blur-sm" style={{ backgroundColor: 'hsl(var(--background))' }}>
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-[90vh] overflow-visible backdrop-blur-sm" style={{ backgroundColor: 'hsl(var(--background))' }}>
                     {/* Search input */}
                     <div className="p-2 border-b border-border">
                         <div className="relative">
@@ -109,7 +110,8 @@ export default function ChooseAccount({
                                 placeholder="Search accounts..."
                                 value={filterText}
                                 onChange={(e) => setFilterText(e.target.value)}
-                                className="w-full pl-8 pr-2 py-2 text-sm border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
+                                className="w-full pl-8 pr-2 py-2 text-sm border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground dark:text-white"
+                                style={{ color: 'hsl(var(--popover-foreground))' }}
                                 autoFocus
                             />
                         </div>
@@ -140,8 +142,8 @@ export default function ChooseAccount({
                                 <button
                                     key={account.name}
                                     onClick={() => handleAccountSelect(account)}
-                                    className={`w-full px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 ${selectedAccount?.name === account.name ? 'bg-accent text-accent-foreground' : ''
-                                        }`}
+                                    className={`w-full px-2 py-2 text-left text-sm text-popover-foreground dark:text-white hover:bg-accent hover:text-accent-foreground flex items-center gap-2 ${selectedAccount?.name === account.name ? 'bg-accent text-accent-foreground' : ''}`}
+                                    style={{ color: 'hsl(var(--popover-foreground))' }}
                                 >
                                     <User className="h-4 w-4 flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
@@ -155,18 +157,18 @@ export default function ChooseAccount({
                         )}
                     </div>
 
-                    {/* Create new account option
-                    {filterText && !exactMatch && !loading && (
-                        <div className="border-t border-border">
-                            <button
-                                onClick={handleCreateAccount}
-                                className="w-full px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
-                            >
-                                <Plus className="h-4 w-4" />
-                                <span>Create "{filterText}"</span>
-                            </button>
-                        </div>
-                    )} */}
+                    {/* Create new account link at the bottom */}
+                    <div className="border-t border-border">
+                        <Link
+                            to="/account"
+                            className="w-full flex items-center gap-2 px-2 py-2 text-left text-sm text-popover-foreground dark:text-white hover:bg-accent hover:text-accent-foreground"
+                            style={{ color: 'hsl(var(--popover-foreground))' }}
+                            tabIndex={0}
+                        >
+                            <Plus className="h-4 w-4" />
+                            <span>Create</span>
+                        </Link>
+                    </div>
                 </div>
             )}
         </div>

@@ -209,20 +209,20 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                         )}
 
                         <div className="flex justify-end gap-2 mt-6">
-                            <button
-                                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 transition-colors"
+                            <Button
+                                variant="outline"
                                 onClick={closeTransferModal}
                                 disabled={transferLoading}
                             >
                                 Cancel
-                            </button>
-                            <button
-                                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50"
+                            </Button>
+                            <Button
+                                variant="theme"
                                 onClick={handleTransfer}
                                 disabled={transferLoading || !destinationAccount || !transferAmount.trim()}
                             >
                                 {transferLoading ? "Transferring..." : "Transfer"}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
