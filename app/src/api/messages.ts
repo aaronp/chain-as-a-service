@@ -108,7 +108,12 @@ export function makeMessageStore() {
         },
         getAllByAddress(address: string) {
             return messages.filter(m =>
-                m.senderAddress === address || m.recipientAddress === address
+                m.recipientAddress === address
+            );
+        },
+        getSentByAddress(address: string) {
+            return messages.filter(m =>
+                m.senderAddress === address
             );
         },
         getById(messageId: string) {
@@ -144,6 +149,22 @@ export const messageRoutes = new Elysia({
         detail: {
             tags: ['messages'],
             description: 'Get count of messages for an address',
+        },
+    })
+    .get('/sent', ({ headers, store }) => {
+        const address = headers.address;
+        if (!address) {
+            return new Response(JSON.stringify({ error: 'Address header is required' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+        return { messages: store.messageStore.getSentByAddress(address) };
+    }, {
+        response: { 200: MessagesListResponseSchema },
+        detail: {
+            tags: ['messages'],
+            description: 'Get all messages sent by an address',
         },
     })
     // Get all messages for an address
