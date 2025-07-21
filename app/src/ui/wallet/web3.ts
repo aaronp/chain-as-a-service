@@ -191,6 +191,25 @@ export type SwapParams = {
     amount: string;
 }
 
+
+export const erc20 = async (account: Account, chainId: string, ercContractAddress: string) => {
+    const provider = await providerForChain(chainId);
+    const wallet = new ethers.Wallet(account.privateKey, provider);
+    const tokenContract = new ethers.Contract(ercContractAddress, erc20Template().abi, wallet);
+
+    return {
+        symbol: async () => await tokenContract.symbol(),
+        name: async () => await tokenContract.name(),
+        decimals: async () => await tokenContract.decimals(),
+        balance: async () => await tokenContract.balanceOf(account.address),
+        allowance: async (swapContractAddress: string) => await tokenContract.allowance(account.address, swapContractAddress),
+        approve: async (swapContractAddress: string, amount: string) => await tokenContract.approve(swapContractAddress, amount),
+        transfer: async (toAddress: string, amount: string) => await tokenContract.transfer(toAddress, amount),
+        transferFrom: async (fromAddress: string, toAddress: string, amount: string) => await tokenContract.transferFrom(fromAddress, toAddress, amount),
+    }
+}
+
+
 export const approveSwap = async (
     account: Account,
     chainId: string,

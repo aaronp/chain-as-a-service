@@ -5,7 +5,7 @@ import NotificationMessageContentPanel from "./NotificationMessageContentPanel";
 
 export default function MessageContentPanel({ msg, content }: { msg: StoredMessage, content: MessageContent }) {
     if (content.type === "swap") {
-        return <SwapMessageContentPanel content={content} />;
+        return <SwapMessageContentPanel msg={msg} content={content} />;
     }
     if (content.type === "notification") {
         return <NotificationMessageContentPanel msg={msg} content={content} />;

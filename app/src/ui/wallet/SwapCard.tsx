@@ -88,7 +88,9 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
 
             const mailResponse = client().messages(account).send(withAccount.address, {
                 type: "swap",
+                chainId: contract.chainId,
                 amount: amount,
+                swapContractAddress: contract.contractAddress,
                 counterparty: {
                     amount: forAmount,
                     tokenContractAddress: selectedTargetContract,

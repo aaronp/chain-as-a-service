@@ -3,14 +3,17 @@ import { Elysia, Static, t } from 'elysia';
 // Message content types
 export const SwapContentSchema = t.Object({
     type: t.Literal('swap'),
+    chainId: t.String({ description: "The chain ID of the swap" }),
     counterparty: t.Object({
-        tokenContractAddress: t.String(),
-        amount: t.String(),
-        recipientAddress: t.String(),
+        tokenContractAddress: t.String({ description: "The address of the ERC20 compatible contract" }),
+        amount: t.String({ description: "The amount of tokens from this token contract address to swap" }),
+        recipientAddress: t.String({ description: "The address of the recipient" }),
     }),
-    sourceContractAddress: t.String(),
-    amount: t.String(),
+    sourceContractAddress: t.String({ description: "The address of the source ERC20 compatible contract" }),
+    amount: t.String({ description: "The amount of tokens from the source contract address to swap" }),
+    swapContractAddress: t.String({ description: "The address of the swap contract" }),
 });
+export type SwapContent = Static<typeof SwapContentSchema>;
 
 export const NotificationContentSchema = t.Object({
     type: t.Literal('notification'),
