@@ -150,7 +150,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                             Trade
                         </Button>
                     </SheetTrigger>
-                    <SheetContent className="!w-[60vw] !max-w-[60vw]">
+                    <SheetContent className="!w-[60vw] !max-w-[60vw] bg-white dark:bg-card">
                         <SheetHeader>
                             <SheetTitle>Swap {contract.symbol}</SheetTitle>
                             <SheetDescription>
