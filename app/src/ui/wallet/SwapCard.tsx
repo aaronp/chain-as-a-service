@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
-import { Account } from "@/ui/wallet/accounts";
 import { client } from "@/api/client";
-import { executeSwap } from "@/ui/wallet/web3";
+import { approveSwap, executeSwap } from "@/ui/wallet/web3";
 import { useAccount } from "@/ui/account/AccountContext";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -14,7 +13,7 @@ import {
     SheetTrigger
 } from "@/ui/components/ui/sheet";
 import ChooseAccount from "../account/ChooseAccount";
-import { StoredAccount } from "@/api/accounts";
+import { Account, StoredAccount } from "@/api/accounts";
 
 interface SwapCardProps {
     contract: StoredContract;
@@ -77,22 +76,31 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 throw new Error("Selected contract not found");
             }
 
-            const txHash = await executeSwap(
+            const swapResponse = await approveSwap(
                 currentAccount,
                 contract.chainId,
                 contract.contractAddress,
-                withAccount.address,
                 {
                     address: contract.contractAddress,
                     amount: amount
-                },
-                {
-                    address: selectedContractData.contractAddress,
-                    amount: forAmount
                 }
             );
 
-            setSuccess(`Swap executed successfully! Transaction hash: ${txHash}`);
+            const mailResponse = client().messages(account).send(withAccount.address, {
+                type: "swap",
+                amount: amount,
+                counterparty: {
+                    amount: forAmount,
+                    tokenContractAddress: selectedTargetContract,
+                    recipientAddress: withAccount.address
+                },
+                sourceContractAddress: contract.contractAddress,
+            });
+            console.log("mailResponse:", mailResponse);
+
+
+
+            setSuccess(`Swap executed successfully! Transaction hash: ${swapResponse}`);
             setAmount("");
             setForAmount("");
             setWithAccount(null);
@@ -142,7 +150,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                             Trade
                         </Button>
                     </SheetTrigger>
-                    <SheetContent className="w-[600px] sm:w-[700px]">
+                    <SheetContent className="!w-[60vw] !max-w-[60vw]">
                         <SheetHeader>
                             <SheetTitle>Swap {contract.symbol}</SheetTitle>
                             <SheetDescription>
@@ -164,20 +172,20 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                             )}
 
                             {/* First row: From token and amount */}
-                            <div className="flex gap-2">
-                                <div className="flex-1">
+                            <div className="flex items-end">
+                                <div>
                                     <label className="block text-sm font-medium mb-2">
                                         Amount
                                     </label>
                                     <input
                                         type="number"
-                                        className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
+                                        className="w-32 border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
                                         placeholder="0.0"
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
                                     />
                                 </div>
-                                <div className="flex-1">
+                                <div className="ml-2">
                                     <label className="block text-sm font-medium mb-2">
                                         Token
                                     </label>
@@ -196,6 +204,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                         ))}
                                     </select>
                                 </div>
+                                <div className="flex-1" />
                             </div>
 
                             {/* Second row: "for" label */}
@@ -204,20 +213,20 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                             </div>
 
                             {/* Third row: To token and amount */}
-                            <div className="flex gap-2">
-                                <div className="flex-1">
+                            <div className="flex items-end">
+                                <div>
                                     <label className="block text-sm font-medium mb-2">
                                         Amount
                                     </label>
                                     <input
                                         type="number"
-                                        className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
+                                        className="w-32 border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
                                         placeholder="0.0"
                                         value={forAmount}
                                         onChange={(e) => setForAmount(e.target.value)}
                                     />
                                 </div>
-                                <div className="flex-1">
+                                <div className="ml-2">
                                     <label className="block text-sm font-medium mb-2">
                                         Token
                                     </label>
@@ -234,6 +243,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                         ))}
                                     </select>
                                 </div>
+                                <div className="flex-1" />
                             </div>
 
                             {/* Fourth row: With account */}

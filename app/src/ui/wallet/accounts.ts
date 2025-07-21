@@ -1,11 +1,11 @@
 import { client } from "@/api/client";
 import { ethers } from "ethers";
-
-export interface Account {
-    name: string;
-    address: string;
-    privateKey: string;
-}
+import { Account } from "@/api/accounts";
+// export interface Account {
+//     name: string;
+//     address: string;
+//     privateKey: string;
+// }
 
 export interface AccountMap {
     [name: string]: Account;

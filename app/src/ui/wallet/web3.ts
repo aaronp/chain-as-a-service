@@ -181,6 +181,24 @@ export type SwapParams = {
     address: string;
     amount: string;
 }
+
+export const approveSwap = async (
+    account: Account,
+    chainId: string,
+    swapContractAddress: string,
+    token: SwapParams
+) => {
+    console.log(`Approving swap on contract ${swapContractAddress}`);
+
+    const wallet = new ethers.Wallet(account.privateKey, await providerForChain(chainId));
+
+    // Check balances and approve tokens for the swap contract
+    const tokenContract = new ethers.Contract(token.address, erc20Template().abi, wallet);
+
+    const approveTokenATx = await tokenContract.approve(swapContractAddress, token.amount);
+    return await approveTokenATx.wait();
+}
+
 export const executeSwap = async (
     account: Account,
     chainId: string,
