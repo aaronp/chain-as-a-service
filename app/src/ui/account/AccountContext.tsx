@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { Account, loadAccounts } from "../wallet/accounts";
+import { loadAccounts } from "../wallet/accounts";
+import { Account } from "@/api/accounts";
 
 const CURRENT_ACCOUNT_KEY = "currentAccountName";
 

@@ -12,10 +12,17 @@ export const SwapContentSchema = t.Object({
     amount: t.String(),
 });
 
+export const NotificationContentSchema = t.Object({
+    type: t.Literal('notification'),
+    message: t.String(),
+});
+
 export const MessageContentSchema = t.Union([
     SwapContentSchema,
+    NotificationContentSchema
     // Add more content types here as needed
 ]);
+export type MessageContent = Static<typeof MessageContentSchema>;
 
 // Message schema for POST requests
 export const MessageSchema = t.Object({
@@ -86,6 +93,14 @@ export function makeMessageStore() {
             messages.splice(index, 1);
             return true;
         },
+        countByAddress(address: string) {
+
+            const all = messages.filter(m =>
+                m.recipientAddress === address
+            );
+            const unread = all.filter(m => !m.read);
+            return { unread: unread.length, all: all.length };
+        },
         getUnreadByAddress(address: string) {
             return messages.filter(m =>
                 m.recipientAddress === address && !m.read
@@ -114,6 +129,23 @@ export const messageRoutes = new Elysia({
     },
 })
     .use(messageContext)
+    .get('/count', ({ headers, store }) => {
+        const address = headers.address;
+        if (!address) {
+            return new Response(JSON.stringify({ error: 'Address header is required' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+        const { all, unread } = store.messageStore.countByAddress(address)
+        return { total: all, unread };
+    }, {
+        response: { 200: t.Object({ total: t.Number(), unread: t.Number() }) },
+        detail: {
+            tags: ['messages'],
+            description: 'Get count of messages for an address',
+        },
+    })
     // Get all messages for an address
     .get('/', ({ headers, store }) => {
         const address = headers.address;

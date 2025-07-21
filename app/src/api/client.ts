@@ -3,12 +3,78 @@ import { Api } from "./api";
 import { Contract } from "./contracts";
 import { Chain, StoredChain } from "./chains";
 import { Account, StoredAccount, UpdateAccount } from "./accounts";
+import { Account as AccountType } from "./accounts";
+import { Message, StoredMessage, MessagesListResponse, CreateMessageResponse, MessageContent } from "./messages";
+
+export class MessagesClient {
+    constructor(private readonly url: string, private readonly account: Account) { }
+
+    async getAll(): Promise<StoredMessage[] | { error: string; data?: any }> {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.messages.get({ headers: { address: this.account.address } });
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to fetch messages: ${response.status}`, data: response.data };
+        }
+        return response.data.messages;
+    }
+
+    async getUnread(): Promise<StoredMessage[] | { error: string; data?: any }> {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.messages.unread.get({ headers: { address: this.account.address } });
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to fetch unread messages: ${response.status}`, data: response.data };
+        }
+        return response.data.messages;
+    }
+
+    async count(): Promise<{ total: number, unread: number } | { error: string; data?: any }> {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.messages.count.get({ headers: { address: this.account.address } });
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to fetch message count: ${response.status}`, data: response.data };
+        }
+        return response.data;
+    }
+
+    async send(toAddress: string, msg: MessageContent): Promise<CreateMessageResponse | { error: string; data?: any }> {
+        const message = {
+            senderAddress: this.account.address,
+            recipientAddress: toAddress,
+            content: msg
+        }
+        const client = treaty<Api>(this.url);
+        const response = await client.api.messages.post(message);
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to send message: ${response.status}`, data: response.data };
+        }
+        return response.data;
+    }
+
+    async markAsRead(messageId: string): Promise<StoredMessage | { error: string; data?: any }> {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.messages["mark-read"]({ messageId }).post();
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to mark message as read: ${response.status}`, data: response.data };
+        }
+        return response.data;
+    }
+
+    async delete(messageId: string): Promise<{ success: boolean } | { error: string; data?: any }> {
+        const client = treaty<Api>(this.url);
+        const response = await client.api.messages({ messageId }).delete();
+        if (response.status !== 200 || !response.data) {
+            return { error: `Failed to delete message: ${response.status}`, data: response.data };
+        }
+        return response.data;
+    }
+}
 
 export class Client {
 
     constructor(private readonly url: string) {
     }
 
+    messages = (account: Account) => new MessagesClient(this.url, account);
 
 
     async registerChain(request: Chain) {
