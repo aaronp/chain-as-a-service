@@ -5,6 +5,8 @@ import { getBalance, transferTokens } from "@/ui/wallet/web3";
 import { retryUntil } from "@/lib/retryUntil";
 import { createPortal } from "react-dom";
 import { Button } from "@/ui/components/ui/button";
+import ChooseAccount from "../account/ChooseAccount";
+import { StoredAccount } from "@/api/accounts";
 
 interface ERC20CardProps {
     contract: StoredContract;
@@ -16,7 +18,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [transferModalOpen, setTransferModalOpen] = useState(false);
-    const [destinationAddress, setDestinationAddress] = useState("");
+    const [destinationAccount, setDestinationAccount] = useState<StoredAccount | null>(null);
     const [transferAmount, setTransferAmount] = useState("");
     const [transferLoading, setTransferLoading] = useState(false);
     const [transferError, setTransferError] = useState<string | null>(null);
@@ -47,8 +49,16 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
         refreshBalance();
     }, [contract.chainId, contract.contractAddress, account]);
 
+
+    const closeTransferModal = () => {
+        setTransferModalOpen(false);
+        setDestinationAccount(null);
+        setTransferAmount("");
+        setTransferError(null);
+    };
+
     const handleTransfer = async () => {
-        if (!destinationAddress.trim() || !transferAmount.trim()) {
+        if (!destinationAccount || !transferAmount.trim()) {
             setTransferError("Please enter both destination address and amount");
             return;
         }
@@ -57,17 +67,15 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
         setTransferError(null);
 
         try {
-            const result = await transferTokens(account, contract.contractAddress, contract.chainId, destinationAddress, transferAmount);
+            const result = await transferTokens(account, contract.contractAddress, contract.chainId, destinationAccount.address, transferAmount);
             console.log("Transfer result:", result);
+
+            // Close transfer modal and reset form
+            closeTransferModal();
 
             // Store the result and show success modal
             setTransferResult(result);
             setShowSuccessModal(true);
-
-            // Close transfer modal and reset form
-            setTransferModalOpen(false);
-            setDestinationAddress("");
-            setTransferAmount("");
 
             // Auto-hide success modal after 1 second and refresh balance
             setTimeout(() => {
@@ -81,13 +89,6 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
         } finally {
             setTransferLoading(false);
         }
-    };
-
-    const closeTransferModal = () => {
-        setTransferModalOpen(false);
-        setDestinationAddress("");
-        setTransferAmount("");
-        setTransferError(null);
     };
 
     const successModalContent = showSuccessModal && (
@@ -184,14 +185,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium mb-2">Destination Address</label>
-                                <input
-                                    type="text"
-                                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                                    placeholder="0x..."
-                                    value={destinationAddress}
-                                    onChange={(e) => setDestinationAddress(e.target.value)}
-                                    autoFocus
-                                />
+                                <ChooseAccount onAccountSelected={setDestinationAccount} />
                             </div>
 
                             <div>
@@ -225,7 +219,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                             <button
                                 className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50"
                                 onClick={handleTransfer}
-                                disabled={transferLoading || !destinationAddress.trim() || !transferAmount.trim()}
+                                disabled={transferLoading || !destinationAccount || !transferAmount.trim()}
                             >
                                 {transferLoading ? "Transferring..." : "Transfer"}
                             </button>

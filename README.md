@@ -1,33 +1,24 @@
 # Chain As-A-Service
 
-This project runs an EVM on-demand with some input state plus message (e.g. transaction) to execute.
+This project demonstrates creating EVM "chain as a service".
 
-The actions include:
+The off-chain REST services are served under `/api` used by the UI.
 
-
-# Start
-
-Starts the EVM in docker with some given volume mounts.
-
-Records the privileged private keys to `./state/deployment.json`
+The project is fully self-sufficient, but using web3 technologies (so you can swap out this 'chain as a service' for any EVM compatible chain)
 
 
-# Operations
+## DvD swaps
+
+There is an AtomicSwap contract used for DvD deliver of ERC20 tokens. The flow is:
 
 
-## Deploy
+User One:
+1. call 'Approve' on your ERC20 tokent to allow the AtomicSwap to transfer tokens
+2. send an off-chain message to the counterparty, notifying them of the swap (e.g., signalling 'I want to trade X of token A for Y of your token B')
 
-### Issue:
-There is an issue where anvil only ever listens on 127.0.0.1, so can't accept REST requests from outside the docker container. 
-Bummer.
+User Two:
+1. read the unread swap message
+2. call 'Approve' on their ERC20 token for the AtomicSwap contract
+3. Invoke the 'swap' operation (could be done be either user)
 
-
-### Work-Around:
-
-Break-out deploy into:
-
-1. deploy : gathers and writes the inputs (token, input params, etc) to ./scripts/deploy_config.json
-2. deployExec : executes ./scripts/deploy.sh from within the docker container, which has mounted ☝️
-
-
-## Transaction
+4. (housekeeping) markt their message as read, send an optional notification that the swap was made.
