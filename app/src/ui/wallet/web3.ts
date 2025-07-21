@@ -61,6 +61,22 @@ export const fundAccount = async (account: Account, chainId: string, amount: str
     return tx.hash;
 };
 
+export const ensureETH = async (account: Account, chainId: string, minEth: string = "0.1") => {
+    const provider = await providerForChain(chainId);
+    if (!isAnvilAccount(account)) {
+        console.log("Checking ETH balance for account", account.address);
+        const balance = await provider.getBalance(account.address);
+        if (balance < ethers.parseEther(minEth)) {
+            console.log("Account has insufficient ETH for gas, funding...");
+            await fundAccount(account, chainId);
+        } else {
+            console.log("ETH balance", balance, " ok for account", account.address);
+        }
+    } else {
+        console.log("Skipping ETH check for Anvil account", account.address);
+    }
+};
+
 export const erc20Template = () => {
     const abi = MyToken.abi;
     const bytecode = MyToken.bytecode.object;
@@ -103,14 +119,7 @@ export const deployERC20 = async (
     initialSupply: number): Promise<StoredContract | ErrorResponse> => {
     const provider = await providerForChain(chainId);
 
-    // Check if account has enough ETH, fund if needed (skip for Anvil accounts)
-    if (!isAnvilAccount(account)) {
-        const balance = await provider.getBalance(account.address);
-        if (balance < ethers.parseEther("0.1")) {
-            console.log("Account has insufficient ETH, funding...");
-            await fundAccount(account, chainId);
-        }
-    }
+    await ensureETH(account, chainId);
 
     const signer = new ethers.Wallet(account.privateKey, provider);
 
@@ -188,15 +197,60 @@ export const approveSwap = async (
     swapContractAddress: string,
     token: SwapParams
 ) => {
-    console.log(`Approving swap on contract ${swapContractAddress}`);
+    console.log(`Approving swap on contract ${swapContractAddress} for ${token.amount} of ${token.address} on account ${chainId}/${account.address}`);
 
-    const wallet = new ethers.Wallet(account.privateKey, await providerForChain(chainId));
+    const provider = await providerForChain(chainId);
+    const wallet = new ethers.Wallet(account.privateKey, provider);
+
+
+    await ensureETH(account, chainId);
 
     // Check balances and approve tokens for the swap contract
     const tokenContract = new ethers.Contract(token.address, erc20Template().abi, wallet);
 
+    console.log("Approving token", token.address, "for swap contract", swapContractAddress, "with amount", token.amount);
     const approveTokenATx = await tokenContract.approve(swapContractAddress, token.amount);
-    return await approveTokenATx.wait();
+    console.log("Approval transaction hash:", approveTokenATx.hash);
+    const result = await approveTokenATx.wait();
+
+    /**
+     * {
+    "_type": "TransactionReceipt",
+    "blockHash": "0x132ecd9c401acb3c1e86041f70195ea89daa0973b9aa7318c5c99a04417b69fe",
+    "blockNumber": 6,
+    "contractAddress": null,
+    "cumulativeGasUsed": "29768",
+    "from": "0xc6767A0AbaCCEAcE9bFd03789393c17Cbf3bE305",
+    "gasPrice": "1524700648",
+    "blobGasUsed": null,
+    "blobGasPrice": "1",
+    "gasUsed": "29768",
+    "hash": "0x6f044979f5e9dafe9416f6c2ec058ae0663701d04f0765364d2c15d29dd3af1c",
+    "index": 0,
+    "logs": [
+        {
+            "_type": "log",
+            "address": "0x01fe7F11FA0A3cE331f1E737Fb3e720c6445d9C9",
+            "blockHash": "0x132ecd9c401acb3c1e86041f70195ea89daa0973b9aa7318c5c99a04417b69fe",
+            "blockNumber": 6,
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000003",
+            "index": 0,
+            "topics": [
+                "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+                "0x000000000000000000000000c6767a0abacceace9bfd03789393c17cbf3be305",
+                "0x00000000000000000000000058841230e03fa2fec006c95c14786e50833676bc"
+            ],
+            "transactionHash": "0x6f044979f5e9dafe9416f6c2ec058ae0663701d04f0765364d2c15d29dd3af1c",
+            "transactionIndex": 0
+        }
+    ],
+    "logsBloom": "0x00000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000080200000000000000080000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000008000020000000000000000000000000000004000000000000000000000000000000001000000000000000000000000000000000000000000001000000000000000000010000000000000000000000000000000000000000000000000000000000000",
+    "status": 1,
+    "to": "0x01fe7F11FA0A3cE331f1E737Fb3e720c6445d9C9"
+}
+     */
+    console.log("Approval result:", result);
+    return result.logs[0].transactionHash;
 }
 
 export const executeSwap = async (

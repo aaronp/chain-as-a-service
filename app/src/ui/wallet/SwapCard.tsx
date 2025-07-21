@@ -81,7 +81,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 contract.chainId,
                 contract.contractAddress,
                 {
-                    address: contract.contractAddress,
+                    address: selectedTargetContract,
                     amount: amount
                 }
             );
@@ -100,7 +100,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
 
 
 
-            setSuccess(`Swap executed successfully! Transaction hash: ${swapResponse}`);
+            setSuccess(`Swap executed successfully! Transaction hash: ${JSON.stringify(swapResponse)}`);
             setAmount("");
             setForAmount("");
             setWithAccount(null);
