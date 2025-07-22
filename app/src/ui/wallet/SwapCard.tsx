@@ -13,11 +13,13 @@ import {
     SheetTrigger
 } from "@/ui/components/ui/sheet";
 import ChooseAccount from "../account/ChooseAccount";
-import { Account, StoredAccount } from "@/api/accounts";
+import { PrivateAccount } from "@/ui/wallet/accounts";
+import { StoredAccount } from "@/api/accounts";
+import Metadata from "../chain/erc20/Metadata";
 
 interface SwapCardProps {
     contract: StoredContract;
-    account: Account;
+    account: PrivateAccount;
 }
 
 export default function SwapCard({ contract, account }: SwapCardProps) {
@@ -81,12 +83,12 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 contract.chainId,
                 contract.contractAddress,
                 {
-                    address: selectedTargetContract,
+                    address: selectedSourceContract,
                     amount: amount
                 }
             );
 
-            const mailResponse = client().messages(account).send(withAccount.address, {
+            client().messages(account).send(withAccount.address, {
                 type: "swap",
                 chainId: contract.chainId,
                 amount: amount,
@@ -98,7 +100,6 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                     recipientAddress: withAccount.address
                 },
             });
-            console.log("mailResponse:", mailResponse);
 
 
 
@@ -149,7 +150,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 <Sheet open={isOpen} onOpenChange={setIsOpen}>
                     <SheetTrigger asChild>
                         <Button variant="theme" >
-                            Trade
+                            Swap
                         </Button>
                     </SheetTrigger>
                     <SheetContent className="!w-[60vw] !max-w-[60vw] bg-white dark:bg-card">
@@ -207,6 +208,16 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                     </select>
                                 </div>
                                 <div className="flex-1" />
+                            </div>
+
+                            {/* Second row: "for" label */}
+                            <div className="flex justify-start">
+                                {selectedSourceContract && withAccount?.address && <Metadata
+                                    chainId={contract.chainId}
+                                    contractAddress={selectedSourceContract}
+                                    allowanceOwnerAddress={account.address}
+                                    allowanceSpenderAddress={withAccount.address}
+                                />}
                             </div>
 
                             {/* Second row: "for" label */}

@@ -24,7 +24,27 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
     const [sourceAsset, setSourceAsset] = useState<Asset | null>(null);
     const [targetAsset, setTargetAsset] = useState<Asset | null>(null);
 
+    const [sourceApproved, setSourceApproved] = useState<string | null>(null);
+    const [targetApproved, setTargetApproved] = useState<string | null>(null);
+    const [canTransfer, setCanTransfer] = useState(false);
+
+
     useEffect(() => {
+
+
+        if (currentAccount) {
+            erc20(currentAccount, content.chainId, content.sourceContractAddress).then((contract) => {
+                contract.allowance(content.swapContractAddress).then((allowance) => {
+                    setSourceApproved(allowance);
+                });
+            });
+            erc20(currentAccount, content.chainId, content.counterparty.tokenContractAddress).then((contract) => {
+                contract.allowance(content.swapContractAddress).then((allowance) => {
+                    setTargetApproved(allowance);
+                });
+            });
+        }
+
         if (currentAccount) {
             const sourceToken = erc20(currentAccount, content.chainId, content.sourceContractAddress);
             sourceToken.then((contract) => {
@@ -66,6 +86,53 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
         }
     }, [currentAccount]);
 
+    const handleTransfer = async () => {
+
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            if (!currentAccount) {
+                setError("No account selected");
+                setLoading(false);
+                return;
+            }
+            // Find the swap contract in the registry to get chainId
+            const contracts = await client().listContracts();
+            const swapContract = contracts.find((c: any) => c.contractAddress === content.swapContractAddress);
+            if (!swapContract) {
+                setError("Swap contract not found in registry");
+                setLoading(false);
+                return;
+            }
+            const chainId = swapContract.chainId;
+
+            const swapResult = await executeSwap(
+                currentAccount,
+                chainId,
+                content.swapContractAddress,
+                content.counterparty.recipientAddress,
+                {
+                    address: content.sourceContractAddress,
+                    amount: content.amount
+                },
+                {
+                    address: content.counterparty.tokenContractAddress,
+                    amount: content.counterparty.amount
+                }
+            );
+
+
+            setSuccess(swapResult);
+            setShowModal(true);
+            setTimeout(() => setShowModal(false), 2000);
+        } catch (e: any) {
+            setError(e?.message || String(e));
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const handleApprove = async () => {
         setLoading(true);
         setError(null);
@@ -91,42 +158,12 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
                 chainId,
                 content.swapContractAddress,
                 {
-                    address: content.sourceContractAddress,
-                    amount: content.amount
-                }
-            );
-
-            console.log("approveResult:", approveResult);
-
-            const swapResult = await executeSwap(
-                currentAccount,
-                chainId,
-                content.swapContractAddress,
-                content.counterparty.recipientAddress,
-                {
-                    address: content.sourceContractAddress,
-                    amount: content.amount
-                },
-                {
                     address: content.counterparty.tokenContractAddress,
                     amount: content.counterparty.amount
                 }
             );
 
-
-            // const mailResponse = client().messages(account).send(withAccount.address, {
-            //     type: "swap",
-            //     chainId: content.chainId,
-            //     amount: content.amount,
-            //     swapContractAddress: contract.contractAddress,
-            //     sourceContractAddress: selectedSourceContract,
-            //     counterparty: {
-            //         amount: forAmount,
-            //         tokenContractAddress: selectedTargetContract,
-            //         recipientAddress: withAccount.address
-            //     },
-            // });
-            setSuccess(swapResult);
+            setSuccess(approveResult);
             setShowModal(true);
             setTimeout(() => setShowModal(false), 2000);
         } catch (e: any) {
@@ -142,21 +179,30 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
                 {sourceAsset && targetAsset && (
                     <div className="mb-2 text-sm text-muted-foreground">
                         <div className="font-semibold text-lg pb-2">Swap:</div>
-                        <div className="font-bold text-2xl">{content.counterparty.amount} {targetAsset.symbol}</div>
+                        <div className="font-bold text-2xl">{content.counterparty.amount} {targetAsset.symbol} {targetApproved ? `(approved: ${targetApproved})` : ""}</div>
                         <div className="text-sm text-muted-foreground">(current balance: {targetAsset.accountBalance})</div>
                         <div className="text-semibold p-4">for</div>
-                        <div className="font-bold text-2xl">{content.amount} {sourceAsset.symbol}</div>
+                        <div className="font-bold text-2xl">{content.amount} {sourceAsset.symbol} {sourceApproved ? `(approved: ${sourceApproved})` : ""}</div>
                         <div className="text-sm text-muted-foreground">(current balance: {sourceAsset.accountBalance})</div>
                     </div>
                 )}
             </div>
-            <Button
-                variant="theme"
-                onClick={handleApprove}
-                disabled={loading}
-            >
-                {loading ? "Approving..." : "Approve Swap"}
-            </Button>
+            <div className="flex flex-row gap-2">
+                <Button
+                    variant="theme"
+                    onClick={handleApprove}
+                    disabled={loading}
+                >
+                    {loading ? "Approving..." : "Approve Swap"}
+                </Button>
+                <Button
+                    variant="theme"
+                    onClick={handleTransfer}
+                    disabled={canTransfer}
+                >
+                    {loading ? "Transferring..." : "Transfer"}
+                </Button>
+            </div>
             {error && <div className="text-red-500 mt-2">{error}</div>}
             {showModal && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">

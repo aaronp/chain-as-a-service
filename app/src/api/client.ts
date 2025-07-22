@@ -167,7 +167,10 @@ export class Client {
 
         return await response.json();
     }
-
+    async getAccountByAddress(address: string): Promise<StoredAccount | undefined> {
+        const accounts = await this.listAccounts();
+        return accounts.find(a => a.address === address) || undefined;
+    }
     async getAccountByName(name: string): Promise<StoredAccount | undefined> {
         const accounts = await this.listAccounts();
         return accounts.find(a => a.name === name) || undefined;

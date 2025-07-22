@@ -108,13 +108,6 @@ export default function DeployERC20() {
                     >
                         {loading ? "Creating..." : "Create"}
                     </Button>
-                    <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none border border-border">
-                        <div><strong>canDeploy:</strong> {String(canDeploy)}</div>
-                        <div><strong>loading:</strong> {String(loading)}</div>
-                        <div><strong>name:</strong> {name || <span className='text-muted-foreground'>[empty]</span>}</div>
-                        <div><strong>symbol:</strong> {symbol || <span className='text-muted-foreground'>[empty]</span>}</div>
-                        <div><strong>account:</strong> {account ? (account.name || account.address || '[selected]') : <span className='text-muted-foreground'>[none]</span>}</div>
-                    </div>
                 </div>
             </div>
         </div>
