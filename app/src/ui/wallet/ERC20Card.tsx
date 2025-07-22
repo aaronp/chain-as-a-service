@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/ui/components/ui/button";
 import ChooseAccount from "../account/ChooseAccount";
 import { StoredAccount } from "@/api/accounts";
+import SwapCard from "./SwapCard";
 
 interface ERC20CardProps {
     contract: StoredContract;
@@ -24,6 +25,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
     const [transferError, setTransferError] = useState<string | null>(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [transferResult, setTransferResult] = useState<string | null>(null);
+    const [swapModalOpen, setSwapModalOpen] = useState(false);
 
     const refreshBalance = () => {
         setLoading(true);
@@ -91,6 +93,13 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
         }
     };
 
+    const onSwap = () => {
+        setSwapModalOpen(true);
+    };
+    const closeSwapModal = () => {
+        setSwapModalOpen(false);
+    };
+
     const successModalContent = showSuccessModal && (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
@@ -155,22 +164,25 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                             )}
                         </div>
                         {!loading && !error && balance !== null && (
-                            <Button
-                                variant="theme"
-                                onClick={() => setTransferModalOpen(true)}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    stroke="currentColor"
-                                    className="w-3 h-3"
+                            <div className="flex flex-row gap-2">
+                                <SwapCard contract={contract} account={account} />
+                                <Button
+                                    variant="theme"
+                                    onClick={() => setTransferModalOpen(true)}
                                 >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                                </svg>
-                                Transfer
-                            </Button>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={1.5}
+                                        stroke="currentColor"
+                                        className="w-3 h-3 ml-1"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5L19.5 12L4.5 4.5L7.5 12L4.5 19.5Z" />
+                                    </svg>
+                                    <span className="pl-1">Transfer</span>
+                                </Button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -224,6 +236,23 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                                 {transferLoading ? "Transferring..." : "Transfer"}
                             </Button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Swap Modal */}
+            {swapModalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+                    <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg p-6 w-full max-w-2xl border relative">
+                        <button
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                            onClick={closeSwapModal}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
                     </div>
                 </div>
             )}
