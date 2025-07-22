@@ -34,12 +34,12 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
 
         if (currentAccount) {
             erc20(currentAccount, content.chainId, content.sourceContractAddress).then((contract) => {
-                contract.allowance(content.swapContractAddress).then((allowance) => {
+                contract.allowance(currentAccount.address, content.swapContractAddress).then((allowance) => {
                     setSourceApproved(allowance);
                 });
             });
             erc20(currentAccount, content.chainId, content.counterparty.tokenContractAddress).then((contract) => {
-                contract.allowance(content.swapContractAddress).then((allowance) => {
+                contract.allowance(content.counterparty.recipientAddress, content.swapContractAddress).then((allowance) => {
                     setTargetApproved(allowance);
                 });
             });
@@ -144,18 +144,17 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
                 return;
             }
             // Find the swap contract in the registry to get chainId
-            const contracts = await client().listContracts();
-            const swapContract = contracts.find((c: any) => c.contractAddress === content.swapContractAddress);
+            const swapContract = await client().contractForAddress(content.chainId, content.swapContractAddress);
             if (!swapContract) {
                 setError("Swap contract not found in registry");
                 setLoading(false);
                 return;
             }
-            const chainId = swapContract.chainId;
+
             // Approve the token from the source contract for the swap contract
             const approveResult = await approveSwap(
                 currentAccount,
-                chainId,
+                content.chainId,
                 content.swapContractAddress,
                 {
                     address: content.counterparty.tokenContractAddress,
