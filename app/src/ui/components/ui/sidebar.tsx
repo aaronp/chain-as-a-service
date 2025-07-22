@@ -521,7 +521,7 @@ const Sidebar = ({ className, children }: SidebarProps) => {
 
             {/* Add Chain Modal */}
             {addChainModalOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+                <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme === 'dark' ? 'bg-black/40' : 'bg-black/80'}`}>
                     <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg p-6 w-full max-w-sm border">
                         <h2 className="text-xl font-semibold mb-4">Add Chain</h2>
                         <input

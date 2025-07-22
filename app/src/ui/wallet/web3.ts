@@ -165,9 +165,9 @@ export const erc20 = async (account: Account, chainId: string, ercContractAddres
         symbol: async () => await tokenContract.symbol(),
         name: async () => await tokenContract.name(),
         decimals: async () => await tokenContract.decimals(),
-        balance: async () => await tokenContract.balanceOf(account.address),
-        allowance: async (swapContractAddress: string) => await tokenContract.allowance(account.address, swapContractAddress),
-        approve: async (swapContractAddress: string, amount: string) => await tokenContract.approve(swapContractAddress, amount),
+        balance: async (address: string = account.address) => await tokenContract.balanceOf(address),
+        allowance: async (owner: string, spender: string) => await tokenContract.allowance(owner, spender),
+        approve: async (spenderAddress: string, amount: string) => await tokenContract.approve(spenderAddress, amount),
         transfer: async (toAddress: string, amount: string) => await tokenContract.transfer(toAddress, amount),
         transferFrom: async (fromAddress: string, toAddress: string, amount: string) => await tokenContract.transferFrom(fromAddress, toAddress, amount),
     }
@@ -194,6 +194,9 @@ export const approveSwap = async (
     console.log("Approving token", token.address, "for swap contract", swapContractAddress, "with amount", token.amount);
     const approveTokenATx = await tokenContract.approve(swapContractAddress, token.amount);
     console.log("Approval transaction hash:", approveTokenATx.hash);
+
+    const allowed = await tokenContract.allowance(account.address, swapContractAddress);
+    console.log(token.address, "has approved", swapContractAddress, "for amount", allowed, " which should be ", token.amount);
     const result = await approveTokenATx.wait();
 
     /**
@@ -251,17 +254,110 @@ export const executeSwap = async (
     const swapContract = new ethers.Contract(swapContractAddress, atomicSwapTemplate().abi, wallet);
 
     await ensureETH(account.address, chainId);
-    await ensureETH(swapContractAddress, chainId);
+    // await ensureETH(swapContractAddress, chainId);
+
+    const accounts = await client().listAccounts();
+    const partyBAccount = accounts.find(a => a.address == partyB);
+    if (!partyBAccount) {
+        throw new Error(`Party B account ${partyB} not found`);
+    }
+
+    const contracts = await client().listContractsForChain(chainId);
+    const foundSwapContract = contracts.find(c => c.contractAddress == swapContractAddress);
+    if (!foundSwapContract) {
+        throw new Error(`Swap contract ${swapContractAddress} not found`);
+    }
+    if (foundSwapContract.contractType != "ATOMICSWAP") {
+        throw new Error(`Swap contract ${swapContractAddress} is not an AtomicSwap contract, but a ${foundSwapContract.contractType}`);
+    }
+
+    const tokenAContract = contracts.find(c => c.contractAddress == tokenA.address);
+    if (!tokenAContract) {
+        throw new Error(`Token A contract ${tokenA.address} not found`);
+    }
+    if (tokenAContract.contractType != "ERC20") {
+        throw new Error(`Token A contract ${tokenA.address} is not an ERC20 contract`);
+    }
+
+    const tokenBContract = contracts.find(c => c.contractAddress == tokenB.address);
+    if (!tokenBContract) {
+        throw new Error(`Token B contract ${tokenB.address} not found`);
+    }
+    if (tokenBContract.contractType != "ERC20") {
+        throw new Error(`Token B contract ${tokenB.address} is not an ERC20 contract`);
+    }
+
+    // Debug: Check balances and allowances before swap
+    console.log("=== DEBUG: Pre-swap checks ===");
+
+    // Check Token A balance and allowance for party A
+    const tokenAContractInstance = new ethers.Contract(tokenA.address, erc20Template().abi, provider);
+    const tokenABalanceA = await tokenAContractInstance.balanceOf(account.address);
+    const tokenAAllowanceA = await tokenAContractInstance.allowance(account.address, swapContractAddress);
+    console.log(`Party A (${account.address}) Token A balance: ${tokenABalanceA}, allowance: ${tokenAAllowanceA}`);
+
+    // Check Token B balance and allowance for party B
+    const tokenBContractInstance = new ethers.Contract(tokenB.address, erc20Template().abi, provider);
+    const tokenBBalanceB = await tokenBContractInstance.balanceOf(partyB);
+    const tokenBAllowanceB = await tokenBContractInstance.allowance(partyB, swapContractAddress);
+    console.log(`Party B (${partyB}) Token B balance: ${tokenBBalanceB}, allowance: ${tokenBAllowanceB}`);
+
+    // Check if amounts are sufficient
+    console.log(`Required Token A amount: ${tokenA.amount}, available: ${tokenABalanceA}, approved: ${tokenAAllowanceA}`);
+    console.log(`Required Token B amount: ${tokenB.amount}, available: ${tokenBBalanceB}, approved: ${tokenBAllowanceB}`);
+
+    if (tokenABalanceA < tokenA.amount) {
+        throw new Error(`Insufficient Token A balance. Required: ${tokenA.amount}, Available: ${tokenABalanceA}`);
+    }
+
+    if (tokenAAllowanceA < tokenA.amount) {
+        throw new Error(`Insufficient Token A allowance. Required: ${tokenA.amount}, Approved: ${tokenAAllowanceA}`);
+    }
+
+    if (tokenBBalanceB < tokenB.amount) {
+        throw new Error(`Insufficient Token B balance. Required: ${tokenB.amount}, Available: ${tokenBBalanceB}`);
+    }
+
+    if (tokenBAllowanceB < tokenB.amount) {
+        throw new Error(`Insufficient Token B allowance. Required: ${tokenB.amount}, Approved: ${tokenBAllowanceB}`);
+    }
 
     console.log(`Executing swap: ${tokenA.amount} of token ${tokenA.address} for ${tokenB.amount} of token ${tokenB.address} with party ${partyB}`);
-    // Execute the swap
-    const tx = await swapContract.swap(tokenB.address, tokenB.amount, partyB, tokenA.address, tokenA.amount);
-    console.log("Swap transaction hash:", tx.hash);
 
-    const receipt = await tx.wait();
-    console.log("Swap receipt:", receipt);
+    // Execute the swap - FIXED: Parameters should match the contract function signature:
+    // swap(address tokenA, uint256 amountA, address partyB, address tokenB, uint256 amountB)
+    try {
+        const tx = await swapContract.swap(tokenA.address, tokenA.amount, partyB, tokenB.address, tokenB.amount);
+        console.log("Swap transaction hash:", tx.hash);
 
-    return tx.hash;
+        const receipt = await tx.wait();
+        console.log("Swap receipt:", receipt);
+
+        return receipt.hash;
+    } catch (error: any) {
+        console.error("Swap execution failed:", error);
+
+        // Try to decode the error if it's a contract error
+        if (error.data) {
+            console.error("Error data:", error.data);
+
+            // Check if it's a require statement error
+            if (error.data.startsWith('0x08c379a0')) {
+                // This is a require statement error, try to decode it
+                try {
+                    const decodedError = ethers.AbiCoder.defaultAbiCoder().decode(
+                        ['string'],
+                        error.data.slice(10) // Remove the function selector
+                    );
+                    console.error("Decoded error message:", decodedError[0]);
+                } catch (decodeError) {
+                    console.error("Failed to decode error message:", decodeError);
+                }
+            }
+        }
+
+        throw error;
+    }
 }
 
 export const approveTokensForSwap = async (
@@ -294,6 +390,58 @@ export const approveTokensForSwap = async (
     console.log("Approval receipt:", receipt);
 
     return tx.hash;
+}
+
+export const checkSwapReadiness = async (
+    account: Account,
+    chainId: string,
+    swapContractAddress: string,
+    partyB: string,
+    tokenA: SwapParams,
+    tokenB: SwapParams
+): Promise<{
+    tokenABalance: string;
+    tokenAAllowance: string;
+    tokenBBalance: string;
+    tokenBAllowance: string;
+    isReady: boolean;
+    issues: string[];
+}> => {
+    const provider = await providerForChain(chainId);
+    const tokenAContract = new ethers.Contract(tokenA.address, erc20Template().abi, provider);
+    const tokenBContract = new ethers.Contract(tokenB.address, erc20Template().abi, provider);
+
+    const tokenABalance = await tokenAContract.balanceOf(account.address);
+    const tokenAAllowance = await tokenAContract.allowance(account.address, swapContractAddress);
+    const tokenBBalance = await tokenBContract.balanceOf(partyB);
+    const tokenBAllowance = await tokenBContract.allowance(partyB, swapContractAddress);
+
+    const issues: string[] = [];
+
+    if (tokenABalance < tokenA.amount) {
+        issues.push(`Party A has insufficient Token A balance. Required: ${tokenA.amount}, Available: ${tokenABalance}`);
+    }
+
+    if (tokenAAllowance < tokenA.amount) {
+        issues.push(`Party A has insufficient Token A allowance. Required: ${tokenA.amount}, Approved: ${tokenAAllowance}`);
+    }
+
+    if (tokenBBalance < tokenB.amount) {
+        issues.push(`Party B has insufficient Token B balance. Required: ${tokenB.amount}, Available: ${tokenBBalance}`);
+    }
+
+    if (tokenBAllowance < tokenB.amount) {
+        issues.push(`Party B has insufficient Token B allowance. Required: ${tokenB.amount}, Approved: ${tokenBAllowance}`);
+    }
+
+    return {
+        tokenABalance: tokenABalance.toString(),
+        tokenAAllowance: tokenAAllowance.toString(),
+        tokenBBalance: tokenBBalance.toString(),
+        tokenBAllowance: tokenBAllowance.toString(),
+        isReady: issues.length === 0,
+        issues
+    };
 }
 
 const providerForChain = async (chainId: string) => {

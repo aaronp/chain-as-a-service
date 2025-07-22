@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
 import { client } from "@/api/client";
-import { approveSwap } from "@/ui/wallet/web3";
+import { approveSwap, executeSwap } from "@/ui/wallet/web3";
 import { useAccount } from "@/ui/account/AccountContext";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -57,6 +57,82 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
         }
     }, [isOpen, contract.chainId, contract.contractAddress]);
 
+    const onAction = async (action: () => Promise<string>) => {
+        if (!currentAccount) {
+            setError("No account selected");
+            return;
+        }
+
+        if (!selectedTargetContract || !amount || !forAmount || !withAccount) {
+            setError("Please fill in all fields");
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const response = await action();
+
+            setSuccess(response);
+            setAmount("");
+            setForAmount("");
+            setWithAccount(null);
+            setSelectedTargetContract("");
+            setSelectedSourceContract("");
+        } catch (err: any) {
+            setError(err.message || "Failed to execute swap");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleApprove = async () => {
+        onAction(async () => {
+            const selectedContractData = allContracts.find(c => c.contractAddress === selectedTargetContract);
+            if (!selectedContractData) {
+                throw new Error("Selected contract not found");
+            }
+
+            const approveResponse = await approveSwap(
+                currentAccount!,
+                contract.chainId,
+                contract.contractAddress,
+                {
+                    address: selectedSourceContract,
+                    amount: amount
+                }
+            );
+
+            return `Approve executed successfully! ${JSON.stringify(approveResponse)}`
+        })
+    }
+    const handleTransfer = async () => {
+        onAction(async () => {
+            const selectedContractData = allContracts.find(c => c.contractAddress === selectedTargetContract);
+            if (!selectedContractData) {
+                throw new Error("Selected contract not found");
+            }
+
+            const transferResponse = await executeSwap(
+                currentAccount!,
+                contract.chainId,
+                contract.contractAddress,
+                withAccount!.address,
+                {
+                    address: selectedSourceContract,
+                    amount: amount
+                },
+                {
+                    address: selectedTargetContract,
+                    amount: forAmount
+                }
+            );
+
+            return `Transfer executed successfully! ${JSON.stringify(transferResponse)}`
+        })
+    }
     const handleSwap = async () => {
         if (!currentAccount) {
             setError("No account selected");
@@ -216,7 +292,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                     chainId={contract.chainId}
                                     contractAddress={selectedSourceContract}
                                     allowanceOwnerAddress={account.address}
-                                    allowanceSpenderAddress={withAccount.address}
+                                    allowanceSpenderAddress={contract.contractAddress}
                                 />}
                             </div>
 
@@ -276,18 +352,31 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                                         setIsOpen(false);
                                     }}
                                     disabled={loading}
-                                    className="flex-1"
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     variant="theme"
+                                    onClick={handleApprove}
+                                    disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
+                                >
+                                    {loading ? "Approving..." : "Approve"}
+                                </Button>
+                                <Button
+                                    variant="theme"
+                                    onClick={handleTransfer}
+                                    disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
+                                >
+                                    {loading ? "Transferring..." : "Transfer"}
+                                </Button>
+                                <Button
+                                    variant="theme"
                                     onClick={handleSwap}
                                     disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
-                                    className="flex-1"
                                 >
                                     {loading ? "Executing..." : "Trade"}
                                 </Button>
+                                <div className="flex-1" />
                             </div>
                         </div>
                     </SheetContent>
