@@ -15,8 +15,6 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
         return <ERC20Card contract={contract} account={account} />;
     } else if (contract.contractType === "ATOMICSWAP") {
 
-        // return <SwapCard contract={contract} account={account} />;
-
         return (
             <div className="p-4 border border-border rounded-lg bg-card shadow-sm">
                 <div className="flex justify-between items-start mb-2">
@@ -37,7 +35,7 @@ export default function ContractCard({ contract, account }: ContractCardProps) {
                     </p>
                 </div>
                 <div className="border-t border-border pt-2">
-                    <SwapCard contract={contract} account={account} />
+                    <SwapCard swapContract={contract} account={account} />
                 </div>
             </div>
         )

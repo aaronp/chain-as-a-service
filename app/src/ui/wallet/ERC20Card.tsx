@@ -8,6 +8,7 @@ import { Button } from "@/ui/components/ui/button";
 import ChooseAccount from "../account/ChooseAccount";
 import { StoredAccount } from "@/api/accounts";
 import SwapCard from "./SwapCard";
+import { client } from "@/api/client";
 
 interface ERC20CardProps {
     contract: StoredContract;
@@ -20,6 +21,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
     const [error, setError] = useState<string | null>(null);
     const [transferModalOpen, setTransferModalOpen] = useState(false);
     const [destinationAccount, setDestinationAccount] = useState<StoredAccount | null>(null);
+    const [swapContract, setSwapContract] = useState<StoredContract | null>(null);
     const [transferAmount, setTransferAmount] = useState("");
     const [transferLoading, setTransferLoading] = useState(false);
     const [transferError, setTransferError] = useState<string | null>(null);
@@ -49,6 +51,15 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
 
     useEffect(() => {
         refreshBalance();
+
+        client().listContractsForChain(contract.chainId).then((contracts) => {
+            const swapContract = contracts.find((c: StoredContract) => c.contractType === "ATOMICSWAP");
+            if (swapContract) {
+                setSwapContract(swapContract);
+            }
+        });
+
+
     }, [contract.chainId, contract.contractAddress, account]);
 
 
@@ -163,9 +174,9 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                                 </p>
                             )}
                         </div>
-                        {!loading && !error && balance !== null && (
+                        {!loading && !error && balance !== null && swapContract != null && (
                             <div className="flex flex-row gap-2">
-                                <SwapCard contract={contract} account={account} />
+                                <SwapCard swapContract={swapContract} account={account} sourceTargetContract={contract.contractAddress} />
                                 <Button
                                     variant="theme"
                                     onClick={() => setTransferModalOpen(true)}

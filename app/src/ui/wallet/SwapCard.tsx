@@ -18,11 +18,12 @@ import { StoredAccount } from "@/api/accounts";
 import Metadata from "../chain/erc20/Metadata";
 
 interface SwapCardProps {
-    contract: StoredContract;
+    swapContract: StoredContract;
     account: PrivateAccount;
+    sourceTargetContract?: string; // optional prop
 }
 
-export default function SwapCard({ contract, account }: SwapCardProps) {
+export default function SwapCard({ swapContract: contract, account, sourceTargetContract }: SwapCardProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const [allContracts, setAllContracts] = useState<StoredContract[]>([]);
@@ -38,6 +39,9 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
 
     // Load other contracts for the dropdown
     useEffect(() => {
+        if (sourceTargetContract) {
+            setSelectedSourceContract(sourceTargetContract);
+        }
         const loadContracts = async () => {
             try {
                 const contracts = await client().listContractsForChain(contract.chainId);
@@ -80,13 +84,16 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
             setForAmount("");
             setWithAccount(null);
             setSelectedTargetContract("");
-            setSelectedSourceContract("");
+            setSelectedSourceContract(sourceTargetContract || "");
         } catch (err: any) {
             setError(err.message || "Failed to execute swap");
         } finally {
             setLoading(false);
         }
     }
+
+    // Use the prop if set, otherwise use the state
+    const effectiveSourceContract = sourceTargetContract ?? selectedSourceContract;
 
     const handleApprove = async () => {
         onAction(async () => {
@@ -100,7 +107,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 contract.chainId,
                 contract.contractAddress,
                 {
-                    address: selectedSourceContract,
+                    address: effectiveSourceContract,
                     amount: amount
                 }
             );
@@ -121,7 +128,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 contract.contractAddress,
                 withAccount!.address,
                 {
-                    address: selectedSourceContract,
+                    address: effectiveSourceContract,
                     amount: amount
                 },
                 {
@@ -159,7 +166,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 contract.chainId,
                 contract.contractAddress,
                 {
-                    address: selectedSourceContract,
+                    address: effectiveSourceContract,
                     amount: amount
                 }
             );
@@ -169,7 +176,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                 chainId: contract.chainId,
                 amount: amount,
                 swapContractAddress: contract.contractAddress,
-                sourceContractAddress: selectedSourceContract,
+                sourceContractAddress: effectiveSourceContract,
                 counterparty: {
                     amount: forAmount,
                     tokenContractAddress: selectedTargetContract,
@@ -179,12 +186,9 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
 
 
 
+            resetForm();
             setSuccess(`Swap executed successfully! Transaction hash: ${JSON.stringify(swapResponse)}`);
-            setAmount("");
-            setForAmount("");
-            setWithAccount(null);
-            setSelectedTargetContract("");
-            setSelectedSourceContract("");
+
         } catch (err: any) {
             setError(err.message || "Failed to execute swap");
         } finally {
@@ -197,7 +201,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
         setForAmount("");
         setWithAccount(null);
         setSelectedTargetContract("");
-        setSelectedSourceContract("");
+        setSelectedSourceContract(sourceTargetContract || "");
         setError(null);
         setSuccess(null);
     };
@@ -224,6 +228,7 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                     <SheetTitle>Swap {contract.symbol}</SheetTitle>
                     <SheetDescription>
                         Exchange {contract.symbol} for other tokens
+                        sourceTargetContract: {sourceTargetContract}
                     </SheetDescription>
                 </SheetHeader>
 
@@ -258,29 +263,38 @@ export default function SwapCard({ contract, account }: SwapCardProps) {
                             <label className="block text-sm font-medium mb-2">
                                 Token
                             </label>
-                            <select
-                                className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
-                                value={selectedSourceContract}
-                                onChange={(e) => {
-                                    setSelectedSourceContract(e.target.value);
-                                }}
-                            >
-                                <option value="">Select a token</option>
-                                {allContracts.map((contract) => (
-                                    <option key={contract.contractAddress} value={contract.contractAddress}>
-                                        {contract.name} ({contract.symbol})
-                                    </option>
-                                ))}
-                            </select>
+                            {sourceTargetContract ? (
+                                <div className="w-full border border-input rounded-md px-3 py-2 bg-background text-foreground flex items-center min-h-[40px]">
+                                    {(() => {
+                                        const contractObj = allContracts.find(c => c.contractAddress === effectiveSourceContract);
+                                        return contractObj ? `${contractObj.name} (${contractObj.symbol})` : effectiveSourceContract;
+                                    })()}
+                                </div>
+                            ) : (
+                                <select
+                                    className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
+                                    value={effectiveSourceContract}
+                                    onChange={(e) => {
+                                        setSelectedSourceContract(e.target.value);
+                                    }}
+                                >
+                                    <option value="">Select a token</option>
+                                    {allContracts.map((contract) => (
+                                        <option key={contract.contractAddress} value={contract.contractAddress}>
+                                            {contract.name} ({contract.symbol})
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
                         <div className="flex-1" />
                     </div>
 
                     {/* Second row: "for" label */}
                     <div className="flex justify-start">
-                        {selectedSourceContract && withAccount?.address && <Metadata
+                        {effectiveSourceContract && withAccount?.address && <Metadata
                             chainId={contract.chainId}
-                            contractAddress={selectedSourceContract}
+                            contractAddress={effectiveSourceContract}
                             allowanceOwnerAddress={account.address}
                             allowanceSpenderAddress={contract.contractAddress}
                         />}
