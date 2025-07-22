@@ -107,20 +107,40 @@ export default function SwapMessageContentPanel({ msg, content }: { msg: StoredM
             }
             const chainId = swapContract.chainId;
 
-            const swapResult = await executeSwap(
+            const approveResult = await approveSwap(
                 currentAccount,
-                chainId,
+                content.chainId,
                 content.swapContractAddress,
-                content.counterparty.recipientAddress,
-                {
-                    address: content.sourceContractAddress,
-                    amount: content.amount
-                },
                 {
                     address: content.counterparty.tokenContractAddress,
                     amount: content.counterparty.amount
                 }
             );
+            console.log("approveResult", approveResult);
+
+            const swapResult = await executeSwap(
+                currentAccount,
+                chainId,
+                content.swapContractAddress,
+                // content.counterparty.recipientAddress,
+                content.originAccountAddress,
+                {
+                    address: content.counterparty.tokenContractAddress,
+                    amount: content.counterparty.amount
+                },
+
+                {
+                    address: content.sourceContractAddress,
+                    amount: content.amount
+                },
+            );
+
+            const messages = client().messages(currentAccount);
+            messages.markAsRead(msg.messageId);
+            messages.send(content.originAccountAddress, {
+                type: "notification",
+                message: "Swap executed successfully! Transaction hash: " + swapResult
+            });
 
 
             setSuccess(swapResult);

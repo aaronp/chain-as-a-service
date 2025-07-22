@@ -10,6 +10,7 @@ export const SwapContentSchema = t.Object({
         recipientAddress: t.String({ description: "The address of the recipient" }),
     }),
     sourceContractAddress: t.String({ description: "The address of the source ERC20 compatible contract" }),
+    originAccountAddress: t.String({ description: "The originating address" }),
     amount: t.String({ description: "The amount of tokens from the source contract address to swap" }),
     swapContractAddress: t.String({ description: "The address of the swap contract" }),
 });

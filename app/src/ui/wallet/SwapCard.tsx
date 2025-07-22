@@ -188,6 +188,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
                 amount: amount,
                 swapContractAddress: contract.contractAddress,
                 sourceContractAddress: effectiveSourceContract,
+                originAccountAddress: currentAccount.address,
                 counterparty: {
                     amount: forAmount,
                     tokenContractAddress: effectiveTargetContract(),
