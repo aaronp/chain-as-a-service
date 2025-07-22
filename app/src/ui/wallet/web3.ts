@@ -156,6 +156,18 @@ export type SwapParams = {
 }
 
 
+// const getERC20 = async (
+//     chainId: string,
+//     contractAddress: string
+// ) => {
+//     const provider = await providerForChain(chainId);
+
+//     // Get the ERC20 contract ABI (we only need the balanceOf function)
+//     const template = erc20Template();
+//     return new ethers.Contract(contractAddress, template.abi, provider);
+// }
+
+
 export const erc20 = async (account: Account, chainId: string, ercContractAddress: string) => {
     const provider = await providerForChain(chainId);
     const wallet = new ethers.Wallet(account.privateKey, provider);
@@ -449,35 +461,14 @@ const providerForChain = async (chainId: string) => {
     return new ethers.JsonRpcProvider(rpcUrl);
 }
 
-const getERC20 = async (
-    chainId: string,
-    contractAddress: string
-) => {
-    const provider = await providerForChain(chainId);
-
-    // Get the ERC20 contract ABI (we only need the balanceOf function)
-    const template = erc20Template();
-    return new ethers.Contract(contractAddress, template.abi, provider);
-}
-
 
 export const getBalance = async (
     chainId: string,
     contractAddress: string,
     account: Account,
 ): Promise<string> => {
-    console.log(`Getting balance for contract ${contractAddress} on chain ${chainId} for account ${account.address}`);
-
-    // First check if the contract exists
-    // const provider = await providerForChain(chainId);
-    // const code = await provider.getCode(contractAddress);
-    // if (code === "0x") {
-    //     throw new Error(`No contract found at address ${contractAddress}`);
-    // }
-
-    const contract = await getERC20(chainId, contractAddress);
-    const balance = await contract.balanceOf(account.address);
-    console.log("balance", balance);
+    const contract = await erc20(account, chainId, contractAddress);
+    const balance = await contract.balance(account.address);
     return balance.toString();
 }
 

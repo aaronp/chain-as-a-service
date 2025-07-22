@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
-import { Account } from "@/ui/wallet/accounts";
-import { getBalance, transferTokens } from "@/ui/wallet/web3";
+import { PrivateAccount as Account } from "@/ui/wallet/accounts";
+import { erc20, transferTokens } from "@/ui/wallet/web3";
 import { retryUntil } from "@/lib/retryUntil";
 import { createPortal } from "react-dom";
 import { Button } from "@/ui/components/ui/button";
@@ -17,6 +17,7 @@ interface ERC20CardProps {
 
 export default function ERC20Card({ contract, account }: ERC20CardProps) {
     const [balance, setBalance] = useState<string | null>(null);
+    const [allocation, setAllocation] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -34,13 +35,33 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
         setError(null);
 
         retryUntil(
-            () => getBalance(contract.chainId, contract.contractAddress, account),
+            () => erc20(account, contract.chainId, contract.contractAddress),
             2000, // max 2 seconds
             500   // 500ms delay between retries
         )
-            .then((balance) => {
-                setBalance(balance);
-                setLoading(false);
+            .then(async (ercContract) => {
+
+                ercContract.balance(account.address).then((balance) => {
+                    setBalance(balance);
+                    setLoading(false);
+                });
+
+                let swap = swapContract;
+                if (!swap) {
+                    client().listContractsForChain(contract.chainId).then((all) => {
+                        const found = all.find((c: StoredContract) => c.contractType === "ATOMICSWAP");
+
+                        if (found?.contractAddress) {
+                            ercContract.allowance(account.address, found?.contractAddress).then((allowance) => {
+                                setAllocation(allowance);
+                            });
+                        }
+                    })
+                } else {
+                    ercContract.allowance(account.address, swap?.contractAddress).then((allowance) => {
+                        setAllocation(allowance);
+                    });
+                }
             })
             .catch((error) => {
                 console.error("Error getting balance after retries:", error);
@@ -50,13 +71,14 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
     };
 
     useEffect(() => {
-        refreshBalance();
 
         client().listContractsForChain(contract.chainId).then((contracts) => {
             const swapContract = contracts.find((c: StoredContract) => c.contractType === "ATOMICSWAP");
             if (swapContract) {
                 setSwapContract(swapContract);
             }
+
+            refreshBalance();
         });
 
 
@@ -104,9 +126,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
         }
     };
 
-    const onSwap = () => {
-        setSwapModalOpen(true);
-    };
+
     const closeSwapModal = () => {
         setSwapModalOpen(false);
     };
@@ -162,6 +182,17 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                     </p>
                 </div>
 
+
+
+                {allocation && <div className="mb-2 bg-green-500">
+                    <span className="text-xs text-muted-foreground">Allocation</span>
+                    <span className="text-xs font-mono text-card-foreground break-all">
+                        {allocation} {contract.symbol}
+                    </span>
+                </div>}
+
+
+
                 <div className="border-t border-border pt-2">
                     <div className="flex justify-between items-center">
                         <div>
@@ -174,9 +205,9 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
                                 </p>
                             )}
                         </div>
-                        {!loading && !error && balance !== null && swapContract != null && (
+                        {!loading && !error && balance !== null && (
                             <div className="flex flex-row gap-2">
-                                <SwapCard swapContract={swapContract} account={account} sourceTargetContract={contract.contractAddress} />
+                                {swapContract != null && <SwapCard swapContract={swapContract} account={account} sourceTargetContract={contract.contractAddress} />}
                                 <Button
                                     variant="theme"
                                     onClick={() => setTransferModalOpen(true)}

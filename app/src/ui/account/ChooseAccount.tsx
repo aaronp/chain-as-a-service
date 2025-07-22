@@ -65,10 +65,10 @@ export default function ChooseAccount({
         account.address.toLowerCase().includes(filterText.toLowerCase())
     );
 
-    // Check if filter text matches any existing account
-    const exactMatch = accounts.find(account =>
-        account.name.toLowerCase() === filterText.toLowerCase()
-    );
+    // // Check if filter text matches any existing account
+    // const exactMatch = accounts.find(account =>
+    //     account.name.toLowerCase() === filterText.toLowerCase()
+    // );
 
     const handleAccountSelect = (account: StoredAccount) => {
         setSelectedAccount(account);
@@ -138,22 +138,29 @@ export default function ChooseAccount({
                                 No accounts found
                             </div>
                         ) : (
-                            filteredAccounts.map((account) => (
-                                <button
-                                    key={account.name}
-                                    onClick={() => handleAccountSelect(account)}
-                                    className={`w-full px-2 py-2 text-left text-sm text-popover-foreground dark:text-white hover:bg-accent hover:text-accent-foreground flex items-center gap-2 ${selectedAccount?.name === account.name ? 'bg-accent text-accent-foreground' : ''}`}
-                                    style={{ color: 'hsl(var(--popover-foreground))' }}
-                                >
-                                    <User className="h-4 w-4 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-medium truncate">{account.name}</div>
-                                        <div className="text-xs text-muted-foreground font-mono truncate">
-                                            {account.address}
+                            filteredAccounts.map((account) => {
+                                const isSelected = selectedAccount?.name === account.name;
+                                const isCurrent = currentAccount?.address === account.address;
+                                return (
+                                    <button
+                                        key={account.name}
+                                        onClick={() => handleAccountSelect(account)}
+                                        className={`w-full px-2 py-2 text-left text-sm text-popover-foreground dark:text-white hover:bg-accent hover:text-accent-foreground flex items-center gap-2 ${isSelected ? 'bg-accent text-accent-foreground' : ''}`}
+                                        style={{
+                                            color: 'hsl(var(--popover-foreground))',
+                                            backgroundColor: isCurrent && !isSelected ? 'hsl(var(--muted))' : undefined
+                                        }}
+                                    >
+                                        <User className="h-4 w-4 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-medium truncate">{account.name}</div>
+                                            <div className="text-xs text-muted-foreground font-mono truncate">
+                                                {account.address}
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
-                            ))
+                                    </button>
+                                );
+                            })
                         )}
                     </div>
 

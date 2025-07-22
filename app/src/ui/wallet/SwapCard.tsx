@@ -37,6 +37,9 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
     const [success, setSuccess] = useState<string | null>(null);
     const { currentAccount } = useAccount();
 
+    // it doesn't ever make sense to swap e.g. dollars for dollars -- make sure the target contract is different from the source contract
+    const targetContracts = () => allContracts.filter(c => c.contractAddress !== effectiveSourceContract);
+
     // Load other contracts for the dropdown
     useEffect(() => {
         if (sourceTargetContract) {
@@ -51,6 +54,9 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
                     c.contractType === "ERC20"
                 );
                 setAllContracts(allContracts);
+
+                setSelectedTargetContract(effectiveTargetContract());
+
             } catch (error) {
                 console.error("Error loading contracts:", error);
             }
@@ -67,7 +73,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
             return;
         }
 
-        if (!selectedTargetContract || !amount || !forAmount || !withAccount) {
+        if (!effectiveTargetContract || !amount || !forAmount || !withAccount) {
             setError("Please fill in all fields");
             return;
         }
@@ -95,10 +101,17 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
     // Use the prop if set, otherwise use the state
     const effectiveSourceContract = sourceTargetContract ?? selectedSourceContract;
 
+    const effectiveTargetContract = () => {
+        const found = targetContracts().filter(c => c.contractAddress != selectedSourceContract);
+        if (found && found.length === 1) {
+            return found[0].contractAddress;
+        }
+        return selectedTargetContract;
+    }
+
     const handleApprove = async () => {
         onAction(async () => {
-            const selectedContractData = allContracts.find(c => c.contractAddress === selectedTargetContract);
-            if (!selectedContractData) {
+            if (!effectiveTargetContract()) {
                 throw new Error("Selected contract not found");
             }
 
@@ -117,8 +130,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
     }
     const handleTransfer = async () => {
         onAction(async () => {
-            const selectedContractData = allContracts.find(c => c.contractAddress === selectedTargetContract);
-            if (!selectedContractData) {
+            if (!effectiveTargetContract()) {
                 throw new Error("Selected contract not found");
             }
 
@@ -132,7 +144,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
                     amount: amount
                 },
                 {
-                    address: selectedTargetContract,
+                    address: effectiveTargetContract(),
                     amount: forAmount
                 }
             );
@@ -146,7 +158,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
             return;
         }
 
-        if (!selectedTargetContract || !amount || !forAmount || !withAccount) {
+        if (!effectiveTargetContract() || !amount || !forAmount || !withAccount) {
             setError("Please fill in all fields");
             return;
         }
@@ -156,8 +168,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
         setSuccess(null);
 
         try {
-            const selectedContractData = allContracts.find(c => c.contractAddress === selectedTargetContract);
-            if (!selectedContractData) {
+            if (!effectiveTargetContract()) {
                 throw new Error("Selected contract not found");
             }
 
@@ -179,14 +190,14 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
                 sourceContractAddress: effectiveSourceContract,
                 counterparty: {
                     amount: forAmount,
-                    tokenContractAddress: selectedTargetContract,
+                    tokenContractAddress: effectiveTargetContract(),
                     recipientAddress: withAccount.address
                 },
             });
 
 
 
-            resetForm();
+            // resetForm();
             setSuccess(`Swap executed successfully! Transaction hash: ${JSON.stringify(swapResponse)}`);
 
         } catch (err: any) {
@@ -225,11 +236,10 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
             </SheetTrigger>
             <SheetContent className="!w-[60vw] !max-w-[60vw] bg-white dark:bg-card">
                 <SheetHeader>
-                    <SheetTitle>Swap {contract.symbol}</SheetTitle>
-                    <SheetDescription>
-                        Exchange {contract.symbol} for other tokens
-                        sourceTargetContract: {sourceTargetContract}
-                    </SheetDescription>
+                    <SheetTitle>Swap Tokens</SheetTitle>
+                    {/* <SheetDescription>
+                        Swap tokens
+                    </SheetDescription> */}
                 </SheetHeader>
 
                 <div className="space-y-4 mt-6">
@@ -325,11 +335,11 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
                             </label>
                             <select
                                 className="w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground"
-                                value={selectedTargetContract}
+                                value={effectiveTargetContract()}
                                 onChange={(e) => setSelectedTargetContract(e.target.value)}
                             >
                                 <option value="">Select a token</option>
-                                {allContracts.map((contract) => (
+                                {targetContracts().map((contract) => (
                                     <option key={contract.contractAddress} value={contract.contractAddress}>
                                         {contract.name} ({contract.symbol})
                                     </option>
@@ -361,24 +371,26 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
                         </Button>
                         <Button
                             variant="theme"
+                            className="bg-blue-500 hover:bg-blue-600"
                             onClick={handleApprove}
-                            disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
+                            disabled={loading || !amount || !effectiveTargetContract() || !forAmount || !withAccount}
                         >
                             {loading ? "Approving..." : "Approve"}
                         </Button>
                         <Button
                             variant="theme"
+                            className="bg-green-500 hover:bg-green-600"
                             onClick={handleTransfer}
-                            disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
+                            disabled={loading || !amount || !effectiveTargetContract() || !forAmount || !withAccount}
                         >
-                            {loading ? "Transferring..." : "Transfer"}
+                            {loading ? "Executing..." : "Execute"}
                         </Button>
                         <Button
                             variant="theme"
                             onClick={handleSwap}
-                            disabled={loading || !amount || !selectedTargetContract || !forAmount || !withAccount}
+                            disabled={loading || !amount || !effectiveTargetContract() || !forAmount || !withAccount}
                         >
-                            {loading ? "Executing..." : "Trade"}
+                            {loading ? "Executing..." : "Swap"}
                         </Button>
                         <div className="flex-1" />
                     </div>
