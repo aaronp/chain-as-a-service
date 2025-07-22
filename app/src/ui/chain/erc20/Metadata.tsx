@@ -71,33 +71,11 @@ export default function Metadata({ chainId, contractAddress, allowanceOwnerAddre
     }, [chainId, contractAddress, allowanceOwnerAddress, allowanceSpenderAddress]);
 
     return (
-        <div className="p-4 border border-border rounded-lg bg-card shadow-sm max-w-md">
-            <h2 className="text-lg font-semibold mb-2">ERC20 Metadata</h2>
-            <div className="mb-1 flex justify-between">
-                <span className="text-muted-foreground">Name:</span>
-                <span>{nameError ? <span className="text-red-500">{nameError}</span> : name ?? "..."}</span>
-            </div>
-            <div className="mb-1 flex justify-between">
-                <span className="text-muted-foreground">Symbol:</span>
-                <span>{symbolError ? <span className="text-red-500">{symbolError}</span> : symbol ?? "..."}</span>
-            </div>
-            <div className="mb-1 flex justify-between">
-                <span className="text-muted-foreground">Decimals:</span>
-                <span>{decimalsError ? <span className="text-red-500">{decimalsError}</span> : decimals ?? "..."}</span>
-            </div>
-            <div className="mb-1 flex justify-between">
-                <span className="text-muted-foreground">Balance:</span>
-                <span>{balanceError ? <span className="text-red-500">{balanceError}</span> : balance ?? "..."}</span>
-            </div>
-            <div className="mb-1 flex justify-between">
-                <span className="text-muted-foreground">Allowance:</span>
-                <span>{allowanceError ? <span className="text-red-500">{allowanceError}</span> : allowance ?? "..."}</span>
-            </div>
+        <div className="px-2 border border-border rounded-lg bg-card shadow-sm max-w-md">
             <div className="mt-2 text-xs text-muted-foreground">
-                <div>Owner: <ShowAccount accountAddress={allowanceOwnerAddress} /></div>
-                <div>Spender: <ShowAccount accountAddress={allowanceSpenderAddress} /></div>
-                <div>Contract: <span className="font-mono">{contractAddress}</span></div>
-                <div>Chain: <span className="font-mono">{chainId}</span></div>
+                <div>{nameError ? <span className="text-red-500">{nameError}</span> : name ?? "..."}  (<span className="font-mono">{contractAddress.slice(0, 8)}...{contractAddress.slice(-6)}</span>)</div>
+                <div><ShowAccount accountAddress={allowanceOwnerAddress} /> balance: {balanceError ? <span className="text-red-500">{balanceError}</span> : balance ?? "..."}</div>
+                <div><ShowAccount accountAddress={allowanceSpenderAddress} /> allowance: {allowanceError ? <span className="text-red-500">{allowanceError}</span> : allowance ?? "..."}</div>
             </div>
         </div>
     );
