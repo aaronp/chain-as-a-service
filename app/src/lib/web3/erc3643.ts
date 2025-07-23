@@ -46,82 +46,97 @@ export const getSigner = async (account: PrivateAccount, chainId: string) => {
     return signer;
 }
 
+// Helper to deploy a contract and return its address
+async function deployImplementation(artifact: any, signer: any, ...args: any[]): Promise<string> {
+    const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer);
+    const contract = await factory.deploy(...args);
+    await contract.waitForDeployment();
+    return await contract.getAddress();
+}
+
+// Helper to register an implementation in the authority
+async function registerImplementation(authority: any, fnName: string, implAddress: string) {
+    const tx = await authority[fnName](implAddress);
+    await tx.wait();
+}
+
 export const deployTREXFactory = async (account: PrivateAccount, chainId: string) => {
-    // const signer = ;
 
-    // Load artifacts
+
+    // 1. Deploy implementation contracts
+    const TokenArtifact = await import("@/contracts/erc3643/contracts/token/Token.sol/Token.json");
+    const IdentityRegistryArtifact = await import("@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json");
+    const IdentityRegistryStorageArtifact = await import("@/contracts/erc3643/contracts/registry/implementation/IdentityRegistryStorage.sol/IdentityRegistryStorage.json");
+    const ModularComplianceArtifact = await import("@/contracts/erc3643/contracts/compliance/modular/ModularCompliance.sol/ModularCompliance.json");
+    const ClaimTopicsRegistryArtifact = await import("@/contracts/erc3643/contracts/registry/implementation/ClaimTopicsRegistry.sol/ClaimTopicsRegistry.json");
+    const TrustedIssuersRegistryArtifact = await import("@/contracts/erc3643/contracts/registry/implementation/TrustedIssuersRegistry.sol/TrustedIssuersRegistry.json");
+
+    const tokenImpl = await deployImplementation(TokenArtifact, await getSigner(account, chainId));
+    const irImpl = await deployImplementation(IdentityRegistryArtifact, await getSigner(account, chainId));
+    const irsImpl = await deployImplementation(IdentityRegistryStorageArtifact, await getSigner(account, chainId));
+    const mcImpl = await deployImplementation(ModularComplianceArtifact, await getSigner(account, chainId));
+    const ctrImpl = await deployImplementation(ClaimTopicsRegistryArtifact, await getSigner(account, chainId));
+    const tirImpl = await deployImplementation(TrustedIssuersRegistryArtifact, await getSigner(account, chainId));
+
+    // 2. Deploy IAFactory
     const IAFactoryArtifact = await import("@/contracts/erc3643/contracts/proxy/authority/IAFactory.sol/IAFactory.json");
-    const TREXImplementationAuthorityArtifact = await import("@/contracts/erc3643/contracts/proxy/authority/TREXImplementationAuthority.sol/TREXImplementationAuthority.json");
-    const TREXFactoryArtifact = await import("@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json");
-
-    // 1. Deploy IAFactory with zero address (since TREXFactory doesn't exist yet)
     const iaFactory = await new ethers.ContractFactory(
         IAFactoryArtifact.abi,
         IAFactoryArtifact.bytecode,
         await getSigner(account, chainId)
     ).deploy(ethers.ZeroAddress);
-    console.log("Waiting for IAFactory deployment...");
     await iaFactory.waitForDeployment();
-    console.log("IAFactory deployed");
     const iaFactoryAddress = await iaFactory.getAddress();
-    console.log("IAFactory address:", iaFactoryAddress);
 
-
-    // 2. Deploy TREXImplementationAuthority with referenceStatus=true, trexFactory=0, iaFactory=iaFactoryAddress
+    // 3. Deploy TREXImplementationAuthority
+    const TREXImplementationAuthorityArtifact = await import("@/contracts/erc3643/contracts/proxy/authority/TREXImplementationAuthority.sol/TREXImplementationAuthority.json");
     const trexImplementationAuthority = await new ethers.ContractFactory(
         TREXImplementationAuthorityArtifact.abi,
         TREXImplementationAuthorityArtifact.bytecode,
         await getSigner(account, chainId)
     ).deploy(true, ethers.ZeroAddress, iaFactoryAddress);
-    console.log("Waiting for TREXImplementationAuthority deployment...");
     await trexImplementationAuthority.waitForDeployment();
-    console.log("TREXImplementationAuthority deployed");
     const trexImplementationAuthorityAddress = await trexImplementationAuthority.getAddress();
-    console.log("TREXImplementationAuthority address:", trexImplementationAuthorityAddress);
+    const trexImplementationAuthorityInstance = new ethers.Contract(
+        trexImplementationAuthorityAddress,
+        TREXImplementationAuthorityArtifact.abi,
+        await getSigner(account, chainId)
+    );
 
-    console.log("Getting TREXImplementationAuthority instance...");
-    try {
+    // 4. Register implementations in the authority
+    await registerImplementation(trexImplementationAuthorityInstance, "setTokenImplementation", tokenImpl);
+    await registerImplementation(trexImplementationAuthorityInstance, "setIRImplementation", irImpl);
+    await registerImplementation(trexImplementationAuthorityInstance, "setIRSImplementation", irsImpl);
+    await registerImplementation(trexImplementationAuthorityInstance, "setMCImplementation", mcImpl);
+    await registerImplementation(trexImplementationAuthorityInstance, "setCTRImplementation", ctrImpl);
+    await registerImplementation(trexImplementationAuthorityInstance, "setTIRImplementation", tirImpl);
 
-        const trexImplementationAuthorityInstance = new ethers.Contract(
-            trexImplementationAuthorityAddress,
-            TREXImplementationAuthorityArtifact.abi,
-            await getSigner(account, chainId)
-        );
-        console.log("TREXImplementationAuthority instance:", trexImplementationAuthorityInstance.getAddress());
-
-        console.log("Reference status:", await trexImplementationAuthorityInstance.referenceStatus());
-        console.log("IA factory:", await trexImplementationAuthorityInstance.getIAFactory());
-    } catch (e) {
-        console.log("!!! Error getting reference status:", e);
-    }
-
-
-    // 3. Deploy TREXFactory with implementationAuthority and iaFactory addresses
+    // 5. Deploy TREXFactory
+    const TREXFactoryArtifact = await import("@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json");
     const trexFactory = await new ethers.ContractFactory(
         TREXFactoryArtifact.abi,
         TREXFactoryArtifact.bytecode,
         await getSigner(account, chainId)
     ).deploy(trexImplementationAuthorityAddress, iaFactoryAddress);
-    console.log("Waiting for TREXFactory deployment...");
     await trexFactory.waitForDeployment();
-    console.log("TREXFactory deployed");
     const trexFactoryAddress = await trexFactory.getAddress();
-    console.log("TREXFactory address:", trexFactoryAddress);
 
-    // 4. Set the TREXFactory address in the Implementation Authority
-    // const trexImplementationAuthorityInstance = new ethers.Contract(
-    //     trexImplementationAuthorityAddress,
-    //     TREXImplementationAuthorityArtifact.abi,
-    //     await getSigner(account, chainId)
-    // );
+    // 6. Set the TREXFactory address in the Implementation Authority
     const tx = await trexImplementationAuthorityInstance.setTREXFactory(trexFactoryAddress);
     await tx.wait();
-    console.log("TREXImplementationAuthority setTREXFactory called");
-    // Return addresses for test verification
+
     return {
         trexFactory: trexFactoryAddress,
         trexImplementationAuthority: trexImplementationAuthorityAddress,
         iaFactory: iaFactoryAddress,
+        implementations: {
+            tokenImpl,
+            irImpl,
+            irsImpl,
+            mcImpl,
+            ctrImpl,
+            tirImpl,
+        },
     };
 }
 
@@ -130,9 +145,9 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
 //     return deployContract(account, chainId, factory, "TrustedIssuersRegistry", {});
 // }
 export const deployER3543Suite = async (account: PrivateAccount, chainId: string) => {
-    const signer = await getSigner(account, chainId);
 
-    const trexFactory = await deployContract(account, chainId, new ethers.ContractFactory(TREXFactory.abi, TREXFactory.bytecode, signer), "TREXFactory", {});
+
+    const trexFactory = await deployContract(account, chainId, new ethers.ContractFactory(TREXFactory.abi, TREXFactory.bytecode, await getSigner(account, chainId)), "TREXFactory", {});
     // const identityRegistry = await deployContract(account, chainId, new ethers.ContractFactory(IdentityRegistry.abi, IdentityRegistry.bytecode, signer), "IdentityRegistry", {});
     // const identityRegistryStorage = await deployContract(account, chainId, new ethers.ContractFactory(IdentityRegistryStorage.abi, IdentityRegistryStorage.bytecode, signer), "IdentityRegistryStorage", {});
     // const modularCompliance = await deployContract(account, chainId, new ethers.ContractFactory(ModularCompliance.abi, ModularCompliance.bytecode, signer), "ModularCompliance", {});
