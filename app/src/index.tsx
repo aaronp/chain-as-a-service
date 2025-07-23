@@ -26,8 +26,11 @@ function withLogging(handler: (req: Request) => Promise<Response> | Response) {
   };
 }
 
+const PORT = Number(process.env.PORT) || 3000;
+
 const server = serve({
   hostname: "0.0.0.0", // Added to allow external access in Docker
+  port: PORT,
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
