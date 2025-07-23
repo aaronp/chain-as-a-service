@@ -42,8 +42,7 @@ export const getSigner = async (account: PrivateAccount, chainId: string) => {
 
     await ensureETH(account.address, chainId);
 
-    const signer = new ethers.Wallet(account.privateKey, provider);
-    return signer;
+    return new ethers.Wallet(account.privateKey, provider);
 }
 
 // Helper to deploy a contract and return its address
@@ -54,11 +53,6 @@ async function deployImplementation(artifact: any, signer: any, ...args: any[]):
     return await contract.getAddress();
 }
 
-// Helper to register an implementation in the authority
-async function registerImplementation(authority: any, fnName: string, implAddress: string) {
-    const tx = await authority[fnName](implAddress);
-    await tx.wait();
-}
 
 export const deployTREXFactory = async (account: PrivateAccount, chainId: string) => {
 
@@ -103,13 +97,34 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
         await getSigner(account, chainId)
     );
 
-    // 4. Register implementations in the authority
-    await registerImplementation(trexImplementationAuthorityInstance, "setTokenImplementation", tokenImpl);
-    await registerImplementation(trexImplementationAuthorityInstance, "setIRImplementation", irImpl);
-    await registerImplementation(trexImplementationAuthorityInstance, "setIRSImplementation", irsImpl);
-    await registerImplementation(trexImplementationAuthorityInstance, "setMCImplementation", mcImpl);
-    await registerImplementation(trexImplementationAuthorityInstance, "setCTRImplementation", ctrImpl);
-    await registerImplementation(trexImplementationAuthorityInstance, "setTIRImplementation", tirImpl);
+    // 4. Register implementations in the authority using addTREXVersion
+    const versionObj = { major: 1, minor: 0, patch: 0 };
+    const trexContractsObj = {
+        tokenImplementation: tokenImpl,
+        ctrImplementation: ctrImpl,
+        irImplementation: irImpl,
+        irsImplementation: irsImpl,
+        tirImplementation: tirImpl,
+        mcImplementation: mcImpl,
+    };
+    try {
+        const txVersion = await trexImplementationAuthorityInstance.addTREXVersion(versionObj, trexContractsObj);
+        await txVersion.wait();
+        console.log("addTREXVersion succeeded");
+        const txUse = await trexImplementationAuthorityInstance.useTREXVersion(versionObj);
+        await txUse.wait();
+        console.log("useTREXVersion succeeded");
+    } catch (e) {
+        console.error("addTREXVersion or useTREXVersion failed:", e);
+    }
+    try {
+        const isRef = await trexImplementationAuthorityInstance.isReferenceContract();
+        console.log("isReferenceContract:", isRef);
+        const tokenImplSet = await trexImplementationAuthorityInstance.getTokenImplementation();
+        console.log("getTokenImplementation after useTREXVersion:", tokenImplSet);
+    } catch (e) {
+        console.error("Error checking authority state:", e);
+    }
 
     // 5. Deploy TREXFactory
     const TREXFactoryArtifact = await import("@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json");
@@ -122,8 +137,8 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     const trexFactoryAddress = await trexFactory.getAddress();
 
     // 6. Set the TREXFactory address in the Implementation Authority
-    const tx = await trexImplementationAuthorityInstance.setTREXFactory(trexFactoryAddress);
-    await tx.wait();
+    const txSetFactory = await trexImplementationAuthorityInstance.setTREXFactory(trexFactoryAddress);
+    await txSetFactory.wait();
 
     return {
         trexFactory: trexFactoryAddress,
