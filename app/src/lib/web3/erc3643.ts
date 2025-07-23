@@ -66,6 +66,7 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     const iaFactoryAddress = await iaFactory.getAddress();
     console.log("IAFactory address:", iaFactoryAddress);
 
+
     // 2. Deploy TREXImplementationAuthority with referenceStatus=true, trexFactory=0, iaFactory=iaFactoryAddress
     const trexImplementationAuthority = await new ethers.ContractFactory(
         TREXImplementationAuthorityArtifact.abi,
@@ -78,6 +79,23 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     const trexImplementationAuthorityAddress = await trexImplementationAuthority.getAddress();
     console.log("TREXImplementationAuthority address:", trexImplementationAuthorityAddress);
 
+    console.log("Getting TREXImplementationAuthority instance...");
+    try {
+
+        const trexImplementationAuthorityInstance = new ethers.Contract(
+            trexImplementationAuthorityAddress,
+            TREXImplementationAuthorityArtifact.abi,
+            await getSigner(account, chainId)
+        );
+        console.log("TREXImplementationAuthority instance:", trexImplementationAuthorityInstance.getAddress());
+
+        console.log("Reference status:", await trexImplementationAuthorityInstance.referenceStatus());
+        console.log("IA factory:", await trexImplementationAuthorityInstance.getIAFactory());
+    } catch (e) {
+        console.log("!!! Error getting reference status:", e);
+    }
+
+
     // 3. Deploy TREXFactory with implementationAuthority and iaFactory addresses
     const trexFactory = await new ethers.ContractFactory(
         TREXFactoryArtifact.abi,
@@ -89,6 +107,16 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     console.log("TREXFactory deployed");
     const trexFactoryAddress = await trexFactory.getAddress();
     console.log("TREXFactory address:", trexFactoryAddress);
+
+    // 4. Set the TREXFactory address in the Implementation Authority
+    // const trexImplementationAuthorityInstance = new ethers.Contract(
+    //     trexImplementationAuthorityAddress,
+    //     TREXImplementationAuthorityArtifact.abi,
+    //     await getSigner(account, chainId)
+    // );
+    const tx = await trexImplementationAuthorityInstance.setTREXFactory(trexFactoryAddress);
+    await tx.wait();
+    console.log("TREXImplementationAuthority setTREXFactory called");
     // Return addresses for test verification
     return {
         trexFactory: trexFactoryAddress,

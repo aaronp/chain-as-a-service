@@ -9,7 +9,7 @@ test('deploy an ERC3643 identity contract', async () => {
 
     const wallet = await createNewAccount('Test Account ' + new Date().getTime());
 
-    const result = await deployTREXFactory(wallet, 'test-chain-1');
+    const result = await deployTREXFactory(wallet, 'erc3643-chain-' + new Date().getTime());
     expect(result.trexFactory).toBeDefined();
     expect(result.trexImplementationAuthority).toBeDefined();
     expect(result.iaFactory).toBeDefined();
