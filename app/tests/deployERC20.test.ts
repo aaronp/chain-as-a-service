@@ -1,7 +1,7 @@
 import { client } from '@/api/client';
-import { ensureServerRunning, TEST_URL } from './testServer';
+import { ensureServerRunning } from './testServer';
 import { deployERC20 } from '@/lib/web3/web3';
-import { PrivateAccount as Account, createNewAccount } from '@/ui/wallet/accounts';
+import { createNewAccount } from '@/ui/wallet/accounts';
 
 // @ts-expect-error Bun global
 test('deploy an ERC20 token on a chain', async () => {

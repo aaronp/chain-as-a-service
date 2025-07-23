@@ -46,8 +46,46 @@ export const getSigner = async (account: PrivateAccount, chainId: string) => {
 }
 
 export const deployTREXFactory = async (account: PrivateAccount, chainId: string) => {
-    const factory = new ethers.ContractFactory(TREXFactory.abi, TREXFactory.bytecode, await getSigner(account, chainId));
-    return deployContract(account, chainId, factory, "TREXFactory", {});
+    const signer = await getSigner(account, chainId);
+
+    // Load artifacts
+    const IAFactoryArtifact = await import("@/contracts/erc3643/contracts/proxy/authority/IAFactory.sol/IAFactory.json");
+    const TREXImplementationAuthorityArtifact = await import("@/contracts/erc3643/contracts/proxy/authority/TREXImplementationAuthority.sol/TREXImplementationAuthority.json");
+    const TREXFactoryArtifact = await import("@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json");
+
+    // 1. Deploy IAFactory with zero address (since TREXFactory doesn't exist yet)
+    const iaFactory = await new ethers.ContractFactory(
+        IAFactoryArtifact.abi,
+        IAFactoryArtifact.bytecode,
+        signer
+    ).deploy(ethers.ZeroAddress);
+    await iaFactory.waitForDeployment();
+    const iaFactoryAddress = await iaFactory.getAddress();
+
+    // 2. Deploy TREXImplementationAuthority with referenceStatus=true, trexFactory=0, iaFactory=0
+    const trexImplementationAuthority = await new ethers.ContractFactory(
+        TREXImplementationAuthorityArtifact.abi,
+        TREXImplementationAuthorityArtifact.bytecode,
+        signer
+    ).deploy(true, ethers.ZeroAddress, ethers.ZeroAddress);
+    await trexImplementationAuthority.waitForDeployment();
+    const trexImplementationAuthorityAddress = await trexImplementationAuthority.getAddress();
+
+    // 3. Deploy TREXFactory with implementationAuthority and iaFactory addresses
+    const trexFactory = await new ethers.ContractFactory(
+        TREXFactoryArtifact.abi,
+        TREXFactoryArtifact.bytecode,
+        signer
+    ).deploy(trexImplementationAuthorityAddress, iaFactoryAddress);
+    await trexFactory.waitForDeployment();
+    const trexFactoryAddress = await trexFactory.getAddress();
+
+    // Return addresses for test verification
+    return {
+        trexFactory: trexFactoryAddress,
+        trexImplementationAuthority: trexImplementationAuthorityAddress,
+        iaFactory: iaFactoryAddress,
+    };
 }
 
 // export const deployTrustedIssuersRegistry = async (account: PrivateAccount, chainId: string) => {
