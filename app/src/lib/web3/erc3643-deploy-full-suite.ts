@@ -17,6 +17,7 @@ import TrustedIssuersRegistryProxy from '@/contracts/erc3643/contracts/proxy/Tru
 import IdentityRegistryStorageProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryStorageProxy.sol/IdentityRegistryStorageProxy.json';
 import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/DefaultCompliance.sol/DefaultCompliance.json';
 import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
+import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
 
 
 // export async function deployIdentityProxy(implementationAuthority: Contract['address'], managementKey: string, signer: Signer) {
@@ -137,24 +138,25 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
   const identityRegistry = await deployContract(chainId, accounts.deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
 
   const tokenOID = await deployContract(chainId, accounts.deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuer.address);
-  // const tokenName = 'TREXDINO';
-  // const tokenSymbol = 'TREX';
-  // const tokenDecimals = BigNumber.from('0');
-  // const token = await ethers
-  //   .deployContract(
-  //     'TokenProxy',
-  //     [
-  //       trexImplementationAuthority.address,
-  //       identityRegistry.address,
-  //       defaultCompliance.address,
-  //       tokenName,
-  //       tokenSymbol,
-  //       tokenDecimals,
-  //       tokenOID.address,
-  //     ],
-  //     deployer,
-  //   )
-  //   .then(async (proxy) => ethers.getContractAt('Token', proxy.address));
+  const tokenName = 'TREXDINO';
+  const tokenSymbol = 'TREX';
+  const tokenDecimals = '0' //BigNumber.from('0');
+  const token = await
+    deployContract(
+      chainId,
+      accounts.deployer,
+      'TokenProxy',
+      TokenProxy.abi,
+      TokenProxy.bytecode,
+
+      trexImplementationAuthority.address,
+      identityRegistry.address,
+      defaultCompliance.address,
+      tokenName,
+      tokenSymbol,
+      tokenDecimals,
+      tokenOID.address,
+    );
 
   // const agentManager = await ethers.deployContract('AgentManager', [token.address], tokenAgent);
 
@@ -314,7 +316,7 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
       defaultCompliance,
       identityRegistry,
       tokenOID,
-      // token,
+      token,
       // agentManager,
     },
     authorities: {
