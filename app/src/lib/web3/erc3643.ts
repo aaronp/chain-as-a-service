@@ -3,6 +3,7 @@ import { ensureETH, providerForChain } from "./web3";
 import { PrivateAccount } from "@/ui/wallet/accounts";
 
 import TREXFactory from "@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json";
+import TrustedIssuersRegistry from "@/contracts/erc3643/contracts/proxy/TrustedIssuersRegistryProxy.sol/TrustedIssuersRegistryProxy.json";
 
 // import IdentityRegistry from "@/contracts/erc3643/IdentityRegistry.json";
 // import IdentityRegistryStorage from "@/contracts/erc3643/IdentityRegistryStorage.json";
@@ -46,7 +47,7 @@ export const getSigner = async (account: PrivateAccount, chainId: string) => {
 }
 
 export const deployTREXFactory = async (account: PrivateAccount, chainId: string) => {
-    const signer = await getSigner(account, chainId);
+    // const signer = ;
 
     // Load artifacts
     const IAFactoryArtifact = await import("@/contracts/erc3643/contracts/proxy/authority/IAFactory.sol/IAFactory.json");
@@ -57,7 +58,7 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     const iaFactory = await new ethers.ContractFactory(
         IAFactoryArtifact.abi,
         IAFactoryArtifact.bytecode,
-        signer
+        await getSigner(account, chainId)
     ).deploy(ethers.ZeroAddress);
     console.log("Waiting for IAFactory deployment...");
     await iaFactory.waitForDeployment();
@@ -65,12 +66,12 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     const iaFactoryAddress = await iaFactory.getAddress();
     console.log("IAFactory address:", iaFactoryAddress);
 
-    // 2. Deploy TREXImplementationAuthority with referenceStatus=true, trexFactory=0, iaFactory=0
+    // 2. Deploy TREXImplementationAuthority with referenceStatus=true, trexFactory=0, iaFactory=iaFactoryAddress
     const trexImplementationAuthority = await new ethers.ContractFactory(
         TREXImplementationAuthorityArtifact.abi,
         TREXImplementationAuthorityArtifact.bytecode,
-        signer
-    ).deploy(true, ethers.ZeroAddress, ethers.ZeroAddress);
+        await getSigner(account, chainId)
+    ).deploy(true, ethers.ZeroAddress, iaFactoryAddress);
     console.log("Waiting for TREXImplementationAuthority deployment...");
     await trexImplementationAuthority.waitForDeployment();
     console.log("TREXImplementationAuthority deployed");
@@ -81,7 +82,7 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
     const trexFactory = await new ethers.ContractFactory(
         TREXFactoryArtifact.abi,
         TREXFactoryArtifact.bytecode,
-        signer
+        await getSigner(account, chainId)
     ).deploy(trexImplementationAuthorityAddress, iaFactoryAddress);
     console.log("Waiting for TREXFactory deployment...");
     await trexFactory.waitForDeployment();
