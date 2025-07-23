@@ -11,7 +11,12 @@ import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementat
 import ModularCompliance from '@/contracts/erc3643/contracts/compliance/modular/ModularCompliance.sol/ModularCompliance.json';
 import Token from '@/contracts/erc3643/contracts/token/Token.sol/Token.json';
 import TREXImplementationAuthority from '@/contracts/erc3643/contracts/proxy/authority/TREXImplementationAuthority.sol/TREXImplementationAuthority.json';
-
+import TREXFactory from '@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json';
+import ClaimTopicsRegistryProxy from '@/contracts/erc3643/contracts/proxy/ClaimTopicsRegistryProxy.sol/ClaimTopicsRegistryProxy.json';
+import TrustedIssuersRegistryProxy from '@/contracts/erc3643/contracts/proxy/TrustedIssuersRegistryProxy.sol/TrustedIssuersRegistryProxy.json';
+import IdentityRegistryStorageProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryStorageProxy.sol/IdentityRegistryStorageProxy.json';
+import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/DefaultCompliance.sol/DefaultCompliance.json';
+import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
 
 
 // export async function deployIdentityProxy(implementationAuthority: Contract['address'], managementKey: string, signer: Signer) {
@@ -115,32 +120,21 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
 
 
   console.log('addAndUseTREXVersion', trexImplementationAuthority);
-  (await trexImplementationAuthority.getContract(deployer)).addAndUseTREXVersion(versionStruct, contractsStruct);
+  await (await trexImplementationAuthority.getContract(deployer)).addAndUseTREXVersion(versionStruct, contractsStruct);
 
-  // const trexFactory = await ethers.deployContract('TREXFactory', [trexImplementationAuthority.address, identityFactory.address], deployer);
-  // await identityFactory.connect(deployer).addTokenFactory(trexFactory.address);
 
-  // const claimTopicsRegistry = await ethers
-  //   .deployContract('ClaimTopicsRegistryProxy', [trexImplementationAuthority.address], deployer)
-  //   .then(async (proxy) => ethers.getContractAt('ClaimTopicsRegistry', proxy.address));
+  const trexFactory = await deployContract(chainId, accounts.deployer, 'TREXFactory', TREXFactory.abi, TREXFactory.bytecode, trexImplementationAuthority.address, identityFactory.address);
+  await (await identityFactory.getContract(deployer)).addTokenFactory(trexFactory.address);
 
-  // const trustedIssuersRegistry = await ethers
-  //   .deployContract('TrustedIssuersRegistryProxy', [trexImplementationAuthority.address], deployer)
-  //   .then(async (proxy) => ethers.getContractAt('TrustedIssuersRegistry', proxy.address));
+  const claimTopicsRegistry = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistryProxy', ClaimTopicsRegistryProxy.abi, ClaimTopicsRegistryProxy.bytecode, trexImplementationAuthority.address);
 
-  // const identityRegistryStorage = await ethers
-  //   .deployContract('IdentityRegistryStorageProxy', [trexImplementationAuthority.address], deployer)
-  //   .then(async (proxy) => ethers.getContractAt('IdentityRegistryStorage', proxy.address));
+  const trustedIssuersRegistry = await deployContract(chainId, accounts.deployer, 'TrustedIssuersRegistryProxy', TrustedIssuersRegistryProxy.abi, TrustedIssuersRegistryProxy.bytecode, trexImplementationAuthority.address);
 
-  // const defaultCompliance = await ethers.deployContract('DefaultCompliance', deployer);
+  const identityRegistryStorage = await deployContract(chainId, accounts.deployer, 'IdentityRegistryStorageProxy', IdentityRegistryStorageProxy.abi, IdentityRegistryStorageProxy.bytecode, trexImplementationAuthority.address);
 
-  // const identityRegistry = await ethers
-  //   .deployContract(
-  //     'IdentityRegistryProxy',
-  //     [trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address],
-  //     deployer,
-  //   )
-  //   .then(async (proxy) => ethers.getContractAt('IdentityRegistry', proxy.address));
+  const defaultCompliance = await deployContract(chainId, accounts.deployer, 'DefaultCompliance', DefaultCompliance.abi, DefaultCompliance.bytecode);
+
+  const identityRegistry = await deployContract(chainId, accounts.deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
 
   // const tokenOID = await deployIdentityProxy(identityImplementationAuthority.address, tokenIssuer.address, deployer);
   // const tokenName = 'TREXDINO';
@@ -292,7 +286,6 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
   // };
 
 
-
   return {
     accounts: {
       deployer,
@@ -302,12 +295,34 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
       claimIssuer,
       claimIssuerSigningKey,
       aliceActionKey,
+      // aliceWallet,
+      // bobWallet,
+      // charlieWallet,
+      // davidWallet,
+      // anotherWallet,
+    },
+    identities: {
+      // aliceIdentity,
+      // bobIdentity,
+      // charlieIdentity,
+    },
+    suite: {
+      // claimIssuerContract,
+      claimTopicsRegistry,
+      trustedIssuersRegistry,
+      identityRegistryStorage,
+      defaultCompliance,
+      identityRegistry,
+      // tokenOID,
+      // token,
+      // agentManager,
     },
     authorities: {
       trexImplementationAuthority,
       identityImplementationAuthority,
     },
     factories: {
+      trexFactory,
       identityFactory,
     },
     implementations: {
