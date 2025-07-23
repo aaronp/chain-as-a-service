@@ -7,7 +7,8 @@ import { snapshotAnvilState, setAnvilState, startAnvil, waitForAnvilReady } from
 
 export type ChainStore = {
     useChain: (chainId: string) => Promise<void>;
-    isRunning: () => boolean;
+    isRunning: (chainId: string) => boolean;
+    getPort: (chainId: string) => number | undefined;
     currentChainId: () => string | undefined;
     dump: () => Record<string, any[]>;
     list: () => string[];
@@ -16,16 +17,17 @@ export type ChainStore = {
 
 export const makeChainStore = (): ChainStore => {
     const chainData = new Map<string, any[]>();
-    let currentChainId: string | undefined = undefined;
+    const chainProcs = new Map<string, { proc: ReturnType<typeof Bun.spawn>, port: number }>();
 
-    let proc: ReturnType<typeof Bun.spawn> | undefined = undefined;
-    const anvilRunning = () => proc !== undefined;
-    const stopAnvil = async () => {
-        if (proc) {
-            console.log("stopping anvil ...");
-            const state = await snapshotAnvilState();
-            proc.kill();
-            proc = undefined;
+    const getPort = (chainId: string) => chainProcs.get(chainId)?.port;
+    const anvilRunning = (chainId: string) => chainProcs.has(chainId);
+    const stopAnvil = async (chainId: string) => {
+        const entry = chainProcs.get(chainId);
+        if (entry) {
+            console.log("stopping anvil ...", chainId);
+            const state = await snapshotAnvilState(entry.port);
+            entry.proc.kill();
+            chainProcs.delete(chainId);
             return state;
         } else {
             return undefined;
@@ -53,43 +55,29 @@ export const makeChainStore = (): ChainStore => {
         return chain[0];
     }
     return {
-        /**
-         * Use a chain.
-         * If the chain is already running, do nothing.
-         * If the chain is not running, start it and restore the previous state.
-         * If the chain is not running, stop the current chain and start the new one.
-         * @param chainId 
-         */
         useChain: async (chainId: string) => {
-            if (currentChainId === chainId) {
-                if (!anvilRunning()) {
-                    proc = await startAnvil();
-                    console.log("starting anvil for ", chainId);
-                    const previousState = latestDataForChain(chainId);
-                    if (previousState) {
-                        setAnvilState(previousState);
-                    }
-                } else {
-                    // console.log("anvil already running for ", chainId);
-                    await waitForAnvilReady();
-                }
-            } else {
-                const snapshot = await stopAnvil();
-                if (snapshot !== undefined && currentChainId) {
-                    append(currentChainId, snapshot);
-                }
+            let entry = chainProcs.get(chainId);
+            if (entry) {
+                console.log("🚀 anvil already running for ", chainId);
+                // Already running
+                await waitForAnvilReady(entry.port);
+                return;
+            }
 
-                currentChainId = chainId;
-                console.log("starting anvil for ", chainId);
-                proc = await startAnvil();
-                const previousState = latestDataForChain(chainId);
-                if (previousState !== undefined) {
-                    setAnvilState(previousState);
-                }
+            // Assign a new port: 8545 + current number of chainProcs
+            const port = 8545 + chainProcs.size;
+            const proc = await startAnvil(port);
+            console.log("🚀 started anvil for ", chainId, " on port ", port);
+            chainProcs.set(chainId, { proc, port });
+            const previousState = latestDataForChain(chainId);
+            if (previousState !== undefined) {
+                await setAnvilState(previousState, port);
             }
         },
-        isRunning: () => anvilRunning(),
-        currentChainId: () => currentChainId,
+        isRunning: (chainId: string) => anvilRunning(chainId),
+        getPort,
+        // Remove currentChainId tracking, as it's not meaningful with per-chainId procs
+        currentChainId: () => undefined,
         dump: () => Object.fromEntries(chainData.entries()),
         list: () => Array.from(chainData.keys()),
         append: append
@@ -110,13 +98,11 @@ export const chainStatusRoutes = new Elysia({
     },
 }).use(chainStore)
     .get('/', async ({ store }) => {
-        return { currentChainId: store.chainData.currentChainId(), isRunning: store.chainData.isRunning(), chains: store.chainData.list(), data: store.chainData.dump() };
+        return { chains: store.chainData.list(), data: store.chainData.dump() };
     },
         {
             response: {
                 200: t.Object({
-                    currentChainId: t.Optional(t.String()),
-                    isRunning: t.Boolean(),
                     chains: t.Array(t.String()),
                     data: t.Any(),
                 }),
@@ -143,18 +129,14 @@ const handler = async ({ body, params, store, request, path }: {
     const subpath = params.subpath || "";
     const method = request.method;
 
-    console.log(`on ${method} ${subpath} for chain ${chainId} with path ${path} and request ${Object.keys(request)}:\n${JSON.stringify(body)}`);
-
     await store.chainData.useChain(chainId);
 
-    // belt and braces
-    if (!store.chainData.isRunning()) {
-        return { error: 'Anvil is not running' };
-    } else if (store.chainData.currentChainId() !== chainId) {
+    const port = store.chainData.getPort(chainId);
+    if (!port) {
         return { error: 'Anvil is not running for this chain' };
     }
 
-    const response = await chainProxyHandler(body, { method, subpath, path });
+    const response = await chainProxyHandler(port, body, { method, subpath, path });
     console.log(`proxy ${method} ${subpath} response`, response.result);
     store.chainData.append(chainId, response.state);
     return response;

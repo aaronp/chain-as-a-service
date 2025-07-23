@@ -2,18 +2,17 @@ import { ErrorResponse, isErrorResponse } from '../error';
 import path from 'path';
 import os from 'os';
 
-export const startAnvil = async () => {
-
-    const ad = anvilDir()
+export const startAnvil = async (port: number) => {
+    const ad = anvilDir();
     const anvilFQN = path.resolve(ad, "anvil");
-    const proc = Bun.spawn([anvilFQN], {
+    const proc = Bun.spawn([anvilFQN, "--port", String(port)], {
         stdout: 'pipe',
         stderr: 'pipe',
         cwd: ad
     });
 
     // Wait for Anvil to be ready by polling the REST endpoint
-    const ready = await waitForAnvilReady();
+    const ready = await waitForAnvilReady(port);
     if (!ready) {
         proc.kill();
         throw new Error("Anvil did not start in time");
@@ -23,8 +22,8 @@ export const startAnvil = async () => {
 
 const anvilDir = () => path.resolve(os.homedir(), ".foundry/bin");
 
-export async function waitForAnvilReady() {
-    const url = "http://127.0.0.1:8545";
+export async function waitForAnvilReady(port: number) {
+    const url = `http://127.0.0.1:${port}`;
     const timeoutMs = 5000;
     const pollInterval = 100;
     let ready = false;
@@ -49,10 +48,9 @@ export async function waitForAnvilReady() {
  * Make an RPC call to anvil to get the state.
  * @returns The state of the anvil instance.
  */
-export async function snapshotAnvilState(): Promise<any> {
-    // Send anvil_dumpState RPC to anvil
+export async function snapshotAnvilState(port: number): Promise<any> {
     try {
-        const res = await fetch("http://127.0.0.1:8545", {
+        const res = await fetch(`http://127.0.0.1:${port}`, {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -80,15 +78,14 @@ export async function snapshotAnvilState(): Promise<any> {
  * @param state 
  * @returns 
  */
-export async function setAnvilState(state: any): Promise<any> {
+export async function setAnvilState(state: any, port: number): Promise<any> {
     console.log("setting anvil state ...", state);
     if (!state) {
         console.log("no state to set");
         return;
     }
-    // Send anvil_dumpState RPC to anvil
     try {
-        const res = await fetch("http://127.0.0.1:8545", {
+        const res = await fetch(`http://127.0.0.1:${port}`, {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
