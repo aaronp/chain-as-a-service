@@ -136,7 +136,7 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
 
   const identityRegistry = await deployContract(chainId, accounts.deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
 
-  // const tokenOID = await deployIdentityProxy(identityImplementationAuthority.address, tokenIssuer.address, deployer);
+  const tokenOID = await deployContract(chainId, accounts.deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuer.address);
   // const tokenName = 'TREXDINO';
   // const tokenSymbol = 'TREX';
   // const tokenDecimals = BigNumber.from('0');
@@ -313,7 +313,7 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
       identityRegistryStorage,
       defaultCompliance,
       identityRegistry,
-      // tokenOID,
+      tokenOID,
       // token,
       // agentManager,
     },
