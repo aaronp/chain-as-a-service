@@ -2,12 +2,13 @@ import { ethers } from "ethers";
 import { ensureETH, providerForChain } from "./web3";
 import { PrivateAccount } from "@/ui/wallet/accounts";
 
-import ClaimTopicsRegistry from "@/contracts/erc3643/ClaimTopicsRegistry.json";
-import IdentityRegistry from "@/contracts/erc3643/IdentityRegistry.json";
-import IdentityRegistryStorage from "@/contracts/erc3643/IdentityRegistryStorage.json";
-import ModularCompliance from "@/contracts/erc3643/ModularCompliance.json";
-import Token from "@/contracts/erc3643/Token.json";
-import TrustedIssuersRegistry from "@/contracts/erc3643/TrustedIssuersRegistry.json";
+import TREXFactory from "@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json";
+
+// import IdentityRegistry from "@/contracts/erc3643/IdentityRegistry.json";
+// import IdentityRegistryStorage from "@/contracts/erc3643/IdentityRegistryStorage.json";
+// import ModularCompliance from "@/contracts/erc3643/ModularCompliance.json";
+// import Token from "@/contracts/erc3643/Token.json";
+// import TrustedIssuersRegistry from "@/contracts/erc3643/TrustedIssuersRegistry.json";
 
 
 import { client } from "@/api/client";
@@ -44,26 +45,26 @@ export const getSigner = async (account: PrivateAccount, chainId: string) => {
     return signer;
 }
 
-export const deployOnChainID = async (account: PrivateAccount, chainId: string) => {
-    const factory = new ethers.ContractFactory(TrustedIssuersRegistry.abi, TrustedIssuersRegistry.bytecode, await getSigner(account, chainId));
-    return deployContract(account, chainId, factory, "TrustedIssuersRegistry", {});
+export const deployTREXFactory = async (account: PrivateAccount, chainId: string) => {
+    const factory = new ethers.ContractFactory(TREXFactory.abi, TREXFactory.bytecode, await getSigner(account, chainId));
+    return deployContract(account, chainId, factory, "TREXFactory", {});
 }
 
-export const deployTrustedIssuersRegistry = async (account: PrivateAccount, chainId: string) => {
-    const factory = new ethers.ContractFactory(TrustedIssuersRegistry.abi, TrustedIssuersRegistry.bytecode, await getSigner(account, chainId));
-    return deployContract(account, chainId, factory, "TrustedIssuersRegistry", {});
-}
+// export const deployTrustedIssuersRegistry = async (account: PrivateAccount, chainId: string) => {
+//     const factory = new ethers.ContractFactory(TrustedIssuersRegistry.abi, TrustedIssuersRegistry.bytecode, await getSigner(account, chainId));
+//     return deployContract(account, chainId, factory, "TrustedIssuersRegistry", {});
+// }
 export const deployER3543Suite = async (account: PrivateAccount, chainId: string) => {
     const signer = await getSigner(account, chainId);
 
-    const claimTopicsRegistry = await deployContract(account, chainId, new ethers.ContractFactory(ClaimTopicsRegistry.abi, ClaimTopicsRegistry.bytecode, signer), "ClaimTopicsRegistry", {});
-    const identityRegistry = await deployContract(account, chainId, new ethers.ContractFactory(IdentityRegistry.abi, IdentityRegistry.bytecode, signer), "IdentityRegistry", {});
-    const identityRegistryStorage = await deployContract(account, chainId, new ethers.ContractFactory(IdentityRegistryStorage.abi, IdentityRegistryStorage.bytecode, signer), "IdentityRegistryStorage", {});
-    const modularCompliance = await deployContract(account, chainId, new ethers.ContractFactory(ModularCompliance.abi, ModularCompliance.bytecode, signer), "ModularCompliance", {});
+    const trexFactory = await deployContract(account, chainId, new ethers.ContractFactory(TREXFactory.abi, TREXFactory.bytecode, signer), "TREXFactory", {});
+    // const identityRegistry = await deployContract(account, chainId, new ethers.ContractFactory(IdentityRegistry.abi, IdentityRegistry.bytecode, signer), "IdentityRegistry", {});
+    // const identityRegistryStorage = await deployContract(account, chainId, new ethers.ContractFactory(IdentityRegistryStorage.abi, IdentityRegistryStorage.bytecode, signer), "IdentityRegistryStorage", {});
+    // const modularCompliance = await deployContract(account, chainId, new ethers.ContractFactory(ModularCompliance.abi, ModularCompliance.bytecode, signer), "ModularCompliance", {});
     // const token = await deployContract(account, chainId, new ethers.ContractFactory(Token.abi, Token.bytecode, signer), "Token", {});
 
     // return { claimTopicsRegistry, identityRegistry, identityRegistryStorage, modularCompliance, token };
-    return { claimTopicsRegistry };
+    return { trexFactory };
 }
 
 export const trustedIssuersRegistry = async (
