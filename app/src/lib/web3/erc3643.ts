@@ -59,8 +59,11 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
         IAFactoryArtifact.bytecode,
         signer
     ).deploy(ethers.ZeroAddress);
+    console.log("Waiting for IAFactory deployment...");
     await iaFactory.waitForDeployment();
+    console.log("IAFactory deployed");
     const iaFactoryAddress = await iaFactory.getAddress();
+    console.log("IAFactory address:", iaFactoryAddress);
 
     // 2. Deploy TREXImplementationAuthority with referenceStatus=true, trexFactory=0, iaFactory=0
     const trexImplementationAuthority = await new ethers.ContractFactory(
@@ -68,8 +71,11 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
         TREXImplementationAuthorityArtifact.bytecode,
         signer
     ).deploy(true, ethers.ZeroAddress, ethers.ZeroAddress);
+    console.log("Waiting for TREXImplementationAuthority deployment...");
     await trexImplementationAuthority.waitForDeployment();
+    console.log("TREXImplementationAuthority deployed");
     const trexImplementationAuthorityAddress = await trexImplementationAuthority.getAddress();
+    console.log("TREXImplementationAuthority address:", trexImplementationAuthorityAddress);
 
     // 3. Deploy TREXFactory with implementationAuthority and iaFactory addresses
     const trexFactory = await new ethers.ContractFactory(
@@ -77,9 +83,11 @@ export const deployTREXFactory = async (account: PrivateAccount, chainId: string
         TREXFactoryArtifact.bytecode,
         signer
     ).deploy(trexImplementationAuthorityAddress, iaFactoryAddress);
+    console.log("Waiting for TREXFactory deployment...");
     await trexFactory.waitForDeployment();
+    console.log("TREXFactory deployed");
     const trexFactoryAddress = await trexFactory.getAddress();
-
+    console.log("TREXFactory address:", trexFactoryAddress);
     // Return addresses for test verification
     return {
         trexFactory: trexFactoryAddress,
