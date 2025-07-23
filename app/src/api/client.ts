@@ -81,8 +81,9 @@ export class Client {
     async registerChain(request: Chain) {
         const client = treaty<Api>(this.url);
         const response = await client.api.chains.post(request);
+        console.log('registerChain response', response);
         if (response.status !== 200 || !response.data) {
-            return { error: `Failed to register chain: ${response.status}`, data: response.data };
+            return { error: `Failed to register chain: ${response.status}`, data: JSON.stringify(response.data) };
         }
         return response.data
 

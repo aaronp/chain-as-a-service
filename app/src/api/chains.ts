@@ -8,13 +8,12 @@ export const ChainSchema = t.Object({
 export type Chain = Static<typeof ChainSchema>;
 
 // Stored chain with created time and chainId
-export const StoredChainSchema = t.Intersect([
-    ChainSchema,
-    t.Object({
-        created: t.Number(), // timestamp (ms since epoch)
-        chainId: t.String(), // unique chain id
-    })
-]);
+export const StoredChainSchema = t.Object({
+    name: t.String(), // chain name
+    creatorAddress: t.String(), // creator address
+    created: t.Number(), // timestamp (ms since epoch)
+    chainId: t.String(), // unique chain id
+});
 export type StoredChain = Static<typeof StoredChainSchema>;
 
 // Response for GET /chains
@@ -45,6 +44,8 @@ export function makeChainRegistryStore() {
                 chainId: makeChainId(chain.name, chain.creatorAddress),
             };
             chains.push(stored);
+
+
             return stored;
         },
         list() {
@@ -77,16 +78,27 @@ export const chainRoutes = new Elysia({
     // Add a chain
     .post('/', ({ body, store }) => {
         const stored = store.chainRegistry.add(body);
-        if (!stored) {
-            return new Response(JSON.stringify({ error: 'Chain name already exists' }), {
-                status: 409,
+        try {
+            if (!stored) {
+                return new Response(JSON.stringify({ error: 'Chain name already exists' }), {
+                    status: 409,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
+            return stored;
+        } catch (e) {
+            console.error('Error registering chain', e);
+            return new Response(JSON.stringify({ error: 'Error registering chain' }), {
+                status: 500,
                 headers: { 'Content-Type': 'application/json' },
             });
         }
-        return stored;
     }, {
         body: ChainSchema,
-        response: { 200: StoredChainSchema },
+        response: {
+            200: StoredChainSchema,
+            409: t.Object({ error: t.String() }),
+        },
         detail: {
             tags: ['chains'],
             description: 'Register a new chain',
