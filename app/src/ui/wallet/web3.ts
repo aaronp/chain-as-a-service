@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import Token from "contracts/Token.sol/Token.json";
-import AtomicSwap from "contracts/AtomicSwap.sol/AtomicSwap.json";
+import Token from "@/contracts/Token.sol/Token.json";
+import AtomicSwap from "@/contracts/AtomicSwap.sol/AtomicSwap.json";
 import { client } from '@/api/client';
 import { PrivateAccount as Account } from './accounts';
 import { StoredContract } from '@/api/contracts';
