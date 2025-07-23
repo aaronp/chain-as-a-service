@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
-import { deployAtomicSwap } from "@/ui/wallet/web3";
+import { deployAtomicSwap } from "@/lib/web3/web3";
 import { isErrorResponse } from "@/api/error";
 import { StoredContract } from "@/api/contracts";
 import { Button } from "@/ui/components/ui/button";

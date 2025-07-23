@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { erc20 } from "@/ui/wallet/web3";
+import { erc20 } from "@/lib/web3/web3";
 import { retryUntil } from "@/lib/retryUntil";
 import { useAccount } from "@/ui/account/AccountContext";
 import ShowAccount from "@/ui/account/ShowAccount";

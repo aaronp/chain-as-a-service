@@ -1,6 +1,6 @@
 import { StoredMessage, SwapContent } from "@/api/messages";
 import { useEffect, useState } from "react";
-import { approveSwap, erc20, executeSwap } from "../wallet/web3";
+import { approveSwap, erc20, executeSwap } from "../../lib/web3/web3";
 import { useAccount } from "../account/AccountContext";
 import { client } from "@/api/client";
 import { Button } from "@/ui/components/ui/button";

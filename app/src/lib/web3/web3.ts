@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import Token from "@/contracts/Token.sol/Token.json";
 import AtomicSwap from "@/contracts/AtomicSwap.sol/AtomicSwap.json";
 import { client } from '@/api/client';
-import { PrivateAccount as Account } from './accounts';
+import { PrivateAccount as Account } from '../../ui/wallet/accounts';
 import { StoredContract } from '@/api/contracts';
 import { ErrorResponse } from '@/api/error';
 
@@ -154,18 +154,6 @@ export type SwapParams = {
     address: string;
     amount: string;
 }
-
-
-// const getERC20 = async (
-//     chainId: string,
-//     contractAddress: string
-// ) => {
-//     const provider = await providerForChain(chainId);
-
-//     // Get the ERC20 contract ABI (we only need the balanceOf function)
-//     const template = erc20Template();
-//     return new ethers.Contract(contractAddress, template.abi, provider);
-// }
 
 
 export const erc20 = async (account: Account, chainId: string, ercContractAddress: string) => {
@@ -456,8 +444,12 @@ export const checkSwapReadiness = async (
     };
 }
 
+export const hostUrl = () => {
+    return process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : window.location.origin;
+}
+
 const providerForChain = async (chainId: string) => {
-    const rpcUrl = window.location.origin + "/api/proxy/" + chainId;
+    const rpcUrl = hostUrl() + "/api/proxy/" + chainId;
     return new ethers.JsonRpcProvider(rpcUrl);
 }
 

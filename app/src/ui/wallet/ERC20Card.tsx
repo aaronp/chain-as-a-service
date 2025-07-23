@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
 import { PrivateAccount as Account } from "@/ui/wallet/accounts";
-import { erc20, transferTokens } from "@/ui/wallet/web3";
+import { erc20, transferTokens } from "@/lib/web3/web3";
 import { retryUntil } from "@/lib/retryUntil";
 import { createPortal } from "react-dom";
 import { Button } from "@/ui/components/ui/button";

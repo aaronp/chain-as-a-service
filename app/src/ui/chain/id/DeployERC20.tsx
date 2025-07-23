@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { deployERC20 } from "@/ui/wallet/web3";
+import { deployERC20 } from "@/lib/web3/web3";
 import { PrivateAccount as Account } from "@/ui/wallet/accounts";
 import { isErrorResponse } from "@/api/error";
 import { StoredContract } from "@/api/contracts";

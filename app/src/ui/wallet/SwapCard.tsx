@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StoredContract } from "@/api/contracts";
 import { client } from "@/api/client";
-import { approveSwap, executeSwap } from "@/ui/wallet/web3";
+import { approveSwap, executeSwap } from "@/lib/web3/web3";
 import { useAccount } from "@/ui/account/AccountContext";
 import { Button } from "@/ui/components/ui/button";
 import {

@@ -1,7 +1,7 @@
 import { client } from "@/api/client";
 import { useAccount } from "@/ui/account/AccountContext";
 import ContractCard from "@/ui/wallet/ContractCard";
-import { getBalance } from "@/ui/wallet/web3";
+import { getBalance } from "@/lib/web3/web3";
 import React from "react";
 import { Link, useParams } from "react-router-dom";
 
