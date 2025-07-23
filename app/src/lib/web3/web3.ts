@@ -110,8 +110,7 @@ export const deployERC20 = async (
         issuerAddress: account.address,
         contractAddress,
         contractType: "ERC20",
-        name,
-        symbol,
+        parameters: { name, symbol },
     })
     return registerResult;
 }
@@ -144,8 +143,7 @@ export const deployAtomicSwap = async (
         issuerAddress: account.address,
         contractAddress,
         contractType: "AtomicSwap",
-        name: "AtomicSwap",
-        symbol: "",
+        parameters: {},
     })
     return registerResult;
 }
@@ -448,7 +446,7 @@ export const hostUrl = () => {
     return process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : window.location.origin;
 }
 
-const providerForChain = async (chainId: string) => {
+export const providerForChain = async (chainId: string) => {
     const rpcUrl = hostUrl() + "/api/proxy/" + chainId;
     return new ethers.JsonRpcProvider(rpcUrl);
 }

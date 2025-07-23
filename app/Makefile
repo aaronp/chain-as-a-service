@@ -23,6 +23,9 @@ dev: tailwind
 
 
 test:
+	NODE_ENV=development bun test tests/deployERC3643-identity.test.ts
+
+test-erc20:
 	NODE_ENV=development bun test tests/deployERC20.test.ts
 
 test-all:

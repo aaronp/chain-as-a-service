@@ -16,8 +16,9 @@ test('deploy an ERC20 token on a chain', async () => {
         if (!result.contractAddress) throw new Error('No contract address returned');
         if (!result.chainId) throw new Error('No chainId returned');
         if (!result.issuerAddress) throw new Error('No issuer address returned');
-        if (!result.name) throw new Error('No name returned');
-        if (!result.symbol) throw new Error('No symbol returned');
+        if (!result.parameters.name) throw new Error('No name returned');
+        if (!result.parameters.symbol) throw new Error('No symbol returned');
+        return result.contractAddress;
     }
 
     try {
@@ -27,11 +28,18 @@ test('deploy an ERC20 token on a chain', async () => {
 
 
         const chainOne = 'test-chain-' + first;
-        await deployOnChain(chainOne);
+        const addrOne = await deployOnChain(chainOne);
+
+        if (!(await client().listContracts()).find(c => c.contractAddress === addrOne)) {
+            throw new Error('Contract not found');
+        }
 
         const chainTwo = 'test-chain-' + (first + 1);
-        await deployOnChain(chainTwo);
+        const addrTwo = await deployOnChain(chainTwo);
 
+        if (!(await client().listContracts()).find(c => c.contractAddress === addrTwo)) {
+            throw new Error('Contract not found');
+        }
 
     } finally {
         // if (proc) {

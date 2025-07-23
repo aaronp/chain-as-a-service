@@ -6,8 +6,7 @@ export const ContractSchema = t.Object({
     issuerAddress: t.String(), // issuer address
     contractAddress: t.String(), // contract address
     contractType: t.String(), // contract type (e.g. erc20)
-    name: t.String(),
-    symbol: t.String(),
+    parameters: t.Any({ default: {}, description: "Parameters for the contract" }),
 });
 export type Contract = Static<typeof ContractSchema>;
 
@@ -17,8 +16,7 @@ export const StoredContractSchema = t.Object({
     issuerAddress: t.String(), // issuer address
     contractAddress: t.String(), // contract address
     contractType: t.String(), // contract type (e.g. erc20)
-    name: t.String(),
-    symbol: t.String(),
+    parameters: t.Any({ default: {}, description: "Parameters for the contract" }),
     created: t.Number(), // timestamp (ms since epoch)
 });
 export type StoredContract = Static<typeof StoredContractSchema>;
