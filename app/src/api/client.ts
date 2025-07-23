@@ -6,6 +6,7 @@ import { Account, StoredAccount, UpdateAccount } from "./accounts";
 import { Account as AccountType } from "./accounts";
 import { Message, StoredMessage, MessagesListResponse, CreateMessageResponse, MessageContent } from "./messages";
 import { PrivateAccount } from "@/ui/wallet/accounts";
+import { hostUrl } from "@/lib/web3/web3";
 
 export class MessagesClient {
     constructor(private readonly url: string, private readonly account: PrivateAccount) { }
@@ -178,7 +179,7 @@ export class Client {
     }
 }
 
-export const client = (url: string = window.location.origin): Client => {
+export const client = (url: string = hostUrl()): Client => {
     // const makeHeader = (request: any) => mkHeader(user, request)
     return new Client(url);
 }

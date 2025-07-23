@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { useState, useEffect } from "react";
 import { AccountMap, createNewAccount, loadAccounts, saveAccounts } from "../wallet/accounts";
-import { useTheme } from "../components/ui/sidebar";
 import { Button } from "../components/ui/button";
 import { useAccount } from "./AccountContext";
 import { createPortal } from "react-dom";

@@ -20,3 +20,10 @@ tailwind:
 
 dev: tailwind
 	bun dev
+
+
+test:
+	NODE_ENV=development bun test tests/deployERC20.test.ts
+
+test-all:
+	NODE_ENV=development bun test
