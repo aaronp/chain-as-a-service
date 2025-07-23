@@ -1,4 +1,6 @@
-import { Elysia } from "elysia";
+import Elysia from 'elysia';
+import { chainProxyHandler } from './impl/chainProxy';
+
 import { t } from "elysia";
 import { ErrorResponseSchema } from "./error";
 import { snapshotAnvilState, setAnvilState, startAnvil, waitForAnvilReady } from "./impl/anvil";
@@ -98,13 +100,13 @@ export const chainStore = new Elysia().state({
     chainData: makeChainStore(),
 })
 
-export const chainStoreRoutes = new Elysia({
+export const chainStatusRoutes = new Elysia({
     name: "chainData",
     prefix: "/data",
     detail: {
         tags: ["chainData"],
         description:
-            "Chain data commands",
+            "Gets the status of a chain",
     },
 }).use(chainStore)
     .get('/', async ({ store }) => {
@@ -122,3 +124,85 @@ export const chainStoreRoutes = new Elysia({
             },
         }
     )
+
+
+/**
+ * These routes will start chains on demand for any chainId.
+ * 
+ * @param param0 
+ * @returns 
+ */
+const handler = async ({ body, params, store, request, path }: {
+    body: any;
+    params: Record<string, string>;
+    store: { chainData: ChainStore };
+    path: string;
+    request: any;
+}) => {
+    const chainId = params.chainId;
+    const subpath = params.subpath || "";
+    const method = request.method;
+
+    console.log(`on ${method} ${subpath} for chain ${chainId} with path ${path} and request ${Object.keys(request)}:\n${JSON.stringify(body)}`);
+
+    await store.chainData.useChain(chainId);
+
+    // belt and braces
+    if (!store.chainData.isRunning()) {
+        return { error: 'Anvil is not running' };
+    } else if (store.chainData.currentChainId() !== chainId) {
+        return { error: 'Anvil is not running for this chain' };
+    }
+
+    const response = await chainProxyHandler(body, { method, subpath, path });
+    console.log(`proxy ${method} ${subpath} response`, response.result);
+    store.chainData.append(chainId, response.state);
+    return response;
+};
+
+export const chainProxyRoute = new Elysia({
+    name: "chainProxy",
+    prefix: "/proxy",
+    detail: {
+        tags: ["chainProxy"],
+        description:
+            "Proxy JSON-RPC requests to anvil for a given chainId (currently only localhost:8545 supported)",
+    },
+}).use(chainStore)
+    .post(":chainId", handler, {
+        detail: {
+            tags: ["chainProxy"],
+            description: "Proxy JSON-RPC POST requests to anvil for a given chainId (no subpath, for docs only).",
+        },
+    })
+    .post(":chainId/*subpath?", handler, {
+        detail: {
+            tags: ["chainProxy"],
+            description: "Proxy JSON-RPC POST requests to anvil for a given chainId (currently only localhost:8545 supported), supports sub-paths.",
+        },
+    })
+    .get(":chainId/*subpath?", handler, {
+        detail: {
+            tags: ["chainProxy"],
+            description: "Proxy JSON-RPC GET requests to anvil for a given chainId (currently only localhost:8545 supported), supports sub-paths.",
+        },
+    })
+    .put(":chainId/*subpath?", handler, {
+        detail: {
+            tags: ["chainProxy"],
+            description: "Proxy JSON-RPC PUT requests to anvil for a given chainId (currently only localhost:8545 supported), supports sub-paths.",
+        },
+    })
+    .delete(":chainId/*subpath?", handler, {
+        detail: {
+            tags: ["chainProxy"],
+            description: "Proxy JSON-RPC DELETE requests to anvil for a given chainId (currently only localhost:8545 supported), supports sub-paths.",
+        },
+    })
+    .patch(":chainId/*subpath?", handler, {
+        detail: {
+            tags: ["chainProxy"],
+            description: "Proxy JSON-RPC PATCH requests to anvil for a given chainId (currently only localhost:8545 supported), supports sub-paths.",
+        },
+    });
+

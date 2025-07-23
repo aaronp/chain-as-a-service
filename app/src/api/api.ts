@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { execRoute } from './exec';
 import swagger from "@elysiajs/swagger";
-import { chainStoreRoutes } from "./chainData";
-import { chainProxyRoute } from "./proxy";
+import { chainStatusRoutes } from "./chainProxy";
+import { chainProxyRoute } from "./chainProxy";
 import { contractRoutes } from "./contracts";
 import { chainRoutes } from "./chains";
 import { accountRoutes } from "./accounts";
@@ -71,7 +71,7 @@ const app = new Elysia({
         set.headers["Expires"] = "0";
     })
     .use(execRoute)
-    .use(chainStoreRoutes)
+    .use(chainStatusRoutes)
     .use(chainProxyRoute)
     .use(chainRoutes)
     .use(contractRoutes)
