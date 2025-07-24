@@ -1,8 +1,8 @@
-import { Contract, ContractFactory, ethers, Signer } from "ethers";
+import { id, ContractFactory, ethers, Signer } from "ethers";
 import { Accounts, encodeAddress, getSigner, TrexSuite } from "./erc3643";
 import OnchainID from '@onchain-id/solidity';
 import { newAccount, PrivateAccount } from "@/ui/wallet/accounts";
-import { Account } from "@/api/accounts";
+import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json';
 
 
 
@@ -70,25 +70,48 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     await charlieIdentity.addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
 
 
-    // await identityRegistry
-    //   .connect(tokenAgent)
-    //   .batchRegisterIdentity([aliceWallet.address, bobWallet.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
+    // these are tuples of wallet addresses, on-chain identity addresses, and country codes
 
-    // const claimForAlice = {
-    //   data: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('Some claim public data.')),
-    //   issuer: claimIssuerContract.address,
-    //   topic: claimTopics[0],
-    //   scheme: 1,
-    //   identity: aliceIdentity.address,
-    //   signature: '',
-    // };
-    // claimForAlice.signature = await claimIssuerSigningKey.signMessage(
-    //   ethers.utils.arrayify(
-    //     ethers.utils.keccak256(
-    //       ethers.utils.defaultAbiCoder.encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]),
-    //     ),
-    //   ),
-    // );
+
+    const identityRegistryAtProxy = async () => {
+        return new ethers.Contract(
+            trex.suite.identityRegistry.address, // proxy address
+            IdentityRegistry.abi,     // implementation ABI
+            await getSigner(admin.tokenAgent, chainId) // <--- NOTE: this has to be the tokenAgent account (not the deployer) to register identities
+        );
+    }
+
+    // const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
+    // const registryResult = await (await trex.implementations.identityRegistryImplementation.getContract(admin.tokenAgent)).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [await aliceIdentity.getAddress(), await bobIdentity.getAddress()], [42, 666]);
+    const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [await aliceIdentity.getAddress(), await bobIdentity.getAddress()], [42, 666]);
+
+    console.log('registryResult', registryResult.hash);
+
+    const textAsHex = (text: string) => ethers.hexlify(ethers.toUtf8Bytes(text))
+
+    const addClaim = async () => {
+
+    }
+
+    const claimForAlice = {
+        data: textAsHex('Some claim public data.'),
+        issuer: trex.suite.claimIssuerContract.address,
+        topic: id('CLAIM_TOPIC'),
+        scheme: 1,
+        identity: aliceIdentity.address,
+        signature: '',
+    };
+
+    const claimIssuerSigningKey = await getSigner(admin.claimIssuer, chainId)
+
+    const abiByteString = ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]);
+    claimForAlice.signature = await claimIssuerSigningKey.signMessage(
+        ethers.getBytes(
+            ethers.keccak256(
+                abiByteString,
+            ),
+        ),
+    );
 
     // await aliceIdentity
     //   .connect(aliceWallet)
