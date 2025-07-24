@@ -1,4 +1,4 @@
-import { ensureETH, providerForChain } from "./web3";
+import { ensureETH, providerForChain } from "../web3";
 import { createNewAccount, PrivateAccount } from '@/ui/wallet/accounts';
 import { Contract, ethers, keccak256, AbiCoder } from 'ethers';
 

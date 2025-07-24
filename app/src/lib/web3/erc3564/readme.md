@@ -82,3 +82,68 @@ ERC-3643 (formerly T-REX Protocol) is an open-source standard for permissioned t
 ---
 
 For more information, see the [Tokeny ERC-3643 page](https://tokeny.com/erc3643/) and the [ERC-3643 GitHub repository](https://github.com/TokenySolutions/ERC3643).
+
+---
+
+## Example Scenarios
+
+Below are common end-to-end flows for ERC-3643 permissioned tokens. Each scenario lists the high-level steps, the actor responsible, and how they interact with the ERC-3643 contracts.
+
+### 1. Onboarding a New Investor
+1. **Investor submits identity documents**  
+   *Actor:* Investor → Identity Verifier  
+   *Interaction:* Off-chain (KYC/AML process)
+2. **Identity Verifier attests to investor's identity**  
+   *Actor:* Identity Verifier  
+   *Interaction:* Calls Identity Registry to register/update investor's identity
+3. **Issuer mints tokens to investor**  
+   *Actor:* Issuer  
+   *Interaction:* Calls Token contract to mint tokens to investor's address (only possible if identity is valid and compliant)
+
+### 2. Secondary Trading (Peer-to-Peer Transfer)
+1. **Investor A initiates transfer to Investor B**  
+   *Actor:* Investor A  
+   *Interaction:* Calls Token contract to transfer tokens to Investor B
+2. **Compliance check is performed**  
+   *Actor:* Compliance Agent (automated via contract)  
+   *Interaction:* Token contract queries Compliance contract to validate transfer (e.g., both parties are eligible, not blacklisted, within limits)
+3. **Transfer is executed if compliant**  
+   *Actor:* Token contract (automated)  
+   *Interaction:* Tokens are transferred if compliance passes
+
+### 3. Freezing an Account
+1. **Issuer/Compliance Agent decides to freeze an account**  
+   *Actor:* Issuer or Compliance Agent  
+   *Interaction:* Calls Compliance contract or Token contract to block the investor's address
+2. **Frozen account cannot transfer or receive tokens**  
+   *Actor:* Token contract (enforced automatically)  
+   *Interaction:* Compliance checks block all transfers involving the frozen address
+
+### 4. Forcing a Transfer (e.g., Regulatory Action)
+1. **Issuer/Agent initiates a forced transfer**  
+   *Actor:* Issuer/Agent  
+   *Interaction:* Calls Token contract's forceTransfer function to move tokens from one address to another, bypassing normal compliance
+2. **Compliance Agent may log or review the action**  
+   *Actor:* Compliance Agent  
+   *Interaction:* (Optional) Off-chain or on-chain logging/review
+
+### 5. Account Recovery (Lost Access)
+1. **Investor proves identity to Issuer/Identity Verifier**  
+   *Actor:* Investor → Issuer/Identity Verifier  
+   *Interaction:* Off-chain (identity proof)
+2. **Issuer/Agent updates registry and reassigns tokens**  
+   *Actor:* Issuer/Agent  
+   *Interaction:* Calls Identity Registry to update investor's address, then Token contract to transfer or re-mint tokens to new address
+
+### 6. Proving Identity or Claims
+1. **Investor requests proof of eligibility (e.g., for transfer or redemption)**  
+   *Actor:* Investor  
+   *Interaction:* Off-chain or via dApp UI
+2. **System queries Identity Registry and Trusted Issuers Registry**  
+   *Actor:* dApp/Smart Contract  
+   *Interaction:* Reads from Identity Registry and Trusted Issuers Registry to verify claims/credentials
+3. **Investor presents proof to third party**  
+   *Actor:* Investor  
+   *Interaction:* Off-chain or via dApp, using on-chain data as evidence
+
+---
