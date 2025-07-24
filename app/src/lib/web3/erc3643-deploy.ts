@@ -411,10 +411,25 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     Token.abi,                // implementation ABI
     await getSigner(admin.tokenAgent, chainId)
   );
+
+
+  const balanceResultBefore = await tokenAtProxy.balanceOf(users.alice.personalAccount.address);
+  console.log('before mint, balanceResult', balanceResultBefore);
+
   const mintResult = await tokenAtProxy.mint(users.alice.personalAccount.address, 1000);
-  console.log('mintResult', mintResult);
   console.log('mintResult', mintResult.hash);
   // await token.connect(tokenAgent).mint(bobWallet.address, 500);
+
+  const balanceResult = await tokenAtProxy.balanceOf(users.alice.personalAccount.address);
+  console.log('after mint, balanceResult', balanceResult);
+
+  // await (await trex.suite.agentManager.getContract(admin.deployer)).addAgentAdmin(admin.tokenAdmin.address);
+  // await (await trex.suite.token.getContract(admin.deployer)).addAgent(trex.suite.agentManager.address);
+  // await (await trex.suite.identityRegistry.getContract(admin.deployer)).addAgent(trex.suite.agentManager.address);
+
+  // const unpauseResult = await (await trex.suite.token.getContract(admin.tokenAgent)).unpause();
+  // console.log('unpauseResult', unpauseResult);
+  // console.log('unpauseResult', unpauseResult.hash);
 
   return {
     identities: {
