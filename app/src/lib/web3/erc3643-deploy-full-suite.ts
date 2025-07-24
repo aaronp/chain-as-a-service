@@ -162,12 +162,29 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
 
   const agentManager = await deployContract(chainId, accounts.deployer, 'AgentManager', AgentManager.abi, AgentManager.bytecode, token.address);
 
-  await (await identityRegistryStorage.getContract(accounts.deployer)).bindIdentityRegistry(identityRegistry.address);
+  // Use the implementation ABI at the proxy address to call bindIdentityRegistry
+  const identityRegistryStorageAtProxy = new ethers.Contract(
+    identityRegistryStorage.address, // proxy address
+    IdentityRegistryStorage.abi,     // implementation ABI
+    await getSigner(accounts.deployer, chainId)
+  );
+  await identityRegistryStorageAtProxy.bindIdentityRegistry(identityRegistry.address);
 
-  await (await token.getContract(accounts.deployer)).addAgent(agentManager.address);
+  // Use the implementation ABI at the proxy address to call addAgent
+  const tokenAtProxy = new ethers.Contract(
+    token.address, // proxy address
+    Token.abi,     // implementation ABI
+    await getSigner(accounts.deployer, chainId)
+  );
+  await tokenAtProxy.addAgent(agentManager.address);
 
   const claimTopics = [id('CLAIM_TOPIC')];
-  await (await claimTopicsRegistry.getContract(accounts.deployer)).addClaimTopic(claimTopics[0]);
+  const claimTopicsRegistryAtProxy = new ethers.Contract(
+    claimTopicsRegistry.address, // proxy address
+    ClaimTopicsRegistry.abi,     // implementation ABI
+    await getSigner(accounts.deployer, chainId)
+  );
+  await claimTopicsRegistryAtProxy.addClaimTopic(claimTopics[0]);
 
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
 
@@ -182,7 +199,12 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
 
   await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
 
-  await (await trustedIssuersRegistry.getContract(accounts.deployer)).addTrustedIssuer(claimIssuerContract.address, claimTopics);
+  const trustedIssuersRegistryAtProxy = new ethers.Contract(
+    trustedIssuersRegistry.address, // proxy address
+    TrustedIssuersRegistry.abi,     // implementation ABI
+    await getSigner(accounts.deployer, chainId)
+  );
+  await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
   // const aliceIdentity = await deployIdentityProxy(identityImplementationAuthority.address, aliceWallet.address, deployer);
   // await aliceIdentity
