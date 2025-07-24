@@ -1,8 +1,8 @@
 import { BytesLike, Contract, Interface, InterfaceAbi, id, ethers, keccak256, AbiCoder } from 'ethers';
 // import { ethers } from 'hardhat';
 import OnchainID from '@onchain-id/solidity';
-import { Accounts, Deployed, getSigner, TrexSuite } from './erc3643';
-import { createNewAccount, PrivateAccount } from '@/ui/wallet/accounts';
+import { Accounts, Deployed, encodeAddress, getSigner, TrexSuite } from './erc3643';
+import { PrivateAccount } from '@/ui/wallet/accounts';
 import ClaimTopicsRegistry from '@/contracts/erc3643/contracts/registry/implementation/ClaimTopicsRegistry.sol/ClaimTopicsRegistry.json';
 import TrustedIssuersRegistry from '@/contracts/erc3643/contracts/registry/implementation/TrustedIssuersRegistry.sol/TrustedIssuersRegistry.json';
 import IdentityRegistryStorage from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistryStorage.sol/IdentityRegistryStorage.json';
@@ -18,18 +18,7 @@ import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/D
 import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
-import { client } from '@/api/client';
-// import ClaimIssuer from '@/contracts/erc3643/contracts/roles/claim/ClaimIssuer.sol/ClaimIssuer.json';
 
-
-// export async function deployIdentityProxy(implementationAuthority: Contract['address'], managementKey: string, signer: Signer) {
-//   const identity = await new ethers.ContractFactory(OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, signer).deploy(
-//     implementationAuthority,
-//     managementKey,
-//   );
-
-//   return ethers.getContractAt('Identity', identity.address, signer);
-// }
 
 
 const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
@@ -62,7 +51,7 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
 
 export async function deployTrexSuite(chainId: string, accounts: Accounts): Promise<TrexSuite> {
 
-  const { deployer, tokenIssuer, claimIssuer } = accounts;
+  const { deployer, tokenIssuer, claimIssuer, tokenAgent } = accounts;
   const claimIssuerSigningKey = ethers.Wallet.createRandom();
 
   // Deploy implementations
@@ -170,14 +159,6 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
 
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
 
-  const encodeAddress = (address: string) => {
-    // 1. ABI-encode the address
-    const abiCoder = AbiCoder.defaultAbiCoder();
-    const encoded = abiCoder.encode(['address'], [address]);
-
-    // 2. Hash the encoded address
-    return keccak256(encoded);
-  }
 
   await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
 
@@ -189,27 +170,20 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
 
+  // moved from the accounts section, lines 132 - 133 in deploy-full-suite.fixture.ts
+
+  // Human/operator account for privileged actions - being added to manage identities, perform compliance operations, etc.
+  const identityRegistryAtProxy = async () => {
+    return new ethers.Contract(
+      identityRegistry.address, // proxy address
+      IdentityRegistry.abi,     // implementation ABI
+      await getSigner(accounts.deployer, chainId)
+    );
+  }
+  await (await identityRegistryAtProxy()).addAgent(tokenAgent.address);
+  await (await identityRegistryAtProxy()).addAgent(token.address);
 
   return {
-    // accounts: {
-    //   deployer,
-    //   tokenIssuer,
-    //   tokenAgent,
-    //   tokenAdmin,
-    //   claimIssuer,
-    //   claimIssuerSigningKey,
-    //   aliceActionKey,
-    //   // aliceWallet,
-    //   // bobWallet,
-    //   // charlieWallet,
-    //   // davidWallet,
-    //   // anotherWallet,
-    // },
-    // identities: {
-    // aliceIdentity,
-    // bobIdentity,
-    // charlieIdentity,
-    // },
     suite: {
       claimIssuerContract,
       claimTopicsRegistry,
@@ -240,46 +214,3 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
     },
   };
 }
-
-// export async function deploySuiteWithModularCompliancesFixture() {
-//   const context = await loadFixture(deployFullSuiteFixture);
-
-//   const complianceProxy = await ethers.deployContract('ModularComplianceProxy', [context.authorities.trexImplementationAuthority.address]);
-//   const compliance = await ethers.getContractAt('ModularCompliance', complianceProxy.address);
-
-//   const complianceBeta = await ethers.deployContract('ModularCompliance');
-//   await complianceBeta.init();
-
-//   return {
-//     ...context,
-//     suite: {
-//       ...context.suite,
-//       compliance,
-//       complianceBeta,
-//     },
-//   };
-// }
-
-// export async function deploySuiteWithModuleComplianceBoundToWallet() {
-//   const context = await loadFixture(deployFullSuiteFixture);
-
-//   const compliance = await ethers.deployContract('ModularCompliance');
-//   await compliance.init();
-
-//   const complianceModuleA = await ethers.deployContract('CountryAllowModule');
-//   await compliance.addModule(complianceModuleA.address);
-//   const complianceModuleB = await ethers.deployContract('CountryAllowModule');
-//   await compliance.addModule(complianceModuleB.address);
-
-//   await compliance.bindToken(context.accounts.charlieWallet.address);
-
-//   return {
-//     ...context,
-//     suite: {
-//       ...context.suite,
-//       compliance,
-//       complianceModuleA,
-//       complianceModuleB,
-//     },
-//   };
-// }

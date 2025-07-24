@@ -1,8 +1,9 @@
 import { ensureServerRunning, TEST_URL } from './testServer';
-import { PrivateAccount as Account, createNewAccount } from '@/ui/wallet/accounts';
+import { PrivateAccount as Account, createNewAccount, newAccount } from '@/ui/wallet/accounts';
 import { test, expect } from 'bun:test';
 import { deployTrexSuite } from '@/lib/web3/erc3643-deploy';
 import { newAccounts } from '@/lib/web3/erc3643';
+import { newPersona, setupAccounts } from '@/lib/web3/erc3643-accounts';
 
 test('deploy an ERC3643 identity contract', async () => {
 
@@ -13,9 +14,17 @@ test('deploy an ERC3643 identity contract', async () => {
     const accounts = await newAccounts();
     const chainId = 'erc3643-chain-' + new Date().getTime()
 
-    const result = await deployTrexSuite(chainId, accounts);
-    console.log('result', result);
+    const trex = await deployTrexSuite(chainId, accounts);
+    console.log('trex', trex);
 
+
+    const users = {
+        alice: await newPersona('Alice'),
+        bob: await newPersona('Bob'),
+        charlie: await newPersona('Charlie'),
+    }
+    const userAccounts = await setupAccounts(chainId, accounts, users, trex);
+    console.log('users', userAccounts);
     // const result = await deployTREXFactory(wallet, 'erc3643-chain-' + new Date().getTime());
     // expect(result.trexFactory).toBeDefined();
     // expect(result.trexImplementationAuthority).toBeDefined();

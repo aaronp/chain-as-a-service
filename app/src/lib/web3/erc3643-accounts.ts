@@ -1,16 +1,74 @@
+import { Contract, ContractFactory, ethers, Signer } from "ethers";
+import { Accounts, encodeAddress, getSigner, TrexSuite } from "./erc3643";
+import OnchainID from '@onchain-id/solidity';
+import { newAccount, PrivateAccount } from "@/ui/wallet/accounts";
+import { Account } from "@/api/accounts";
 
-export async function setupAccounts(chainId: string, accounts: Accounts, trex: TrexSuite) {
 
 
-    // const aliceIdentity = await deployIdentityProxy(trex.authorities.identityImplementationAuthority.address, aliceWallet.address, deployer);
-    // await aliceIdentity
-    //   .connect(aliceWallet)
-    //   .addKey(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address'], [aliceActionKey.address])), 2, 1);
-    // const bobIdentity = await deployIdentityProxy(identityImplementationAuthority.address, bobWallet.address, deployer);
-    // const charlieIdentity = await deployIdentityProxy(identityImplementationAuthority.address, charlieWallet.address, deployer);
+export type Persona = {
+    personalAccount: PrivateAccount;
+    actionAccount: PrivateAccount;
+    managementAccount: PrivateAccount;
+}
+export const newPersona = async (name: string): Promise<Persona> => {
+    const personalAccount = (await newAccount(`${name} Personal`)).private;
+    const actionAccount = (await newAccount(`${name} Action`)).private;
+    const managementAccount = (await newAccount(`${name} Management`)).private;
+    return { personalAccount, actionAccount, managementAccount };
+}
 
-    // await identityRegistry.connect(deployer).addAgent(tokenAgent.address);
-    // await identityRegistry.connect(deployer).addAgent(token.address);
+export type UserAccounts = {
+    alice: Persona;
+    bob: Persona;
+    charlie: Persona;
+}
+
+
+
+export async function setupAccounts(chainId: string, admin: Accounts, users: UserAccounts, trex: TrexSuite) {
+
+
+    async function deployIdentityProxy(user: PrivateAccount) {
+        const managementKey = user.address;
+
+        console.log('deploying identity proxy for', user.address);
+        const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
+
+        const identity = await new ContractFactory(OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, await getSigner(admin.deployer, chainId)).deploy(
+            implementationAuthorityContractAddress,
+            managementKey,
+        );
+
+        // TODO - register this contract
+
+        await identity.waitForDeployment();
+
+        // return ethers.getContractAt('Identity', identity.address, signer);
+        return new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(user, chainId));
+    }
+
+    console.log('deploying accounts for ', users);
+
+    const aliceIdentity = await deployIdentityProxy(users.alice.personalAccount);
+    // await aliceIdentity.addKey(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address'], [users.alice.actionAccount.address])), 2, 1);
+    // the first arg is 1, 2 or 3
+    // 1 is the key type for management keys
+    // 2 is the key type for action keys
+    // 3 is the key type for claim keys
+    //
+    // the second arg is the key type
+    // 1 is ECDSA
+    // 2 is RSA
+    //
+    await aliceIdentity.addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
+
+    const bobIdentity = await deployIdentityProxy(users.bob.personalAccount);
+    const charlieIdentity = await deployIdentityProxy(users.charlie.personalAccount);
+
+    console.log('adding key to charlie identity', users.charlie.actionAccount.address);
+    await charlieIdentity.addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
+
 
     // await identityRegistry
     //   .connect(tokenAgent)
@@ -64,5 +122,13 @@ export async function setupAccounts(chainId: string, accounts: Accounts, trex: T
     // await identityRegistry.connect(deployer).addAgent(agentManager.address);
 
     // await token.connect(tokenAgent).unpause();
+
+    return {
+        identities: {
+            aliceIdentity: aliceIdentity.address,
+            // bob: bobIdentity,
+            // charlie: charlieIdentity,
+        }
+    }
 
 }

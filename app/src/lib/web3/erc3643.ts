@@ -1,25 +1,24 @@
 import { ensureETH, providerForChain } from "./web3";
 import { createNewAccount, PrivateAccount } from '@/ui/wallet/accounts';
-import { BytesLike, Contract, Interface, InterfaceAbi, id, ethers, keccak256, AbiCoder } from 'ethers';
-
-import { client } from "@/api/client";
+import { Contract, ethers, keccak256, AbiCoder } from 'ethers';
 
 
 export type Accounts = {
     deployer: PrivateAccount;
     tokenIssuer: PrivateAccount;
-    // tokenAgent: PrivateAccount;
-    // tokenAdmin: PrivateAccount;
+    tokenAgent: PrivateAccount;
+    tokenAdmin: PrivateAccount;
     claimIssuer: PrivateAccount;
 }
+
 
 export const newAccounts = async (): Promise<Accounts> => {
 
     return {
         deployer: await createNewAccount('Deployer'),
         tokenIssuer: await createNewAccount('TokenIssuer'),
-        // tokenAgent: await createNewAccount('TokenAgent'),
-        // tokenAdmin: await createNewAccount('TokenAdmin'),
+        tokenAgent: await createNewAccount('TokenAgent'),
+        tokenAdmin: await createNewAccount('TokenAdmin'),
         claimIssuer: await createNewAccount('ClaimIssuer'),
     }
 }
@@ -29,33 +28,6 @@ export type Deployed = {
     getContract: (account: PrivateAccount) => Promise<Contract>;
 }
 
-const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
-    console.log(`Deploying ${contractName}...`);
-    const signer = await getSigner(deployer, chainId);
-
-
-    // // prove we can read/write the abi as json
-    // const abiJson = JSON.parse(JSON.stringify(abi));
-    // client().registerContract({
-    //   chainId,
-    //   issuerAddress: deployer.address,
-    //   contractAddress: '',
-    //   contractType: contractName,
-    //   parameters: abiJson,
-    // })
-
-    const contract = new ethers.ContractFactory(abi, bytecode, signer);
-    const deployment = await contract.deploy(...args);
-    await deployment.waitForDeployment();
-
-
-    const address = await deployment.getAddress();
-
-    return {
-        address,
-        getContract: async (account: PrivateAccount) => new ethers.Contract(address, abi, await getSigner(account, chainId)),
-    };
-}
 
 // Type for the return value of deployFullSuiteFixture
 export type TrexSuite = {
