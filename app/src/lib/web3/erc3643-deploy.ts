@@ -51,24 +51,22 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
 
 export async function deployTrexSuite(chainId: string, accounts: Accounts): Promise<TrexSuite> {
 
-  const { deployer, tokenIssuer, claimIssuer, tokenAgent } = accounts;
-  // const claimIssuerSigningKey = ethers.Wallet.createRandom();
+  const { deployer, tokenIssuer, claimIssuer, claimIssuerSigningKey, tokenAgent } = accounts;
 
+
+  // ============================================================================================================================
   // Deploy implementations
+  // ============================================================================================================================  
+
   const claimTopicsRegistryImplementation = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistry', ClaimTopicsRegistry.abi, ClaimTopicsRegistry.bytecode);
   const trustedIssuersRegistryImplementation = await deployContract(chainId, accounts.deployer, 'TrustedIssuersRegistry', TrustedIssuersRegistry.abi, TrustedIssuersRegistry.bytecode);
   const identityRegistryStorageImplementation = await deployContract(chainId, accounts.deployer, 'IdentityRegistryStorage', IdentityRegistryStorage.abi, IdentityRegistryStorage.bytecode);
   const identityRegistryImplementation = await deployContract(chainId, accounts.deployer, 'IdentityRegistry', IdentityRegistry.abi, IdentityRegistry.bytecode);
   const modularComplianceImplementation = await deployContract(chainId, accounts.deployer, 'ModularCompliance', ModularCompliance.abi, ModularCompliance.bytecode);
   const tokenImplementation = await deployContract(chainId, accounts.deployer, 'Token', Token.abi, Token.bytecode);
-
-
   const identityImplementation = await deployContract(chainId, accounts.deployer, 'OnchainID', OnchainID.contracts.Identity.abi, OnchainID.contracts.Identity.bytecode, deployer.address, true);
-
   const identityImplementationAuthority = await deployContract(chainId, accounts.deployer, 'ImplementationAuthority', OnchainID.contracts.ImplementationAuthority.abi, OnchainID.contracts.ImplementationAuthority.bytecode, identityImplementation.address);
-
   const identityFactory = await deployContract(chainId, accounts.deployer, 'Factory', OnchainID.contracts.Factory.abi, OnchainID.contracts.Factory.bytecode, identityImplementationAuthority.address);
-
   const trexImplementationAuthority = await deployContract(
     chainId,
     accounts.deployer,
@@ -101,16 +99,19 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   await (await identityFactory.getContract(deployer)).addTokenFactory(trexFactory.address);
 
   const claimTopicsRegistry = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistryProxy', ClaimTopicsRegistryProxy.abi, ClaimTopicsRegistryProxy.bytecode, trexImplementationAuthority.address);
-
   const trustedIssuersRegistry = await deployContract(chainId, accounts.deployer, 'TrustedIssuersRegistryProxy', TrustedIssuersRegistryProxy.abi, TrustedIssuersRegistryProxy.bytecode, trexImplementationAuthority.address);
-
   const identityRegistryStorage = await deployContract(chainId, accounts.deployer, 'IdentityRegistryStorageProxy', IdentityRegistryStorageProxy.abi, IdentityRegistryStorageProxy.bytecode, trexImplementationAuthority.address);
-
   const defaultCompliance = await deployContract(chainId, accounts.deployer, 'DefaultCompliance', DefaultCompliance.abi, DefaultCompliance.bytecode);
-
   const identityRegistry = await deployContract(chainId, accounts.deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
-
   const tokenOID = await deployContract(chainId, accounts.deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuer.address);
+
+
+
+  // ============================================================================================================================
+  // Deploy A Token
+  // ============================================================================================================================  
+
+
   const tokenName = 'TREXDINO';
   const tokenSymbol = 'TREX';
   const tokenDecimals = '0' //BigNumber.from('0');
@@ -131,6 +132,28 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
       tokenOID.address,
     );
 
+
+  /**
+   * The AgentManager contract is a permissioning and role management contract for the ERC3643 token suite. Its main responsibilities are:
+Role Assignment & Management: It allows the owner to assign and remove various agent roles to addresses, such as:
+Agent Admin
+Compliance Agent
+Freezer
+Recovery Agent
+Supply Modifier
+Transfer Manager
+WhiteList Manager
+Role Checks: It provides functions to check if a given address has a specific agent role (e.g., isAgentAdmin(address), isComplianceAgent(address), etc.).
+Batch Operations: It exposes batch functions for privileged operations on the token, such as:
+Batch minting and burning
+Batch forced transfers
+Batch freezing/unfreezing of tokens or addresses
+Batch identity registration and updates
+Token Control: It can call privileged functions on the token contract, such as pausing/unpausing, minting, burning, forced transfers, and recovery operations, typically requiring an on-chain identity for authorization.
+Ownership: The contract has an owner (usually the deployer or a governance address) who can transfer or renounce ownership.
+In summary:
+The AgentManager acts as a central authority for managing privileged roles and executing administrative or compliance-related actions on the ERC3643 token and its associated contracts. It is designed to support regulated token environments where fine-grained control and auditability of agent actions are required.
+   */
   const agentManager = await deployContract(chainId, accounts.deployer, 'AgentManager', AgentManager.abi, AgentManager.bytecode, token.address);
 
   // Use the implementation ABI at the proxy address to call bindIdentityRegistry
@@ -147,8 +170,9 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
     Token.abi,     // implementation ABI
     await getSigner(accounts.deployer, chainId)
   );
-  await (await tokenAtProxy()).addAgent(agentManager.address);
+
   const addTokenAgentResult = await (await tokenAtProxy()).addAgent(tokenAgent.address);
+  // await (await tokenAtProxy()).addAgent(agentManager.address);
   console.log('!!!addTokenAgentResult', addTokenAgentResult.hash);
 
   const claimTopics = [id('CLAIM_TOPIC')];
@@ -162,7 +186,8 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
 
 
-  await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuer.address), 3, 1);
+  await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
+  // await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuer.address), 3, 1);
 
   const trustedIssuersRegistryAtProxy = new ethers.Contract(
     trustedIssuersRegistry.address, // proxy address
@@ -170,6 +195,7 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
     await getSigner(accounts.deployer, chainId)
   );
   await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
+
 
 
   // moved from the accounts section, lines 132 - 133 in deploy-full-suite.fixture.ts
@@ -282,13 +308,15 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   // 2 is RSA
   //
   console.log('adding key to alice identity', users.alice.actionAccount.address);
-  (await aliceIdentity.getContract(users.alice.personalAccount)).addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
+  const aliceAddKeyResult = await (await aliceIdentity.getContract(users.alice.personalAccount)).addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
+  console.log('aliceAddKeyResult', aliceAddKeyResult.hash);
 
   const bobIdentity = await deployIdentityProxy(users.bob.personalAccount);
   const charlieIdentity = await deployIdentityProxy(users.charlie.personalAccount);
 
   console.log('adding key to charlie identity', users.charlie.actionAccount.address);
-  (await charlieIdentity.getContract(users.charlie.personalAccount)).addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
+  const charlieAddKeyResult = await (await charlieIdentity.getContract(users.charlie.personalAccount)).addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
+  console.log('charlieAddKeyResult', charlieAddKeyResult.hash);
 
 
   // these are tuples of wallet addresses, on-chain identity addresses, and country codes
@@ -319,8 +347,9 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     signature: '',
   };
 
-  const claimIssuerSigningKey = await getSigner(admin.claimIssuer, chainId)
+  const claimIssuerSigningKey = await getSigner(admin.claimIssuerSigningKey, chainId)
 
+  console.log('signing... claim for alice');
   const abiByteString = ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]);
   claimForAlice.signature = await claimIssuerSigningKey.signMessage(
     ethers.getBytes(
@@ -331,8 +360,9 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   );
 
   console.log('adding claim for alice');
-  (await aliceIdentity.getContract(users.alice.actionAccount))
+  const aliceAddClaimResult = await (await aliceIdentity.getContract(users.alice.personalAccount))
     .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
+  console.log('aliceAddClaimResult', aliceAddClaimResult.hash);
 
   // console.log('creating claim for bob');
   // const claimForBob = {
@@ -355,8 +385,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   // (await bobIdentity.getContract(users.bob.actionAccount))
   //     .addClaim(claimForBob.topic, claimForBob.scheme, claimForBob.issuer, claimForBob.signature, claimForBob.data, '');
 
-  console.log('minting 1000 for alice');
-
   const tokenAtProxyForCheck = new ethers.Contract(trex.suite.token.address, Token.abi, await getSigner(admin.tokenAgent, chainId));
   const isAgent = await tokenAtProxyForCheck.isAgent(admin.tokenAgent.address);
   console.log("Is tokenAgent an agent?", isAgent); // Should be true
@@ -364,7 +392,20 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
 
 
 
-  // Mint tokens for Alice using the implementation ABI at the proxy address
+  // await (await trex.suite.agentManager.getContract(admin.tokenAgent)).addAgentAdmin(admin.tokenAdmin.address);
+  // await (await trex.suite.token.getContract(admin.tokenAgent)).addAgent(trex.suite.agentManager.address);
+  // await (await trex.suite.identityRegistry.getContract(admin.tokenAgent)).addAgent(trex.suite.agentManager.address);
+
+  // await (await trex.suite.token.getContract(admin.tokenAgent)).unpause();
+
+  // const isPaused = await (await trex.suite.token.getContract(admin.tokenAgent)).paused();
+  // console.log('Token paused:', isPaused);
+
+
+  // console.log('minting 1000 for alice');
+
+
+  // // Mint tokens for Alice using the implementation ABI at the proxy address
   const tokenAtProxy = new ethers.Contract(
     trex.suite.token.address, // proxy address
     Token.abi,                // implementation ABI
@@ -374,12 +415,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   console.log('mintResult', mintResult);
   console.log('mintResult', mintResult.hash);
   // await token.connect(tokenAgent).mint(bobWallet.address, 500);
-
-  // await agentManager.connect(tokenAgent).addAgentAdmin(tokenAdmin.address);
-  // await token.connect(deployer).addAgent(agentManager.address);
-  // await identityRegistry.connect(deployer).addAgent(agentManager.address);
-
-  // await token.connect(tokenAgent).unpause();
 
   return {
     identities: {

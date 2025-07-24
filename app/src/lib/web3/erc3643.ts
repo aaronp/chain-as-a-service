@@ -9,6 +9,7 @@ export type Accounts = {
     tokenAgent: PrivateAccount;
     tokenAdmin: PrivateAccount;
     claimIssuer: PrivateAccount;
+    claimIssuerSigningKey: PrivateAccount;
 }
 
 
@@ -20,6 +21,7 @@ export const newAccounts = async (): Promise<Accounts> => {
         tokenAgent: await createNewAccount('TokenAgent'),
         tokenAdmin: await createNewAccount('TokenAdmin'),
         claimIssuer: await createNewAccount('ClaimIssuer'),
+        claimIssuerSigningKey: await createNewAccount('ClaimIssuerSigningKey'),
     }
 }
 
@@ -31,16 +33,6 @@ export type Deployed = {
 
 // Type for the return value of deployFullSuiteFixture
 export type TrexSuite = {
-    // accounts: {
-    //   deployer: PrivateAccount;
-    //   tokenIssuer: PrivateAccount;
-    //   tokenAgent: PrivateAccount;
-    //   tokenAdmin: PrivateAccount;
-    //   claimIssuer: PrivateAccount;
-    //   claimIssuerSigningKey: any; // Replace 'any' with the correct type if available
-    //   aliceActionKey: any;        // Replace 'any' with the correct type if available
-    // };
-    // identities: Record<string, unknown>; // Empty for now, update if needed
     suite: {
         claimIssuerContract: Deployed;
         claimTopicsRegistry: Deployed;
