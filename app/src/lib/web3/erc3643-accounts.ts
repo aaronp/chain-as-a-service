@@ -1,5 +1,5 @@
-import { id, ContractFactory, ethers, Signer } from "ethers";
-import { Accounts, encodeAddress, getSigner, TrexSuite } from "./erc3643";
+import { id, ContractFactory, ethers, Signer, Contract } from "ethers";
+import { Accounts, Deployed, encodeAddress, getSigner, TrexSuite } from "./erc3643";
 import OnchainID from '@onchain-id/solidity';
 import { newAccount, PrivateAccount } from "@/ui/wallet/accounts";
 import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json';
@@ -29,7 +29,7 @@ export type UserAccounts = {
 export async function setupAccounts(chainId: string, admin: Accounts, users: UserAccounts, trex: TrexSuite) {
 
 
-    async function deployIdentityProxy(user: PrivateAccount) {
+    async function deployIdentityProxy(user: PrivateAccount): Promise<Deployed> {
         const managementKey = user.address;
 
         console.log('deploying identity proxy for', user.address);
@@ -45,7 +45,13 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
         await identity.waitForDeployment();
 
         // return ethers.getContractAt('Identity', identity.address, signer);
-        return new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(user, chainId));
+        return {
+            address: await identity.getAddress(),
+            // contract: new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(user, chainId))
+            getContract: async (account: PrivateAccount) => {
+                return new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
+            }
+        }
     }
 
     console.log('deploying accounts for ', users);
@@ -61,13 +67,14 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     // 1 is ECDSA
     // 2 is RSA
     //
-    await aliceIdentity.addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
+    console.log('adding key to alice identity', users.alice.actionAccount.address);
+    (await aliceIdentity.getContract(users.alice.personalAccount)).addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
 
     const bobIdentity = await deployIdentityProxy(users.bob.personalAccount);
     const charlieIdentity = await deployIdentityProxy(users.charlie.personalAccount);
 
     console.log('adding key to charlie identity', users.charlie.actionAccount.address);
-    await charlieIdentity.addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
+    (await charlieIdentity.getContract(users.charlie.personalAccount)).addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
 
 
     // these are tuples of wallet addresses, on-chain identity addresses, and country codes
@@ -83,27 +90,28 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
 
     // const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
     // const registryResult = await (await trex.implementations.identityRegistryImplementation.getContract(admin.tokenAgent)).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [await aliceIdentity.getAddress(), await bobIdentity.getAddress()], [42, 666]);
-    const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [await aliceIdentity.getAddress(), await bobIdentity.getAddress()], [42, 666]);
+    const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
 
     console.log('registryResult', registryResult.hash);
 
     const textAsHex = (text: string) => ethers.hexlify(ethers.toUtf8Bytes(text))
-
-    const addClaim = async () => {
-
-    }
 
     const claimForAlice = {
         data: textAsHex('Some claim public data.'),
         issuer: trex.suite.claimIssuerContract.address,
         topic: id('CLAIM_TOPIC'),
         scheme: 1,
-        identity: aliceIdentity.address,
+        identity: await aliceIdentity.address,
         signature: '',
     };
 
     const claimIssuerSigningKey = await getSigner(admin.claimIssuer, chainId)
 
+    console.log({
+        a: claimForAlice.identity,
+        b: claimForAlice.topic,
+        c: claimForAlice.data
+    })
     const abiByteString = ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]);
     claimForAlice.signature = await claimIssuerSigningKey.signMessage(
         ethers.getBytes(
@@ -113,9 +121,8 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
         ),
     );
 
-    // await aliceIdentity
-    //   .connect(aliceWallet)
-    //   .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
+    // (await aliceIdentity.getContract(users.alice.actionAccount))
+    //     .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
 
     // const claimForBob = {
     //   data: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('Some claim public data.')),
