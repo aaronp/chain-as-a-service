@@ -1,9 +1,8 @@
 import { BytesLike, Contract, Interface, InterfaceAbi, id, ethers, keccak256, AbiCoder } from 'ethers';
 // import { ethers } from 'hardhat';
 import OnchainID from '@onchain-id/solidity';
+import { Accounts, Deployed, getSigner, TrexSuite } from './erc3643';
 import { createNewAccount, PrivateAccount } from '@/ui/wallet/accounts';
-import { getSigner } from './erc3643';
-
 import ClaimTopicsRegistry from '@/contracts/erc3643/contracts/registry/implementation/ClaimTopicsRegistry.sol/ClaimTopicsRegistry.json';
 import TrustedIssuersRegistry from '@/contracts/erc3643/contracts/registry/implementation/TrustedIssuersRegistry.sol/TrustedIssuersRegistry.json';
 import IdentityRegistryStorage from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistryStorage.sol/IdentityRegistryStorage.json';
@@ -19,6 +18,7 @@ import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/D
 import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
+import { client } from '@/api/client';
 // import ClaimIssuer from '@/contracts/erc3643/contracts/roles/claim/ClaimIssuer.sol/ClaimIssuer.json';
 
 
@@ -31,36 +31,26 @@ import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agen
 //   return ethers.getContractAt('Identity', identity.address, signer);
 // }
 
-type Accounts = {
-  deployer: PrivateAccount;
-  tokenIssuer: PrivateAccount;
-  tokenAgent: PrivateAccount;
-  tokenAdmin: PrivateAccount;
-  claimIssuer: PrivateAccount;
-}
-
-export const newAccounts = async (): Promise<Accounts> => {
-
-  return {
-    deployer: await createNewAccount('Deployer'),
-    tokenIssuer: await createNewAccount('TokenIssuer'),
-    tokenAgent: await createNewAccount('TokenAgent'),
-    tokenAdmin: await createNewAccount('TokenAdmin'),
-    claimIssuer: await createNewAccount('ClaimIssuer'),
-  }
-}
-
-type Deployed = {
-  address: string;
-  getContract: (account: PrivateAccount) => Promise<Contract>;
-}
 
 const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
   console.log(`Deploying ${contractName}...`);
   const signer = await getSigner(deployer, chainId);
+
+
+  // // prove we can read/write the abi as json
+  // const abiJson = JSON.parse(JSON.stringify(abi));
+  // client().registerContract({
+  //   chainId,
+  //   issuerAddress: deployer.address,
+  //   contractAddress: '',
+  //   contractType: contractName,
+  //   parameters: abiJson,
+  // })
+
   const contract = new ethers.ContractFactory(abi, bytecode, signer);
   const deployment = await contract.deploy(...args);
   await deployment.waitForDeployment();
+
 
   const address = await deployment.getAddress();
 
@@ -70,56 +60,10 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
   };
 }
 
+export async function deployTrexSuite(chainId: string, accounts: Accounts): Promise<TrexSuite> {
 
-
-// Type for the return value of deployFullSuiteFixture
-export type TrexSuite = {
-  accounts: {
-    deployer: PrivateAccount;
-    tokenIssuer: PrivateAccount;
-    tokenAgent: PrivateAccount;
-    tokenAdmin: PrivateAccount;
-    claimIssuer: PrivateAccount;
-    claimIssuerSigningKey: any; // Replace 'any' with the correct type if available
-    aliceActionKey: any;        // Replace 'any' with the correct type if available
-  };
-  identities: Record<string, unknown>; // Empty for now, update if needed
-  suite: {
-    claimIssuerContract: Deployed;
-    claimTopicsRegistry: Deployed;
-    trustedIssuersRegistry: Deployed;
-    identityRegistryStorage: Deployed;
-    defaultCompliance: Deployed;
-    identityRegistry: Deployed;
-    tokenOID: Deployed;
-    token: Deployed;
-    agentManager: Deployed;
-  };
-  authorities: {
-    trexImplementationAuthority: Deployed;
-    identityImplementationAuthority: Deployed;
-  };
-  factories: {
-    trexFactory: Deployed;
-    identityFactory: Deployed;
-  };
-  implementations: {
-    identityImplementation: Deployed;
-    claimTopicsRegistryImplementation: Deployed;
-    trustedIssuersRegistryImplementation: Deployed;
-    identityRegistryStorageImplementation: Deployed;
-    identityRegistryImplementation: Deployed;
-    modularComplianceImplementation: Deployed;
-    tokenImplementation: Deployed;
-  };
-};
-
-export async function deployFullSuiteFixture(chainId: string, accounts: Accounts): Promise<TrexSuite> {
-  // const [deployer, tokenIssuer, tokenAgent, tokenAdmin, claimIssuer, aliceWallet, bobWallet, charlieWallet, davidWallet, anotherWallet] =
-  //   await ethers.getSigners();
-  const { deployer, tokenIssuer, tokenAgent, tokenAdmin, claimIssuer } = accounts;
+  const { deployer, tokenIssuer, claimIssuer } = accounts;
   const claimIssuerSigningKey = ethers.Wallet.createRandom();
-  const aliceActionKey = ethers.Wallet.createRandom();
 
   // Deploy implementations
   const claimTopicsRegistryImplementation = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistry', ClaimTopicsRegistry.abi, ClaimTopicsRegistry.bytecode);
@@ -244,90 +188,28 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
   );
   await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
-  // const aliceIdentity = await deployIdentityProxy(identityImplementationAuthority.address, aliceWallet.address, deployer);
-  // await aliceIdentity
-  //   .connect(aliceWallet)
-  //   .addKey(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address'], [aliceActionKey.address])), 2, 1);
-  // const bobIdentity = await deployIdentityProxy(identityImplementationAuthority.address, bobWallet.address, deployer);
-  // const charlieIdentity = await deployIdentityProxy(identityImplementationAuthority.address, charlieWallet.address, deployer);
-
-  // await identityRegistry.connect(deployer).addAgent(tokenAgent.address);
-  // await identityRegistry.connect(deployer).addAgent(token.address);
-
-  // await identityRegistry
-  //   .connect(tokenAgent)
-  //   .batchRegisterIdentity([aliceWallet.address, bobWallet.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
-
-  // const claimForAlice = {
-  //   data: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('Some claim public data.')),
-  //   issuer: claimIssuerContract.address,
-  //   topic: claimTopics[0],
-  //   scheme: 1,
-  //   identity: aliceIdentity.address,
-  //   signature: '',
-  // };
-  // claimForAlice.signature = await claimIssuerSigningKey.signMessage(
-  //   ethers.utils.arrayify(
-  //     ethers.utils.keccak256(
-  //       ethers.utils.defaultAbiCoder.encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]),
-  //     ),
-  //   ),
-  // );
-
-  // await aliceIdentity
-  //   .connect(aliceWallet)
-  //   .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
-
-  // const claimForBob = {
-  //   data: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('Some claim public data.')),
-  //   issuer: claimIssuerContract.address,
-  //   topic: claimTopics[0],
-  //   scheme: 1,
-  //   identity: bobIdentity.address,
-  //   signature: '',
-  // };
-  // claimForBob.signature = await claimIssuerSigningKey.signMessage(
-  //   ethers.utils.arrayify(
-  //     ethers.utils.keccak256(
-  //       ethers.utils.defaultAbiCoder.encode(['address', 'uint256', 'bytes'], [claimForBob.identity, claimForBob.topic, claimForBob.data]),
-  //     ),
-  //   ),
-  // );
-
-  // await bobIdentity
-  //   .connect(bobWallet)
-  //   .addClaim(claimForBob.topic, claimForBob.scheme, claimForBob.issuer, claimForBob.signature, claimForBob.data, '');
-
-  // await token.connect(tokenAgent).mint(aliceWallet.address, 1000);
-  // await token.connect(tokenAgent).mint(bobWallet.address, 500);
-
-  // await agentManager.connect(tokenAgent).addAgentAdmin(tokenAdmin.address);
-  // await token.connect(deployer).addAgent(agentManager.address);
-  // await identityRegistry.connect(deployer).addAgent(agentManager.address);
-
-  // await token.connect(tokenAgent).unpause();
 
 
   return {
-    accounts: {
-      deployer,
-      tokenIssuer,
-      tokenAgent,
-      tokenAdmin,
-      claimIssuer,
-      claimIssuerSigningKey,
-      aliceActionKey,
-      // aliceWallet,
-      // bobWallet,
-      // charlieWallet,
-      // davidWallet,
-      // anotherWallet,
-    },
-    identities: {
-      // aliceIdentity,
-      // bobIdentity,
-      // charlieIdentity,
-    },
+    // accounts: {
+    //   deployer,
+    //   tokenIssuer,
+    //   tokenAgent,
+    //   tokenAdmin,
+    //   claimIssuer,
+    //   claimIssuerSigningKey,
+    //   aliceActionKey,
+    //   // aliceWallet,
+    //   // bobWallet,
+    //   // charlieWallet,
+    //   // davidWallet,
+    //   // anotherWallet,
+    // },
+    // identities: {
+    // aliceIdentity,
+    // bobIdentity,
+    // charlieIdentity,
+    // },
     suite: {
       claimIssuerContract,
       claimTopicsRegistry,
