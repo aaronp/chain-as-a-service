@@ -1,4 +1,4 @@
-import { BytesLike, Contract, Interface, InterfaceAbi, Signer, Wallet, ethers } from 'ethers';
+import { BytesLike, Contract, Interface, InterfaceAbi, id, ethers, keccak256, AbiCoder } from 'ethers';
 // import { ethers } from 'hardhat';
 import OnchainID from '@onchain-id/solidity';
 import { createNewAccount, PrivateAccount } from '@/ui/wallet/accounts';
@@ -18,6 +18,8 @@ import IdentityRegistryStorageProxy from '@/contracts/erc3643/contracts/proxy/Id
 import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/DefaultCompliance.sol/DefaultCompliance.json';
 import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
+import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
+// import ClaimIssuer from '@/contracts/erc3643/contracts/roles/claim/ClaimIssuer.sol/ClaimIssuer.json';
 
 
 // export async function deployIdentityProxy(implementationAuthority: Contract['address'], managementKey: string, signer: Signer) {
@@ -158,21 +160,29 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
       tokenOID.address,
     );
 
-  // const agentManager = await ethers.deployContract('AgentManager', [token.address], tokenAgent);
+  const agentManager = await deployContract(chainId, accounts.deployer, 'AgentManager', AgentManager.abi, AgentManager.bytecode, token.address);
 
-  // await identityRegistryStorage.connect(deployer).bindIdentityRegistry(identityRegistry.address);
+  await (await identityRegistryStorage.getContract(accounts.deployer)).bindIdentityRegistry(identityRegistry.address);
 
-  // await token.connect(deployer).addAgent(tokenAgent.address);
+  await (await token.getContract(accounts.deployer)).addAgent(agentManager.address);
 
-  // const claimTopics = [ethers.utils.id('CLAIM_TOPIC')];
-  // await claimTopicsRegistry.connect(deployer).addClaimTopic(claimTopics[0]);
+  const claimTopics = [id('CLAIM_TOPIC')];
+  await (await claimTopicsRegistry.getContract(accounts.deployer)).addClaimTopic(claimTopics[0]);
 
-  // const claimIssuerContract = await ethers.deployContract('ClaimIssuer', [claimIssuer.address], claimIssuer);
-  // await claimIssuerContract
-  //   .connect(claimIssuer)
-  //   .addKey(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address'], [claimIssuerSigningKey.address])), 3, 1);
+  const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
 
-  // await trustedIssuersRegistry.connect(deployer).addTrustedIssuer(claimIssuerContract.address, claimTopics);
+  const encodeAddress = (address: string) => {
+    // 1. ABI-encode the address
+    const abiCoder = AbiCoder.defaultAbiCoder();
+    const encoded = abiCoder.encode(['address'], [address]);
+
+    // 2. Hash the encoded address
+    return keccak256(encoded);
+  }
+
+  await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
+
+  await (await trustedIssuersRegistry.getContract(accounts.deployer)).addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
   // const aliceIdentity = await deployIdentityProxy(identityImplementationAuthority.address, aliceWallet.address, deployer);
   // await aliceIdentity
