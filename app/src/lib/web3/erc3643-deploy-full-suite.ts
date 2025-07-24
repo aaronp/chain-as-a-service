@@ -72,7 +72,49 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
 
 
 
-export async function deployFullSuiteFixture(chainId: string, accounts: Accounts) {
+// Type for the return value of deployFullSuiteFixture
+export type TrexSuite = {
+  accounts: {
+    deployer: PrivateAccount;
+    tokenIssuer: PrivateAccount;
+    tokenAgent: PrivateAccount;
+    tokenAdmin: PrivateAccount;
+    claimIssuer: PrivateAccount;
+    claimIssuerSigningKey: any; // Replace 'any' with the correct type if available
+    aliceActionKey: any;        // Replace 'any' with the correct type if available
+  };
+  identities: Record<string, unknown>; // Empty for now, update if needed
+  suite: {
+    claimIssuerContract: Deployed;
+    claimTopicsRegistry: Deployed;
+    trustedIssuersRegistry: Deployed;
+    identityRegistryStorage: Deployed;
+    defaultCompliance: Deployed;
+    identityRegistry: Deployed;
+    tokenOID: Deployed;
+    token: Deployed;
+    agentManager: Deployed;
+  };
+  authorities: {
+    trexImplementationAuthority: Deployed;
+    identityImplementationAuthority: Deployed;
+  };
+  factories: {
+    trexFactory: Deployed;
+    identityFactory: Deployed;
+  };
+  implementations: {
+    identityImplementation: Deployed;
+    claimTopicsRegistryImplementation: Deployed;
+    trustedIssuersRegistryImplementation: Deployed;
+    identityRegistryStorageImplementation: Deployed;
+    identityRegistryImplementation: Deployed;
+    modularComplianceImplementation: Deployed;
+    tokenImplementation: Deployed;
+  };
+};
+
+export async function deployFullSuiteFixture(chainId: string, accounts: Accounts): Promise<TrexSuite> {
   // const [deployer, tokenIssuer, tokenAgent, tokenAdmin, claimIssuer, aliceWallet, bobWallet, charlieWallet, davidWallet, anotherWallet] =
   //   await ethers.getSigners();
   const { deployer, tokenIssuer, tokenAgent, tokenAdmin, claimIssuer } = accounts;
@@ -116,10 +158,6 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
     tirImplementation: trustedIssuersRegistryImplementation.address,
     mcImplementation: modularComplianceImplementation.address,
   };
-
-  const asContract = () => {
-
-  }
 
 
   console.log('addAndUseTREXVersion', trexImplementationAuthority);
@@ -269,56 +307,6 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
 
   // await token.connect(tokenAgent).unpause();
 
-  // return {
-  //   accounts: {
-  //     deployer,
-  //     tokenIssuer,
-  //     tokenAgent,
-  //     tokenAdmin,
-  //     claimIssuer,
-  //     claimIssuerSigningKey,
-  //     aliceActionKey,
-  //     aliceWallet,
-  //     bobWallet,
-  //     charlieWallet,
-  //     davidWallet,
-  //     anotherWallet,
-  //   },
-  //   identities: {
-  //     aliceIdentity,
-  //     bobIdentity,
-  //     charlieIdentity,
-  //   },
-  //   suite: {
-  //     claimIssuerContract,
-  //     claimTopicsRegistry,
-  //     trustedIssuersRegistry,
-  //     identityRegistryStorage,
-  //     defaultCompliance,
-  //     identityRegistry,
-  //     tokenOID,
-  //     token,
-  //     agentManager,
-  //   },
-  //   authorities: {
-  //     trexImplementationAuthority,
-  //     identityImplementationAuthority,
-  //   },
-  //   factories: {
-  //     trexFactory,
-  //     identityFactory,
-  //   },
-  //   implementations: {
-  //     identityImplementation,
-  //     claimTopicsRegistryImplementation,
-  //     trustedIssuersRegistryImplementation,
-  //     identityRegistryStorageImplementation,
-  //     identityRegistryImplementation,
-  //     modularComplianceImplementation,
-  //     tokenImplementation,
-  //   },
-  // };
-
 
   return {
     accounts: {
@@ -341,7 +329,7 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
       // charlieIdentity,
     },
     suite: {
-      // claimIssuerContract,
+      claimIssuerContract,
       claimTopicsRegistry,
       trustedIssuersRegistry,
       identityRegistryStorage,
@@ -349,7 +337,7 @@ export async function deployFullSuiteFixture(chainId: string, accounts: Accounts
       identityRegistry,
       tokenOID,
       token,
-      // agentManager,
+      agentManager,
     },
     authorities: {
       trexImplementationAuthority,
