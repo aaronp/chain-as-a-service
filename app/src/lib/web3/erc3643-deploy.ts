@@ -142,12 +142,14 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   await identityRegistryStorageAtProxy.bindIdentityRegistry(identityRegistry.address);
 
   // Use the implementation ABI at the proxy address to call addAgent
-  const tokenAtProxy = new ethers.Contract(
+  const tokenAtProxy = async () => new ethers.Contract(
     token.address, // proxy address
     Token.abi,     // implementation ABI
     await getSigner(accounts.deployer, chainId)
   );
-  await tokenAtProxy.addAgent(agentManager.address);
+  await (await tokenAtProxy()).addAgent(agentManager.address);
+  const addTokenAgentResult = await (await tokenAtProxy()).addAgent(tokenAgent.address);
+  console.log('!!!addTokenAgentResult', addTokenAgentResult.hash);
 
   const claimTopics = [id('CLAIM_TOPIC')];
   const claimTopicsRegistryAtProxy = new ethers.Contract(

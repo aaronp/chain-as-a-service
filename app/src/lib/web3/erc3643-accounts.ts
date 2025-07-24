@@ -3,7 +3,7 @@ import { Accounts, Deployed, encodeAddress, getSigner, TrexSuite } from "./erc36
 import OnchainID from '@onchain-id/solidity';
 import { newAccount, PrivateAccount } from "@/ui/wallet/accounts";
 import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json';
-
+import Token from '@/contracts/erc3643/contracts/token/Token.sol/Token.json';
 
 
 export type Persona = {
@@ -107,11 +107,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
 
     const claimIssuerSigningKey = await getSigner(admin.claimIssuer, chainId)
 
-    console.log({
-        a: claimForAlice.identity,
-        b: claimForAlice.topic,
-        c: claimForAlice.data
-    })
     const abiByteString = ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]);
     claimForAlice.signature = await claimIssuerSigningKey.signMessage(
         ethers.getBytes(
@@ -121,30 +116,49 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
         ),
     );
 
-    // (await aliceIdentity.getContract(users.alice.actionAccount))
-    //     .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
+    console.log('adding claim for alice');
+    (await aliceIdentity.getContract(users.alice.actionAccount))
+        .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
 
+    // console.log('creating claim for bob');
     // const claimForBob = {
-    //   data: ethers.utils.hexlify(ethers.utils.toUtf8Bytes('Some claim public data.')),
-    //   issuer: claimIssuerContract.address,
-    //   topic: claimTopics[0],
-    //   scheme: 1,
-    //   identity: bobIdentity.address,
-    //   signature: '',
+    //     data: textAsHex('Some claim public data.'),
+    //     issuer: trex.suite.claimIssuerContract.address,
+    //     topic: id('CLAIM_TOPIC'),
+    //     scheme: 1,
+    //     identity: bobIdentity.address,
+    //     signature: '',
     // };
     // claimForBob.signature = await claimIssuerSigningKey.signMessage(
-    //   ethers.utils.arrayify(
-    //     ethers.utils.keccak256(
-    //       ethers.utils.defaultAbiCoder.encode(['address', 'uint256', 'bytes'], [claimForBob.identity, claimForBob.topic, claimForBob.data]),
+    //     ethers.getBytes(
+    //         ethers.keccak256(
+    //             abiByteString,
+    //         ),
     //     ),
-    //   ),
     // );
 
-    // await bobIdentity
-    //   .connect(bobWallet)
-    //   .addClaim(claimForBob.topic, claimForBob.scheme, claimForBob.issuer, claimForBob.signature, claimForBob.data, '');
+    // console.log('adding claim for bob');
+    // (await bobIdentity.getContract(users.bob.actionAccount))
+    //     .addClaim(claimForBob.topic, claimForBob.scheme, claimForBob.issuer, claimForBob.signature, claimForBob.data, '');
 
-    // await token.connect(tokenAgent).mint(aliceWallet.address, 1000);
+    console.log('minting 1000 for alice');
+
+    const tokenAtProxyForCheck = new ethers.Contract(trex.suite.token.address, Token.abi, await getSigner(admin.tokenAgent, chainId));
+    const isAgent = await tokenAtProxyForCheck.isAgent(admin.tokenAgent.address);
+    console.log("Is tokenAgent an agent?", isAgent); // Should be true
+
+
+
+
+    // Mint tokens for Alice using the implementation ABI at the proxy address
+    const tokenAtProxy = new ethers.Contract(
+        trex.suite.token.address, // proxy address
+        Token.abi,                // implementation ABI
+        await getSigner(admin.tokenAgent, chainId)
+    );
+    const mintResult = await tokenAtProxy.mint(users.alice.personalAccount.address, 1000);
+    console.log('mintResult', mintResult);
+    console.log('mintResult', mintResult.hash);
     // await token.connect(tokenAgent).mint(bobWallet.address, 500);
 
     // await agentManager.connect(tokenAgent).addAgentAdmin(tokenAdmin.address);
