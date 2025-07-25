@@ -17,13 +17,7 @@ export const platformDSL = (deployer: PrivateAccount) => {
         return trex;
     }
 
-    const createUserIdentity = async (chainId: string, trex: TrexSuite, userAddress: string) => {
-
-        return await deployIdentityProxy(chainId, trex, deployer, userAddress);
-    }
-
     return {
-        deploySuite,
-        createUserIdentity
+        deploySuite
     }
 }

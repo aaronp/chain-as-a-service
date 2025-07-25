@@ -323,8 +323,8 @@ export const getIdentityContract = async (identityAddress: string, chainId: stri
   return new ethers.Contract(identityAddress, OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
 }
 
-export async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: PrivateAccount, userAddress: string): Promise<Deployed> {
-  const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
+export async function deployIdentityProxy(chainId: string, implementationAuthorityContractAddress: string, deployer: PrivateAccount, userAddress: string): Promise<Deployed> {
+
 
   const identity = await deployContract(chainId, deployer, `IdentityProxy-${userAddress}`, OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode,
     implementationAuthorityContractAddress,
@@ -336,8 +336,6 @@ export async function deployIdentityProxy(chainId: string, trex: TrexSuite, depl
     getContract: async (account: PrivateAccount) => getIdentityContract(identity.address, chainId, account)
   }
 }
-
-const textAsHex = (text: string) => ethers.hexlify(ethers.toUtf8Bytes(text))
 
 
 export type UserToOnboard = {
@@ -355,28 +353,27 @@ async function deployAccountFlow(chainId: string, admin: Accounts, trex: TrexSui
   /**
    * 1. Deployer registeres a new OnChainID identity for the user
    */
-  // TODO - check if the token agent can do this
-  // const userIdentity = await platformDSL(admin.tokenAgent).createUserIdentity(chainId, trex, user.addresses.personalAccount);
-  const userIdentity = await platformDSL(admin.deployer).createUserIdentity(chainId, trex, user.addresses.personalAccount);
-
-
+  const userIdentity = await tokenAgentDSL(admin.tokenAgent).createUserIdentity(chainId, trex, user.addresses.personalAccount);
+  // const userIdentity = await platformDSL(admin.deployer).createUserIdentity(chainId, trex, user.addresses.personalAccount);
 
   /**
-   * 2. The user adds their action account to the identity
-   */
-  // person step - add their action account
-  // const aliceAddKeyResult = await (await userIdentity.getContract(newPersona.personalAccount)).addKey(encodeAddress(newPersona.actionAccount.address), KeyPurpose.execution, KeyType.ECDSA);
-  const aliceAddKeyResult = await userDSL(userPersona.personalAccount).registerActionAccount(chainId, userIdentity.address, user.addresses.actionAccount);
-
-
-  /**
-   * 3 register this identity 
+   * 1.1 register this identity 
    */
   await tokenAgentDSL(admin.tokenAgent).registerUserIdentity(chainId, trex.suite.identityRegistry.address, {
     accountAddress: user.addresses.personalAccount,
     identityAddress: userIdentity.address,
     countryCode: user.countryCode
   });
+
+
+
+  /**
+   * 3. The user adds their action account to the identity
+   */
+  // person step - add their action account
+  // const aliceAddKeyResult = await (await userIdentity.getContract(newPersona.personalAccount)).addKey(encodeAddress(newPersona.actionAccount.address), KeyPurpose.execution, KeyType.ECDSA);
+  const aliceAddKeyResult = await userDSL(userPersona.personalAccount).registerActionAccount(chainId, userIdentity.address, user.addresses.actionAccount);
+
 
 
   /**
@@ -427,11 +424,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
   });
 
   // // Mint tokens for Alice using the implementation ABI at the proxy address
-  const tokenAtProxy = new ethers.Contract(
-    trex.suite.token.address, // proxy address
-    Token.abi,                // implementation ABI
-    await getSigner(admin.tokenAgent, chainId)
-  );
+  const tokenAtProxy = await tokenContract(chainId, trex.suite.token.address, admin.tokenAgent);
 
 
   const balanceResultBefore = await (await tokenContract(chainId, trex.suite.token.address, newPersona.personalAccount)).balanceOf(newPersona.personalAccount.address);

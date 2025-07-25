@@ -1,7 +1,8 @@
 import { PrivateAccount } from '@/ui/wallet/accounts';
 import { ethers } from 'ethers';
 import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json';
-import { getSigner } from '../erc3643';
+import { getSigner, TrexSuite } from '../erc3643';
+import { deployIdentityProxy } from '../deploy';
 
 type User = {
     accountAddress: string,
@@ -24,8 +25,13 @@ export const tokenAgentDSL = (tokenAgent: PrivateAccount) => {
         await (await identityRegistryAtProxy()).batchRegisterIdentity([user.accountAddress], [user.identityAddress], [user.countryCode]);
     }
 
+    const createUserIdentity = async (chainId: string, trex: TrexSuite, userAddress: string) => {
+        return await deployIdentityProxy(chainId, trex.authorities.identityImplementationAuthority.address, tokenAgent, userAddress);
+    }
+
 
     return {
         registerUserIdentity,
+        createUserIdentity,
     }
 }
