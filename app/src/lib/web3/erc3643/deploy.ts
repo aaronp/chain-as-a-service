@@ -263,8 +263,8 @@ The AgentManager acts as a central authority for managing privileged roles and e
       await getSigner(accounts.deployer, chainId)
     );
   }
-  await (await identityRegistryAtProxy()).addAgent(tokenAgent.address);
-  await (await identityRegistryAtProxy()).addAgent(token.address);
+  requiresTokenInit && await (await identityRegistryAtProxy()).addAgent(tokenAgent.address);
+  requiresTokenInit && await (await identityRegistryAtProxy()).addAgent(token.address);
 
   return {
     suite: {
@@ -325,31 +325,49 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
 
 
   async function deployIdentityProxy(user: PrivateAccount): Promise<Deployed> {
-    const managementKey = user.address;
 
-    console.log('deploying identity proxy for', user.address);
+
+    // console.log('deploying identity proxy for', user.address);
     const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
 
-    const identity = await new ContractFactory(OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, await getSigner(admin.deployer, chainId)).deploy(
+    // const identity = await new ContractFactory(OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, await getSigner(admin.deployer, chainId)).deploy(
+    //   implementationAuthorityContractAddress,
+    //   managementKey,
+    // );
+
+    // await identity.waitForDeployment();
+
+    const identity = await deployContract(chainId, admin.deployer, `IdentityProxy-${user.address}`, OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode,
       implementationAuthorityContractAddress,
-      managementKey,
+      user.address,
     );
 
-    // TODO - register this contract
-
-    await identity.waitForDeployment();
-
     // return ethers.getContractAt('Identity', identity.address, signer);
-    return {
-      address: await identity.getAddress(),
-      // contract: new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(user, chainId))
-      getContract: async (account: PrivateAccount) => {
-        return new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
-      }
-    }
+    // return {
+    //   address: await identity.getAddress(),
+    //   // contract: new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(user, chainId))
+    //   getContract: async (account: PrivateAccount) => {
+    //     return new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
+    //   }
+    // }
+
+    return identity;
   }
 
-  console.log('deploying accounts for ', users);
+  const isAliceIdentityDeployed = async () => {
+    const contracts = await client().listContracts({
+      chain: chainId,
+      type: `IdentityProxy-${users.alice.personalAccount.address}`,
+    });
+    return contracts.length > 0;
+  }
+
+  const requiresAliceInit = !(await isAliceIdentityDeployed());
+  console.log('requiresAliceInit', requiresAliceInit);
+  if (requiresAliceInit) {
+    console.log('deploying accounts for ', users);
+  }
+
 
   const aliceIdentity = await deployIdentityProxy(users.alice.personalAccount);
   // await aliceIdentity.addKey(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address'], [users.alice.actionAccount.address])), 2, 1);
