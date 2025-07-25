@@ -241,7 +241,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
 
 
-  await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
+  requiresContractInit && await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
   // await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuer.address), 3, 1);
 
   const trustedIssuersRegistryAtProxy = new ethers.Contract(
@@ -249,7 +249,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
     TrustedIssuersRegistry.abi,     // implementation ABI
     await getSigner(accounts.deployer, chainId)
   );
-  await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
+  requiresContractInit && await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
 
 
