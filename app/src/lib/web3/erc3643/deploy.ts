@@ -78,6 +78,19 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   const { deployer, tokenIssuer, claimIssuer, claimIssuerSigningKey, tokenAgent } = accounts;
 
 
+  // check if the contract has been deployed so we know whether we need to initialize it
+  const isTRexAlreadyDeployed = async () => {
+    const contracts = await client().listContracts({
+      chain: chainId,
+      type: 'TREXImplementationAuthority',
+    });
+    return contracts.length > 0;
+  }
+
+  const requiresContractInit = !(await isTRexAlreadyDeployed());
+  console.log('requiresContractInit', requiresContractInit);
+
+
   // ============================================================================================================================
   // Deploy implementations
   // ============================================================================================================================  

@@ -12,17 +12,49 @@ export type Accounts = {
     claimIssuerSigningKey: PrivateAccount;
 }
 
+export const saveAccountsToFile = (accounts: Accounts, filename: string) => {
+    const fs = Bun.file(filename);
+    fs.write(JSON.stringify(accounts, null, 2));
+}
+export const readAccountsFromFile = async (filename: string): Promise<Accounts> => {
+    const fs = Bun.file(filename);
+    return JSON.parse(await fs.text());
+}
+
+export const testAccounts = async () => {
+
+    const filename = 'testaccounts.json';
+
+    try {
+        // Check if testaccounts.json exists
+        const file = Bun.file(filename);
+        if (await file.exists()) {
+            console.log('📁 Loading existing accounts from testaccounts.json');
+            return await readAccountsFromFile(filename);
+        }
+    } catch (error) {
+        console.log('📁 testaccounts.json not found, creating new accounts');
+    }
+
+    const accounts = await newAccounts();
+    console.log('🆕 Creating new accounts and saving to testaccounts.json');
+    saveAccountsToFile(accounts, filename);
+    console.log('💾 Saved new accounts to testaccounts.json');
+    return accounts;
+}
 
 export const newAccounts = async (): Promise<Accounts> => {
 
-    return {
+    const accounts = {
         deployer: await createNewAccount('Deployer'),
         tokenIssuer: await createNewAccount('TokenIssuer'),
         tokenAgent: await createNewAccount('TokenAgent'),
         tokenAdmin: await createNewAccount('TokenAdmin'),
         claimIssuer: await createNewAccount('ClaimIssuer'),
         claimIssuerSigningKey: await createNewAccount('ClaimIssuerSigningKey'),
-    }
+    };
+
+    return accounts;
 }
 
 export type Deployed = {

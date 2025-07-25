@@ -2,7 +2,7 @@ import { ensureServerRunning, TEST_URL } from './testServer';
 import { PrivateAccount as Account, createNewAccount, newAccount } from '@/ui/wallet/accounts';
 import { test } from 'bun:test';
 import { deployTrexSuite, newPersona, setupAccounts } from '@/lib/web3/erc3643/deploy';
-import { newAccounts } from '@/lib/web3/erc3643/erc3643';
+import { testAccounts } from '@/lib/web3/erc3643/erc3643';
 
 
 test('deploy an ERC3643 identity contract', async () => {
@@ -11,7 +11,7 @@ test('deploy an ERC3643 identity contract', async () => {
 
     const wallet = await createNewAccount('Test Account ' + new Date().getTime());
 
-    const accounts = await newAccounts();
+    const accounts = await testAccounts();
     // const chainId = 'erc3643-chain-' + new Date().getTime()
     const chainId = 'erc3643-test-chain'
 

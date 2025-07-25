@@ -114,7 +114,7 @@ export class Client {
 
         // const header = await this.makeHeader(request);
 
-        const response = await client.api.contracts.get();
+        const response = await client.api.contracts.get({ query: { chain: chainId } });
         if (response.status !== 200 || !response.data) {
             return { error: `Failed to create token: ${response.status}`, data: response.data };
         }
