@@ -75,17 +75,16 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
 
 export type SetupAccounts = {
   deployer: PrivateAccount,
-  claimIssuer: PrivateAccount,
+  // claimIssuer: PrivateAccount,
   tokenIssuerAddress: string,
   tokenAgentAddress: string,
   claimIssuerAddress: string,
-  claimIssuerSigningKeyAddress: string,
 }
 
 export async function deployTrexSuite(chainId: string, accounts: SetupAccounts): Promise<TrexSuite> {
 
   // const { deployer, tokenIssuer, claimIssuer, claimIssuerSigningKey, tokenAgent } = accounts;
-  const { deployer, tokenIssuerAddress, tokenAgentAddress, claimIssuerAddress, claimIssuerSigningKeyAddress, claimIssuer } = accounts;
+  const { deployer, tokenIssuerAddress, tokenAgentAddress, claimIssuerAddress } = accounts;
 
 
   // check if the contract has been deployed so we know whether we need to initialize it
@@ -246,8 +245,8 @@ The AgentManager acts as a central authority for managing privileged roles and e
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuerAddress);
 
 
-  requiresContractInit && await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKeyAddress), 3, 1);
-  // await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuer.address), 3, 1);
+  // requiresContractInit && await (await claimIssuerContract.getContract(accounts.deployer)).addKey(encodeAddress(claimIssuerSigningKeyAddress), 3, 1);
+
 
   const trustedIssuersRegistryAtProxy = new ethers.Contract(
     trustedIssuersRegistry.address, // proxy address

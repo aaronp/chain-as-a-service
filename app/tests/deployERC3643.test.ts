@@ -3,28 +3,30 @@ import { PrivateAccount as Account, createNewAccount, newAccount } from '@/ui/wa
 import { test } from 'bun:test';
 import { deployTrexSuite, newPersona, SetupAccounts, setupAccounts } from '@/lib/web3/erc3643/deploy';
 import { testAccounts } from '@/lib/web3/erc3643/erc3643';
+import { platform } from '@/lib/web3/erc3643/dsl/platform';
 
 
 test('deploy an ERC3643 identity contract', async () => {
 
-    const proc = await ensureServerRunning();
-
-    const wallet = await createNewAccount('Test Account ' + new Date().getTime());
+    await ensureServerRunning();
 
     const accounts = await testAccounts();
     // const chainId = 'erc3643-chain-' + new Date().getTime()
     const chainId = 'erc3643-test-chain'
 
-    const x: SetupAccounts = {
+
+    const before = new Date().getTime();
+    const trex = await platform().deploy(chainId, {
         deployer: accounts.deployer,
         tokenIssuerAddress: accounts.tokenIssuer.address,
         tokenAgentAddress: accounts.tokenAgent.address,
         claimIssuerAddress: accounts.claimIssuer.address,
-        claimIssuerSigningKeyAddress: accounts.claimIssuerSigningKey.address,
-        claimIssuer: accounts.claimIssuer,
-    }
-    const trex = await deployTrexSuite(chainId, x);
-    console.log('trex', trex);
+    });
+    const after = new Date().getTime();
+    // roughly 3 seconds for deploys,
+    // 300ms if cached
+
+    await platform().addSigningKey(trex, accounts.claimIssuer, accounts.claimIssuerSigningKey.address);
 
 
     const users = {
@@ -46,4 +48,5 @@ test('deploy an ERC3643 identity contract', async () => {
     // const trexFactory = new ethers.Contract(result.trexFactory, TREXFactoryArtifact.abi, provider);
     // const implementationAuthority = await trexFactory.getImplementationAuthority();
     // expect(implementationAuthority.toLowerCase()).toBe(result.trexImplementationAuthority.toLowerCase());
+    console.log('deploy time', after - before);
 }); 
