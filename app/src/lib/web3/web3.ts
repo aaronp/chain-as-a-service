@@ -110,6 +110,8 @@ export const deployERC20 = async (
         issuerAddress: account.address,
         contractAddress,
         contractType: "ERC20",
+        abi: JSON.stringify(template.abi),
+        bytecode: template.bytecode,
         parameters: { name, symbol },
     })
     return registerResult;
@@ -143,6 +145,8 @@ export const deployAtomicSwap = async (
         issuerAddress: account.address,
         contractAddress,
         contractType: "AtomicSwap",
+        abi: JSON.stringify(template.abi),
+        bytecode: template.bytecode,
         parameters: {},
     })
     return registerResult;
@@ -260,7 +264,7 @@ export const executeSwap = async (
         throw new Error(`Party B account ${partyB} not found`);
     }
 
-    const contracts = await client().listContractsForChain(chainId);
+    const contracts = await client().listContracts({ chain: chainId });
     const foundSwapContract = contracts.find(c => c.contractAddress == swapContractAddress);
     if (!foundSwapContract) {
         throw new Error(`Swap contract ${swapContractAddress} not found`);

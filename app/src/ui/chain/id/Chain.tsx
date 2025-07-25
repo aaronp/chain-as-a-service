@@ -23,7 +23,7 @@ export default function Chain() {
             }
         });
 
-        client().listContractsForChain(chainId).then((result) => {
+        client().listContracts(undefined, chainId).then((result) => {
             if (mounted) setContracts(result || []);
             setLoading(false);
         });

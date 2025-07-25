@@ -47,7 +47,7 @@ export default function SwapCard({ swapContract: contract, account, sourceTarget
         }
         const loadContracts = async () => {
             try {
-                const contracts = await client().listContractsForChain(contract.chainId);
+                const contracts = await client().listContracts(undefined, contract.chainId);
                 // Filter out the current contract and only show ERC20 contracts
                 const allContracts = contracts.filter(c =>
                     c.contractAddress !== contract.contractAddress &&

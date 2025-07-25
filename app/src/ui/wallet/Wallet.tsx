@@ -51,7 +51,7 @@ export default function Wallet() {
         const fetchContractsForChain = async () => {
             setContractsLoading(true);
             try {
-                const contractsData = await client().listContractsForChain(selectedChainId);
+                const contractsData = await client().listContracts(undefined, selectedChainId);
 
                 if (contractsData && Array.isArray(contractsData)) {
                     const walletContractTypes = ["ERC20", "ERC3643"];

@@ -18,11 +18,12 @@ import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/D
 import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
+import { client } from '@/api/client';
+import { bytecodeToBase64 } from '@/lib/utils';
 
 
 
 const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
-  console.log(`Deploying ${contractName}...`);
   const signer = await getSigner(deployer, chainId);
 
 
@@ -35,13 +36,36 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
   //   contractType: contractName,
   //   parameters: abiJson,
   // })
+  const found = await client().listContracts({ type: contractName, chain: chainId })
+  if (found.length > 0) {
+    console.log(`🔍 found ${contractName} created on ${new Date(found[0].created).toLocaleString()} 🙌`);
+    return {
+      address: found[0].contractAddress,
+      getContract: async (account: PrivateAccount) => new ethers.Contract(found[0].contractAddress, found[0].abi, await getSigner(account, chainId))
+    };
+  }
+  console.log(`🚀 Deploying ${contractName}...`);
+
 
   const contract = new ethers.ContractFactory(abi, bytecode, signer);
   const deployment = await contract.deploy(...args);
   await deployment.waitForDeployment();
 
-
   const address = await deployment.getAddress();
+
+  await client().registerContract({
+    chainId,
+    issuerAddress: deployer.address,
+    contractAddress: address,
+    contractType: contractName,
+    abi: JSON.stringify(abi),
+    bytecode: bytecodeToBase64(bytecode),
+    parameters: args,
+  }).then(result => {
+    console.log('✍🏻 registered contract', result.contractAddress);
+    return result;
+  })
+
 
   return {
     address,

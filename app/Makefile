@@ -9,8 +9,10 @@ build:
 run:
 	docker run --name $(NAME) --rm -it -p 3000:3000 $(NAME):$(TAG)
 stop:
-	docker stop $(NAME)
-	
+	ps aux | grep "bun.*index" | grep -v grep | awk '{print $$2}' | xargs -r kill -9
+running:
+	ps aux | grep "bun.*index" | grep -v grep
+
 remove:
 	docker stop $(NAME) || true
 	docker rm $(NAME) || true

@@ -100,18 +100,12 @@ export class Client {
         return chains.find(c => c.chainId === chainId) || undefined;
     }
 
-    async listContracts() {
+    async listContracts({ type, chain }: { type?: string; chain?: string } = {}) {
         const client = treaty<Api>(this.url);
-        const response = await client.api.contracts.get();
+        const response = await client.api.contracts.get({ query: { type, chain } });
         return response.data?.contracts || [];
     }
 
-
-    async listContractsForChain(chainId: string) {
-        const client = treaty<Api>(this.url);
-        const response = await client.api.contracts.get();
-        return response.data?.contracts.filter(c => c.chainId === chainId) || [];
-    }
 
     async contractForAddress(chainId: string, contractAddress: string) {
         // const chain = chainForId(chainId);
@@ -134,7 +128,7 @@ export class Client {
 
         const response = await client.api.contracts.post(request);
         if (response.status !== 200 || !response.data) {
-            return { error: `Failed to create token: ${response.status}`, data: response.data };
+            throw new Error(`Failed to create token: ${response.status}, data: ${response.data}`);
         }
         return response.data;
     }

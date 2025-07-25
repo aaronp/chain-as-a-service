@@ -48,7 +48,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
 
                 let swap = swapContract;
                 if (!swap) {
-                    client().listContractsForChain(contract.chainId).then((all) => {
+                    client().listContracts(undefined, contract.chainId).then((all) => {
                         const found = all.find((c: StoredContract) => c.contractType === "ATOMICSWAP");
 
                         if (found?.contractAddress) {
@@ -72,7 +72,7 @@ export default function ERC20Card({ contract, account }: ERC20CardProps) {
 
     useEffect(() => {
 
-        client().listContractsForChain(contract.chainId).then((contracts) => {
+        client().listContracts(undefined, contract.chainId).then((contracts) => {
             const swapContract = contracts.find((c: StoredContract) => c.contractType === "ATOMICSWAP");
             if (swapContract) {
                 setSwapContract(swapContract);
