@@ -1,11 +1,6 @@
 import { PrivateAccount } from '@/ui/wallet/accounts';
 import { encodeAddress, TrexSuite } from '../erc3643';
-
-const KeyPurpose = {
-    management: 1,
-    execution: 2,
-    signing: 3,
-}
+import { KeyPurpose } from '../keys';
 
 export const claimsDSL = (claimIssuer: PrivateAccount) => {
 
