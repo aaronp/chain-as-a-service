@@ -342,16 +342,12 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
       user.address,
     );
 
-    // return ethers.getContractAt('Identity', identity.address, signer);
-    // return {
-    //   address: await identity.getAddress(),
-    //   // contract: new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(user, chainId))
-    //   getContract: async (account: PrivateAccount) => {
-    //     return new ethers.Contract(await identity.getAddress(), OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
-    //   }
-    // }
-
-    return identity;
+    return {
+      address: identity.address,
+      getContract: async (account: PrivateAccount) => {
+        return new ethers.Contract(identity.address, OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
+      }
+    }
   }
 
   const isAliceIdentityDeployed = async () => {
@@ -384,13 +380,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   const aliceAddKeyResult = await (await aliceIdentity.getContract(users.alice.personalAccount)).addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
   console.log('aliceAddKeyResult', aliceAddKeyResult.hash);
 
-  const bobIdentity = await deployIdentityProxy(users.bob.personalAccount);
-  const charlieIdentity = await deployIdentityProxy(users.charlie.personalAccount);
-
-  console.log('adding key to charlie identity', users.charlie.actionAccount.address);
-  const charlieAddKeyResult = await (await charlieIdentity.getContract(users.charlie.personalAccount)).addKey(encodeAddress(users.charlie.actionAccount.address), 2, 1);
-  console.log('charlieAddKeyResult', charlieAddKeyResult.hash);
-
 
   // these are tuples of wallet addresses, on-chain identity addresses, and country codes
 
@@ -405,7 +394,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
 
   // const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
   // const registryResult = await (await trex.implementations.identityRegistryImplementation.getContract(admin.tokenAgent)).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [await aliceIdentity.getAddress(), await bobIdentity.getAddress()], [42, 666]);
-  const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
+  const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address], [aliceIdentity.address], [42]);
 
   console.log('registryResult', registryResult.hash);
 
@@ -437,26 +426,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
   console.log('aliceAddClaimResult', aliceAddClaimResult.hash);
 
-  // console.log('creating claim for bob');
-  // const claimForBob = {
-  //     data: textAsHex('Some claim public data.'),
-  //     issuer: trex.suite.claimIssuerContract.address,
-  //     topic: id('CLAIM_TOPIC'),
-  //     scheme: 1,
-  //     identity: bobIdentity.address,
-  //     signature: '',
-  // };
-  // claimForBob.signature = await claimIssuerSigningKey.signMessage(
-  //     ethers.getBytes(
-  //         ethers.keccak256(
-  //             abiByteString,
-  //         ),
-  //     ),
-  // );
-
-  // console.log('adding claim for bob');
-  // (await bobIdentity.getContract(users.bob.actionAccount))
-  //     .addClaim(claimForBob.topic, claimForBob.scheme, claimForBob.issuer, claimForBob.signature, claimForBob.data, '');
 
   const tokenAtProxyForCheck = new ethers.Contract(trex.suite.token.address, Token.abi, await getSigner(admin.tokenAgent, chainId));
   const isAgent = await tokenAtProxyForCheck.isAgent(admin.tokenAgent.address);
