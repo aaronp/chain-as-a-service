@@ -20,8 +20,6 @@ import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/Token
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
 import { client } from '@/api/client';
 import { bytecodeToBase64 } from '@/lib/utils';
-import { KeyPurpose, KeyType } from './keys';
-import { platformDSL } from './dsl/platformDSL';
 import { userDSL } from './dsl/userDSL';
 import { tokenAgentDSL } from './dsl/tokenAgentDSL';
 import { createKYCClaim } from './claims';
@@ -29,7 +27,7 @@ import { claimsSigningKeyDSL } from './dsl/claimsSigningKeyDSL';
 
 
 
-const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
+export const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
   const signer = await getSigner(deployer, chainId);
 
 
@@ -101,7 +99,6 @@ export async function deployTrexSuite(chainId: string, deployer: PrivateAccount,
   }
 
   const requiresContractInit = !(await isTRexAlreadyDeployed());
-  console.log('requiresContractInit', requiresContractInit);
 
 
   // ============================================================================================================================
@@ -169,7 +166,7 @@ export async function deployTrexSuite(chainId: string, deployer: PrivateAccount,
   const isTokenAlreadyDeployed = async () => {
     const contracts = await client().listContracts({
       chain: chainId,
-      type: 'TokenProxy',
+      type: `TokenProxy-${tokenName}`,
     });
     return contracts.length > 0;
   }
@@ -182,7 +179,7 @@ export async function deployTrexSuite(chainId: string, deployer: PrivateAccount,
     deployContract(
       chainId,
       deployer,
-      'TokenProxy',
+      `TokenProxy-${tokenName}`,
       TokenProxy.abi,
       TokenProxy.bytecode,
 
