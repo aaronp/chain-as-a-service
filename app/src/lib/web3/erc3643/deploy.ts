@@ -128,12 +128,12 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   };
 
 
-  console.log('addAndUseTREXVersion', trexImplementationAuthority);
-  await (await trexImplementationAuthority.getContract(deployer)).addAndUseTREXVersion(versionStruct, contractsStruct);
+
+  requiresContractInit && await (await trexImplementationAuthority.getContract(deployer)).addAndUseTREXVersion(versionStruct, contractsStruct);
 
 
   const trexFactory = await deployContract(chainId, accounts.deployer, 'TREXFactory', TREXFactory.abi, TREXFactory.bytecode, trexImplementationAuthority.address, identityFactory.address);
-  await (await identityFactory.getContract(deployer)).addTokenFactory(trexFactory.address);
+  requiresContractInit && await (await identityFactory.getContract(deployer)).addTokenFactory(trexFactory.address);
 
   const claimTopicsRegistry = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistryProxy', ClaimTopicsRegistryProxy.abi, ClaimTopicsRegistryProxy.bytecode, trexImplementationAuthority.address);
   const trustedIssuersRegistry = await deployContract(chainId, accounts.deployer, 'TrustedIssuersRegistryProxy', TrustedIssuersRegistryProxy.abi, TrustedIssuersRegistryProxy.bytecode, trexImplementationAuthority.address);
@@ -152,6 +152,19 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   const tokenName = 'TREXDINO';
   const tokenSymbol = 'TREX';
   const tokenDecimals = '0' //BigNumber.from('0');
+
+  const isTokenAlreadyDeployed = async () => {
+    const contracts = await client().listContracts({
+      chain: chainId,
+      type: 'TokenProxy',
+    });
+    return contracts.length > 0;
+  }
+
+  const requiresTokenInit = !(await isTokenAlreadyDeployed());
+  console.log('requiresTokenInit', requiresTokenInit);
+
+
   const token = await
     deployContract(
       chainId,
@@ -199,7 +212,10 @@ The AgentManager acts as a central authority for managing privileged roles and e
     IdentityRegistryStorage.abi,     // implementation ABI
     await getSigner(accounts.deployer, chainId)
   );
-  await identityRegistryStorageAtProxy.bindIdentityRegistry(identityRegistry.address);
+
+  console.log("fuck - bindIdentityRegistry")
+
+  requiresContractInit && await identityRegistryStorageAtProxy.bindIdentityRegistry(identityRegistry.address);
 
   // Use the implementation ABI at the proxy address to call addAgent
   const tokenAtProxy = async () => new ethers.Contract(
@@ -208,9 +224,9 @@ The AgentManager acts as a central authority for managing privileged roles and e
     await getSigner(accounts.deployer, chainId)
   );
 
-  const addTokenAgentResult = await (await tokenAtProxy()).addAgent(tokenAgent.address);
-  // await (await tokenAtProxy()).addAgent(agentManager.address);
-  console.log('!!!addTokenAgentResult', addTokenAgentResult.hash);
+  console.log("fuck - adding agent")
+  requiresTokenInit && await (await tokenAtProxy()).addAgent(tokenAgent.address);
+  console.log("fuck - added agent")
 
   const claimTopics = [id('CLAIM_TOPIC')];
   const claimTopicsRegistryAtProxy = new ethers.Contract(
@@ -218,7 +234,9 @@ The AgentManager acts as a central authority for managing privileged roles and e
     ClaimTopicsRegistry.abi,     // implementation ABI
     await getSigner(accounts.deployer, chainId)
   );
-  await claimTopicsRegistryAtProxy.addClaimTopic(claimTopics[0]);
+
+  console.log("fuck - adding claim topic")
+  requiresContractInit && await claimTopicsRegistryAtProxy.addClaimTopic(claimTopics[0]);
 
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
 
