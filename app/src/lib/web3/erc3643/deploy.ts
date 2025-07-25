@@ -321,53 +321,29 @@ export type UserAccounts = {
 }
 
 
+async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: PrivateAccount, userAddress: string): Promise<Deployed> {
+  const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
 
+  const identity = await deployContract(chainId, deployer, `IdentityProxy-${userAddress}`, OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode,
+    implementationAuthorityContractAddress,
+    userAddress,
+  );
+
+  return {
+    address: identity.address,
+    getContract: async (account: PrivateAccount) => {
+      return new ethers.Contract(identity.address, OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
+    }
+  }
+}
+
+export async function setupAccount(chainId: string, user: Persona, trex: TrexSuite) {
+
+}
 export async function setupAccounts(chainId: string, admin: Accounts, users: UserAccounts, trex: TrexSuite) {
 
 
-  async function deployIdentityProxy(user: PrivateAccount): Promise<Deployed> {
-
-
-    // console.log('deploying identity proxy for', user.address);
-    const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
-
-    // const identity = await new ContractFactory(OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, await getSigner(admin.deployer, chainId)).deploy(
-    //   implementationAuthorityContractAddress,
-    //   managementKey,
-    // );
-
-    // await identity.waitForDeployment();
-
-    const identity = await deployContract(chainId, admin.deployer, `IdentityProxy-${user.address}`, OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode,
-      implementationAuthorityContractAddress,
-      user.address,
-    );
-
-    return {
-      address: identity.address,
-      getContract: async (account: PrivateAccount) => {
-        return new ethers.Contract(identity.address, OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
-      }
-    }
-  }
-
-  const isAliceIdentityDeployed = async () => {
-    const contracts = await client().listContracts({
-      chain: chainId,
-      type: `IdentityProxy-${users.alice.personalAccount.address}`,
-    });
-    return contracts.length > 0;
-  }
-
-  const requiresAliceInit = !(await isAliceIdentityDeployed());
-  console.log('requiresAliceInit', requiresAliceInit);
-  if (requiresAliceInit) {
-    console.log('deploying accounts for ', users);
-  }
-
-
-  const aliceIdentity = await deployIdentityProxy(users.alice.personalAccount);
-  // await aliceIdentity.addKey(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address'], [users.alice.actionAccount.address])), 2, 1);
+  const aliceIdentity = await deployIdentityProxy(chainId, trex, admin.deployer, users.alice.personalAccount.address);
   // the first arg is 1, 2 or 3
   // 1 is the key type for management keys
   // 2 is the key type for action keys
@@ -393,11 +369,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     );
   }
 
-  // const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [aliceIdentity.address, bobIdentity.address], [42, 666]);
-  // const registryResult = await (await trex.implementations.identityRegistryImplementation.getContract(admin.tokenAgent)).batchRegisterIdentity([users.alice.personalAccount.address, users.bob.personalAccount.address], [await aliceIdentity.getAddress(), await bobIdentity.getAddress()], [42, 666]);
-  const registryResult = await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address], [aliceIdentity.address], [42]);
-
-  console.log('registryResult', registryResult.hash);
+  await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address], [aliceIdentity.address], [42]);
 
   const textAsHex = (text: string) => ethers.hexlify(ethers.toUtf8Bytes(text))
 

@@ -15,6 +15,9 @@ test('deploy an ERC3643 identity contract', async () => {
     const chainId = 'erc3643-test-chain'
 
 
+    /**
+     * First  step is for the deployer to deploy the platform
+     */
     const before = new Date().getTime();
     const trex = await platform().deploy(chainId, {
         deployer: accounts.deployer,
@@ -26,6 +29,10 @@ test('deploy an ERC3643 identity contract', async () => {
     // roughly 3 seconds for deploys,
     // 300ms if cached
 
+
+    /**
+     * Second step is for the claim issuer to add their signing key to the platform
+     */
     await platform().addSigningKey(trex, accounts.claimIssuer, accounts.claimIssuerSigningKey.address);
 
 
