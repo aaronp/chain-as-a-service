@@ -3,7 +3,8 @@ import { PrivateAccount as Account, createNewAccount, newAccount } from '@/ui/wa
 import { test } from 'bun:test';
 import { deployTrexSuite, newPersona, SetupAccounts, setupAccounts } from '@/lib/web3/erc3643/deploy';
 import { testAccounts } from '@/lib/web3/erc3643/erc3643';
-import { platform } from '@/lib/web3/erc3643/dsl/platform';
+import { platformDSL } from '@/lib/web3/erc3643/dsl/platformDSL';
+import { claimsDSL } from '@/lib/web3/erc3643/dsl/claimsDSL';
 
 
 test('deploy an ERC3643 identity contract', async () => {
@@ -19,8 +20,7 @@ test('deploy an ERC3643 identity contract', async () => {
      * First  step is for the deployer to deploy the platform
      */
     const before = new Date().getTime();
-    const trex = await platform().deploy(chainId, {
-        deployer: accounts.deployer,
+    const trex = await platformDSL(accounts.deployer).deploy(chainId, {
         tokenIssuerAddress: accounts.tokenIssuer.address,
         tokenAgentAddress: accounts.tokenAgent.address,
         claimIssuerAddress: accounts.claimIssuer.address,
@@ -33,7 +33,7 @@ test('deploy an ERC3643 identity contract', async () => {
     /**
      * Second step is for the claim issuer to add their signing key to the platform
      */
-    await platform().addSigningKey(trex, accounts.claimIssuer, accounts.claimIssuerSigningKey.address);
+    await claimsDSL(accounts.claimIssuer).addSigningKey(trex, accounts.claimIssuerSigningKey.address);
 
 
     const users = {

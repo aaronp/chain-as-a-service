@@ -74,17 +74,15 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
 }
 
 export type SetupAccounts = {
-  deployer: PrivateAccount,
   // claimIssuer: PrivateAccount,
   tokenIssuerAddress: string,
   tokenAgentAddress: string,
   claimIssuerAddress: string,
 }
 
-export async function deployTrexSuite(chainId: string, accounts: SetupAccounts): Promise<TrexSuite> {
+export async function deployTrexSuite(chainId: string, deployer: PrivateAccount, accounts: SetupAccounts): Promise<TrexSuite> {
 
-  // const { deployer, tokenIssuer, claimIssuer, claimIssuerSigningKey, tokenAgent } = accounts;
-  const { deployer, tokenIssuerAddress, tokenAgentAddress, claimIssuerAddress } = accounts;
+  const { tokenIssuerAddress, tokenAgentAddress, claimIssuerAddress } = accounts;
 
 
   // check if the contract has been deployed so we know whether we need to initialize it
@@ -104,18 +102,18 @@ export async function deployTrexSuite(chainId: string, accounts: SetupAccounts):
   // Deploy implementations
   // ============================================================================================================================  
 
-  const claimTopicsRegistryImplementation = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistry', ClaimTopicsRegistry.abi, ClaimTopicsRegistry.bytecode);
-  const trustedIssuersRegistryImplementation = await deployContract(chainId, accounts.deployer, 'TrustedIssuersRegistry', TrustedIssuersRegistry.abi, TrustedIssuersRegistry.bytecode);
-  const identityRegistryStorageImplementation = await deployContract(chainId, accounts.deployer, 'IdentityRegistryStorage', IdentityRegistryStorage.abi, IdentityRegistryStorage.bytecode);
-  const identityRegistryImplementation = await deployContract(chainId, accounts.deployer, 'IdentityRegistry', IdentityRegistry.abi, IdentityRegistry.bytecode);
-  const modularComplianceImplementation = await deployContract(chainId, accounts.deployer, 'ModularCompliance', ModularCompliance.abi, ModularCompliance.bytecode);
-  const tokenImplementation = await deployContract(chainId, accounts.deployer, 'Token', Token.abi, Token.bytecode);
-  const identityImplementation = await deployContract(chainId, accounts.deployer, 'OnchainID', OnchainID.contracts.Identity.abi, OnchainID.contracts.Identity.bytecode, deployer.address, true);
-  const identityImplementationAuthority = await deployContract(chainId, accounts.deployer, 'ImplementationAuthority', OnchainID.contracts.ImplementationAuthority.abi, OnchainID.contracts.ImplementationAuthority.bytecode, identityImplementation.address);
-  const identityFactory = await deployContract(chainId, accounts.deployer, 'Factory', OnchainID.contracts.Factory.abi, OnchainID.contracts.Factory.bytecode, identityImplementationAuthority.address);
+  const claimTopicsRegistryImplementation = await deployContract(chainId, deployer, 'ClaimTopicsRegistry', ClaimTopicsRegistry.abi, ClaimTopicsRegistry.bytecode);
+  const trustedIssuersRegistryImplementation = await deployContract(chainId, deployer, 'TrustedIssuersRegistry', TrustedIssuersRegistry.abi, TrustedIssuersRegistry.bytecode);
+  const identityRegistryStorageImplementation = await deployContract(chainId, deployer, 'IdentityRegistryStorage', IdentityRegistryStorage.abi, IdentityRegistryStorage.bytecode);
+  const identityRegistryImplementation = await deployContract(chainId, deployer, 'IdentityRegistry', IdentityRegistry.abi, IdentityRegistry.bytecode);
+  const modularComplianceImplementation = await deployContract(chainId, deployer, 'ModularCompliance', ModularCompliance.abi, ModularCompliance.bytecode);
+  const tokenImplementation = await deployContract(chainId, deployer, 'Token', Token.abi, Token.bytecode);
+  const identityImplementation = await deployContract(chainId, deployer, 'OnchainID', OnchainID.contracts.Identity.abi, OnchainID.contracts.Identity.bytecode, deployer.address, true);
+  const identityImplementationAuthority = await deployContract(chainId, deployer, 'ImplementationAuthority', OnchainID.contracts.ImplementationAuthority.abi, OnchainID.contracts.ImplementationAuthority.bytecode, identityImplementation.address);
+  const identityFactory = await deployContract(chainId, deployer, 'Factory', OnchainID.contracts.Factory.abi, OnchainID.contracts.Factory.bytecode, identityImplementationAuthority.address);
   const trexImplementationAuthority = await deployContract(
     chainId,
-    accounts.deployer,
+    deployer,
     'TREXImplementationAuthority',
     TREXImplementationAuthority.abi,
     TREXImplementationAuthority.bytecode,
@@ -141,15 +139,15 @@ export async function deployTrexSuite(chainId: string, accounts: SetupAccounts):
   requiresContractInit && await (await trexImplementationAuthority.getContract(deployer)).addAndUseTREXVersion(versionStruct, contractsStruct);
 
 
-  const trexFactory = await deployContract(chainId, accounts.deployer, 'TREXFactory', TREXFactory.abi, TREXFactory.bytecode, trexImplementationAuthority.address, identityFactory.address);
+  const trexFactory = await deployContract(chainId, deployer, 'TREXFactory', TREXFactory.abi, TREXFactory.bytecode, trexImplementationAuthority.address, identityFactory.address);
   requiresContractInit && await (await identityFactory.getContract(deployer)).addTokenFactory(trexFactory.address);
 
-  const claimTopicsRegistry = await deployContract(chainId, accounts.deployer, 'ClaimTopicsRegistryProxy', ClaimTopicsRegistryProxy.abi, ClaimTopicsRegistryProxy.bytecode, trexImplementationAuthority.address);
-  const trustedIssuersRegistry = await deployContract(chainId, accounts.deployer, 'TrustedIssuersRegistryProxy', TrustedIssuersRegistryProxy.abi, TrustedIssuersRegistryProxy.bytecode, trexImplementationAuthority.address);
-  const identityRegistryStorage = await deployContract(chainId, accounts.deployer, 'IdentityRegistryStorageProxy', IdentityRegistryStorageProxy.abi, IdentityRegistryStorageProxy.bytecode, trexImplementationAuthority.address);
-  const defaultCompliance = await deployContract(chainId, accounts.deployer, 'DefaultCompliance', DefaultCompliance.abi, DefaultCompliance.bytecode);
-  const identityRegistry = await deployContract(chainId, accounts.deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
-  const tokenOID = await deployContract(chainId, accounts.deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuerAddress);
+  const claimTopicsRegistry = await deployContract(chainId, deployer, 'ClaimTopicsRegistryProxy', ClaimTopicsRegistryProxy.abi, ClaimTopicsRegistryProxy.bytecode, trexImplementationAuthority.address);
+  const trustedIssuersRegistry = await deployContract(chainId, deployer, 'TrustedIssuersRegistryProxy', TrustedIssuersRegistryProxy.abi, TrustedIssuersRegistryProxy.bytecode, trexImplementationAuthority.address);
+  const identityRegistryStorage = await deployContract(chainId, deployer, 'IdentityRegistryStorageProxy', IdentityRegistryStorageProxy.abi, IdentityRegistryStorageProxy.bytecode, trexImplementationAuthority.address);
+  const defaultCompliance = await deployContract(chainId, deployer, 'DefaultCompliance', DefaultCompliance.abi, DefaultCompliance.bytecode);
+  const identityRegistry = await deployContract(chainId, deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
+  const tokenOID = await deployContract(chainId, deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuerAddress);
 
 
 
@@ -177,7 +175,7 @@ export async function deployTrexSuite(chainId: string, accounts: SetupAccounts):
   const token = await
     deployContract(
       chainId,
-      accounts.deployer,
+      deployer,
       'TokenProxy',
       TokenProxy.abi,
       TokenProxy.bytecode,
@@ -213,13 +211,13 @@ Ownership: The contract has an owner (usually the deployer or a governance addre
 In summary:
 The AgentManager acts as a central authority for managing privileged roles and executing administrative or compliance-related actions on the ERC3643 token and its associated contracts. It is designed to support regulated token environments where fine-grained control and auditability of agent actions are required.
    */
-  const agentManager = await deployContract(chainId, accounts.deployer, 'AgentManager', AgentManager.abi, AgentManager.bytecode, token.address);
+  const agentManager = await deployContract(chainId, deployer, 'AgentManager', AgentManager.abi, AgentManager.bytecode, token.address);
 
   // Use the implementation ABI at the proxy address to call bindIdentityRegistry
   const identityRegistryStorageAtProxy = new ethers.Contract(
     identityRegistryStorage.address, // proxy address
     IdentityRegistryStorage.abi,     // implementation ABI
-    await getSigner(accounts.deployer, chainId)
+    await getSigner(deployer, chainId)
   );
 
   requiresContractInit && await identityRegistryStorageAtProxy.bindIdentityRegistry(identityRegistry.address);
@@ -228,7 +226,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
   const tokenAtProxy = async () => new ethers.Contract(
     token.address, // proxy address
     Token.abi,     // implementation ABI
-    await getSigner(accounts.deployer, chainId)
+    await getSigner(deployer, chainId)
   );
 
   requiresTokenInit && await (await tokenAtProxy()).addAgent(tokenAgentAddress);
@@ -237,21 +235,21 @@ The AgentManager acts as a central authority for managing privileged roles and e
   const claimTopicsRegistryAtProxy = new ethers.Contract(
     claimTopicsRegistry.address, // proxy address
     ClaimTopicsRegistry.abi,     // implementation ABI
-    await getSigner(accounts.deployer, chainId)
+    await getSigner(deployer, chainId)
   );
 
   requiresContractInit && await claimTopicsRegistryAtProxy.addClaimTopic(claimTopics[0]);
 
-  const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuerAddress);
+  const claimIssuerContract = await deployContract(chainId, deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuerAddress);
 
 
-  // requiresContractInit && await (await claimIssuerContract.getContract(accounts.deployer)).addKey(encodeAddress(claimIssuerSigningKeyAddress), 3, 1);
+  // requiresContractInit && await (await claimIssuerContract.getContract(deployer)).addKey(encodeAddress(claimIssuerSigningKeyAddress), 3, 1);
 
 
   const trustedIssuersRegistryAtProxy = new ethers.Contract(
     trustedIssuersRegistry.address, // proxy address
     TrustedIssuersRegistry.abi,     // implementation ABI
-    await getSigner(accounts.deployer, chainId)
+    await getSigner(deployer, chainId)
   );
   requiresContractInit && await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
@@ -261,7 +259,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
     return new ethers.Contract(
       identityRegistry.address, // proxy address
       IdentityRegistry.abi,     // implementation ABI
-      await getSigner(accounts.deployer, chainId)
+      await getSigner(deployer, chainId)
     );
   }
   requiresTokenInit && await (await identityRegistryAtProxy()).addAgent(tokenAgentAddress);
@@ -337,9 +335,6 @@ async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: P
   }
 }
 
-export async function setupAccount(chainId: string, user: Persona, trex: TrexSuite) {
-
-}
 export async function setupAccounts(chainId: string, admin: Accounts, users: UserAccounts, trex: TrexSuite) {
 
 
@@ -353,7 +348,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   // 1 is ECDSA
   // 2 is RSA
   //
-  console.log('adding key to alice identity', users.alice.actionAccount.address);
   const aliceAddKeyResult = await (await aliceIdentity.getContract(users.alice.personalAccount)).addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
   console.log('aliceAddKeyResult', aliceAddKeyResult.hash);
 
