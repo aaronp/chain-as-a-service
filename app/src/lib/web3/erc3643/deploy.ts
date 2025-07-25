@@ -73,9 +73,19 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
   };
 }
 
-export async function deployTrexSuite(chainId: string, accounts: Accounts): Promise<TrexSuite> {
+type SetupAccounts = {
+  deployer: PrivateAccount,
+  claimIssuer: PrivateAccount,
+  tokenIssuerAddress: string,
+  tokenAgentAddress: string,
+  claimIssuerAddress: string,
+  claimIssuerSigningKeyAddress: string,
+}
 
-  const { deployer, tokenIssuer, claimIssuer, claimIssuerSigningKey, tokenAgent } = accounts;
+export async function deployTrexSuite(chainId: string, accounts: SetupAccounts): Promise<TrexSuite> {
+
+  // const { deployer, tokenIssuer, claimIssuer, claimIssuerSigningKey, tokenAgent } = accounts;
+  const { deployer, tokenIssuerAddress, tokenAgentAddress, claimIssuerAddress, claimIssuerSigningKeyAddress, claimIssuer } = accounts;
 
 
   // check if the contract has been deployed so we know whether we need to initialize it
@@ -140,7 +150,7 @@ export async function deployTrexSuite(chainId: string, accounts: Accounts): Prom
   const identityRegistryStorage = await deployContract(chainId, accounts.deployer, 'IdentityRegistryStorageProxy', IdentityRegistryStorageProxy.abi, IdentityRegistryStorageProxy.bytecode, trexImplementationAuthority.address);
   const defaultCompliance = await deployContract(chainId, accounts.deployer, 'DefaultCompliance', DefaultCompliance.abi, DefaultCompliance.bytecode);
   const identityRegistry = await deployContract(chainId, accounts.deployer, 'IdentityRegistryProxy', IdentityRegistryProxy.abi, IdentityRegistryProxy.bytecode, trexImplementationAuthority.address, trustedIssuersRegistry.address, claimTopicsRegistry.address, identityRegistryStorage.address);
-  const tokenOID = await deployContract(chainId, accounts.deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuer.address);
+  const tokenOID = await deployContract(chainId, accounts.deployer, 'TokenOID', OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode, identityImplementationAuthority.address, tokenIssuerAddress);
 
 
 
@@ -225,7 +235,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
   );
 
   console.log("fuck - adding agent")
-  requiresTokenInit && await (await tokenAtProxy()).addAgent(tokenAgent.address);
+  requiresTokenInit && await (await tokenAtProxy()).addAgent(tokenAgentAddress);
   console.log("fuck - added agent")
 
   const claimTopics = [id('CLAIM_TOPIC')];
@@ -238,10 +248,10 @@ The AgentManager acts as a central authority for managing privileged roles and e
   console.log("fuck - adding claim topic")
   requiresContractInit && await claimTopicsRegistryAtProxy.addClaimTopic(claimTopics[0]);
 
-  const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuer.address);
+  const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuerAddress);
 
 
-  requiresContractInit && await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKey.address), 3, 1);
+  requiresContractInit && await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuerSigningKeyAddress), 3, 1);
   // await (await claimIssuerContract.getContract(claimIssuer)).addKey(encodeAddress(claimIssuer.address), 3, 1);
 
   const trustedIssuersRegistryAtProxy = new ethers.Contract(
@@ -263,7 +273,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
       await getSigner(accounts.deployer, chainId)
     );
   }
-  requiresTokenInit && await (await identityRegistryAtProxy()).addAgent(tokenAgent.address);
+  requiresTokenInit && await (await identityRegistryAtProxy()).addAgent(tokenAgentAddress);
   requiresTokenInit && await (await identityRegistryAtProxy()).addAgent(token.address);
 
   return {

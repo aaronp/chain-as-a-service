@@ -1,7 +1,7 @@
 import { ensureServerRunning, TEST_URL } from './testServer';
 import { PrivateAccount as Account, createNewAccount, newAccount } from '@/ui/wallet/accounts';
 import { test } from 'bun:test';
-import { deployTrexSuite, newPersona, setupAccounts } from '@/lib/web3/erc3643/deploy';
+import { deployTrexSuite, newPersona, SetupAccounts, setupAccounts } from '@/lib/web3/erc3643/deploy';
 import { testAccounts } from '@/lib/web3/erc3643/erc3643';
 
 
@@ -15,7 +15,15 @@ test('deploy an ERC3643 identity contract', async () => {
     // const chainId = 'erc3643-chain-' + new Date().getTime()
     const chainId = 'erc3643-test-chain'
 
-    const trex = await deployTrexSuite(chainId, accounts);
+    const x: SetupAccounts = {
+        deployer: accounts.deployer,
+        tokenIssuerAddress: accounts.tokenIssuer.address,
+        tokenAgentAddress: accounts.tokenAgent.address,
+        claimIssuerAddress: accounts.claimIssuer.address,
+        claimIssuerSigningKeyAddress: accounts.claimIssuerSigningKey.address,
+        claimIssuer: accounts.claimIssuer,
+    }
+    const trex = await deployTrexSuite(chainId, x);
     console.log('trex', trex);
 
 
