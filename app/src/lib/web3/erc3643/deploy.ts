@@ -348,7 +348,7 @@ export type UserToOnboard = {
   countryCode: number
 }
 
-async function deployAccountFlow(chainId: string, admin: Accounts, trex: TrexSuite, userPersona: Persona, user: UserToOnboard) {
+async function onboardUserFlow(chainId: string, admin: Accounts, trex: TrexSuite, userPersona: Persona, user: UserToOnboard) {
 
   /**
    * 1. Deployer registeres a new OnChainID identity for the user
@@ -413,7 +413,7 @@ export const tokenContract = async (chainId: string, tokenAddress: string, accou
 
 export async function setupAccounts(chainId: string, admin: Accounts, newPersona: Persona, trex: TrexSuite) {
 
-  const alice = await deployAccountFlow(chainId, admin, trex, newPersona, {
+  const newUser = await onboardUserFlow(chainId, admin, trex, newPersona, {
     addresses: {
       personalAccount: newPersona.personalAccount.address,
       actionAccount: newPersona.actionAccount.address,
@@ -425,7 +425,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
 
   // // Mint tokens for Alice using the implementation ABI at the proxy address
   const tokenAtProxy = await tokenContract(chainId, trex.suite.token.address, admin.tokenAgent);
-
 
   const balanceResultBefore = await (await tokenContract(chainId, trex.suite.token.address, newPersona.personalAccount)).balanceOf(newPersona.personalAccount.address);
   console.log('before mint, balanceResult', balanceResultBefore);
@@ -448,7 +447,8 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
 
   return {
     identities: {
-      aliceIdentity: alice.identityContract,
+      newUserIdentity: newUser.identityContract,
+      balance: balanceResult,
     }
   }
 
