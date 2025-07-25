@@ -73,7 +73,7 @@ const deployContract = async (chainId: string, deployer: PrivateAccount, contrac
   };
 }
 
-type SetupAccounts = {
+export type SetupAccounts = {
   deployer: PrivateAccount,
   claimIssuer: PrivateAccount,
   tokenIssuerAddress: string,
@@ -223,8 +223,6 @@ The AgentManager acts as a central authority for managing privileged roles and e
     await getSigner(accounts.deployer, chainId)
   );
 
-  console.log("fuck - bindIdentityRegistry")
-
   requiresContractInit && await identityRegistryStorageAtProxy.bindIdentityRegistry(identityRegistry.address);
 
   // Use the implementation ABI at the proxy address to call addAgent
@@ -234,9 +232,7 @@ The AgentManager acts as a central authority for managing privileged roles and e
     await getSigner(accounts.deployer, chainId)
   );
 
-  console.log("fuck - adding agent")
   requiresTokenInit && await (await tokenAtProxy()).addAgent(tokenAgentAddress);
-  console.log("fuck - added agent")
 
   const claimTopics = [id('CLAIM_TOPIC')];
   const claimTopicsRegistryAtProxy = new ethers.Contract(
@@ -245,7 +241,6 @@ The AgentManager acts as a central authority for managing privileged roles and e
     await getSigner(accounts.deployer, chainId)
   );
 
-  console.log("fuck - adding claim topic")
   requiresContractInit && await claimTopicsRegistryAtProxy.addClaimTopic(claimTopics[0]);
 
   const claimIssuerContract = await deployContract(chainId, accounts.deployer, 'ClaimIssuer', OnchainID.contracts.ClaimIssuer.abi, OnchainID.contracts.ClaimIssuer.bytecode, claimIssuerAddress);
@@ -261,9 +256,6 @@ The AgentManager acts as a central authority for managing privileged roles and e
   );
   requiresContractInit && await trustedIssuersRegistryAtProxy.addTrustedIssuer(claimIssuerContract.address, claimTopics);
 
-
-
-  // moved from the accounts section, lines 132 - 133 in deploy-full-suite.fixture.ts
 
   // Human/operator account for privileged actions - being added to manage identities, perform compliance operations, etc.
   const identityRegistryAtProxy = async () => {

@@ -1,17 +1,22 @@
+import { PrivateAccount as Account, createNewAccount, newAccount, PrivateAccount } from '@/ui/wallet/accounts';
+import { deployTrexSuite, newPersona, SetupAccounts, setupAccounts } from '@/lib/web3/erc3643/deploy';
+
 export const platform = () => {
-    const ensureSetup = (chainId: string) => {
 
-
-
-        const proc = await ensureServerRunning();
-
-        const wallet = await createNewAccount('Test Account ' + new Date().getTime());
-
-        const accounts = await testAccounts();
-        // const chainId = 'erc3643-chain-' + new Date().getTime()
-        const chainId = 'erc3643-test-chain'
+    /**
+     * @param chainId the chain to deploy to 
+     * @param accounts the roles used to deploy the platform
+     * @returns the deployed platform
+     */
+    const deploy = async (chainId: string, accounts: SetupAccounts) => {
 
         const trex = await deployTrexSuite(chainId, accounts);
         console.log('trex', trex);
+
+        return trex;
+    }
+
+    return {
+        deploy,
     }
 }
