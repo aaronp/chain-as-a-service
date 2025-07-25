@@ -20,7 +20,7 @@ test('deploy an ERC3643 identity contract', async () => {
      * First  step is for the deployer to deploy the platform
      */
     const before = new Date().getTime();
-    const trex = await platformDSL(accounts.deployer).deploy(chainId, {
+    const trex = await platformDSL(accounts.deployer).deploySuite(chainId, {
         tokenIssuerAddress: accounts.tokenIssuer.address,
         tokenAgentAddress: accounts.tokenAgent.address,
         claimIssuerAddress: accounts.claimIssuer.address,

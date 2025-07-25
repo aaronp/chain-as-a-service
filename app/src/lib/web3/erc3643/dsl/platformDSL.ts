@@ -1,5 +1,6 @@
 import { PrivateAccount as Account, createNewAccount, newAccount, PrivateAccount } from '@/ui/wallet/accounts';
-import { deployTrexSuite, newPersona, SetupAccounts, setupAccounts } from '@/lib/web3/erc3643/deploy';
+import { deployIdentityProxy, deployTrexSuite, newPersona, SetupAccounts, setupAccounts, UserToOnboard } from '@/lib/web3/erc3643/deploy';
+import { TrexSuite } from '../erc3643';
 
 export const platformDSL = (deployer: PrivateAccount) => {
 
@@ -8,7 +9,7 @@ export const platformDSL = (deployer: PrivateAccount) => {
      * @param accounts the roles used to deploy the platform
      * @returns the deployed platform
      */
-    const deploy = async (chainId: string, accounts: SetupAccounts) => {
+    const deploySuite = async (chainId: string, accounts: SetupAccounts) => {
 
         const trex = await deployTrexSuite(chainId, deployer, accounts);
         console.log('trex', trex);
@@ -16,8 +17,13 @@ export const platformDSL = (deployer: PrivateAccount) => {
         return trex;
     }
 
+    const createUserIdentity = async (chainId: string, trex: TrexSuite, userAddress: string) => {
+
+        return await deployIdentityProxy(chainId, trex, deployer, userAddress);
+    }
 
     return {
-        deploy
+        deploySuite,
+        createUserIdentity
     }
 }

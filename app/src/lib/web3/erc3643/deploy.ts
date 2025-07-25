@@ -21,6 +21,11 @@ import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agen
 import { client } from '@/api/client';
 import { bytecodeToBase64 } from '@/lib/utils';
 import { KeyPurpose, KeyType } from './keys';
+import { platformDSL } from './dsl/platformDSL';
+import { userDSL } from './dsl/userDSL';
+import { tokenAgentDSL } from './dsl/tokenAgentDSL';
+import { createKYCClaim } from './claims';
+import { claimsSigningKeyDSL } from './dsl/claimsSigningKeyDSL';
 
 
 
@@ -314,7 +319,11 @@ export const newPersona = async (name: string): Promise<Persona> => {
 }
 
 
-async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: PrivateAccount, userAddress: string): Promise<Deployed> {
+export const getIdentityContract = async (identityAddress: string, chainId: string, account: PrivateAccount) => {
+  return new ethers.Contract(identityAddress, OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
+}
+
+export async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: PrivateAccount, userAddress: string): Promise<Deployed> {
   const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
 
   const identity = await deployContract(chainId, deployer, `IdentityProxy-${userAddress}`, OnchainID.contracts.IdentityProxy.abi, OnchainID.contracts.IdentityProxy.bytecode,
@@ -324,141 +333,98 @@ async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: P
 
   return {
     address: identity.address,
-    getContract: async (account: PrivateAccount) => {
-      return new ethers.Contract(identity.address, OnchainID.contracts.Identity.abi, await getSigner(account, chainId))
-    }
+    getContract: async (account: PrivateAccount) => getIdentityContract(identity.address, chainId, account)
   }
 }
 
 const textAsHex = (text: string) => ethers.hexlify(ethers.toUtf8Bytes(text))
 
 
-export async function setupAccount(chainId: string, admin: Accounts, newPersona: Persona, trex: TrexSuite, userClaim: string, countryCode: number) {
-
-
-  const aliceIdentity = await deployIdentityProxy(chainId, trex, admin.deployer, newPersona.personalAccount.address);
-
-  const aliceAddKeyResult = await (await aliceIdentity.getContract(newPersona.personalAccount)).addKey(encodeAddress(newPersona.actionAccount.address), KeyPurpose.execution, KeyType.ECDSA);
-
-
-
-  const identityRegistryAtProxy = async () => {
-    return new ethers.Contract(
-      trex.suite.identityRegistry.address, // proxy address
-      IdentityRegistry.abi,     // implementation ABI
-      await getSigner(admin.tokenAgent, chainId) // <--- NOTE: this has to be the tokenAgent account (not the deployer) to register identities
-    );
+export type UserToOnboard = {
+  addresses: {
+    personalAccount: string
+    actionAccount: string,
+    managementAccount: string
   }
-  // these are tuples of wallet addresses, on-chain identity addresses, and country codes
-  await (await identityRegistryAtProxy()).batchRegisterIdentity([newPersona.personalAccount.address], [aliceIdentity.address], [countryCode]);
+  userClaim: string,
+  countryCode: number
+}
+
+async function deployAccountFlow(chainId: string, admin: Accounts, trex: TrexSuite, userPersona: Persona, user: UserToOnboard) {
+
+  /**
+   * 1. Deployer registeres a new OnChainID identity for the user
+   */
+  // TODO - check if the token agent can do this
+  // const userIdentity = await platformDSL(admin.tokenAgent).createUserIdentity(chainId, trex, user.addresses.personalAccount);
+  const userIdentity = await platformDSL(admin.deployer).createUserIdentity(chainId, trex, user.addresses.personalAccount);
 
 
-  const claimForAlice = {
-    data: textAsHex(userClaim),
-    issuer: trex.suite.claimIssuerContract.address,
-    topic: id('CLAIM_TOPIC'),
-    scheme: 1,
-    identity: await aliceIdentity.address,
-    signature: '',
-  };
 
-  const claimIssuerSigningKey = await getSigner(admin.claimIssuerSigningKey, chainId)
+  /**
+   * 2. The user adds their action account to the identity
+   */
+  // person step - add their action account
+  // const aliceAddKeyResult = await (await userIdentity.getContract(newPersona.personalAccount)).addKey(encodeAddress(newPersona.actionAccount.address), KeyPurpose.execution, KeyType.ECDSA);
+  const aliceAddKeyResult = await userDSL(userPersona.personalAccount).registerActionAccount(chainId, userIdentity.address, user.addresses.actionAccount);
 
-  const abiByteString = ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]);
-  claimForAlice.signature = await claimIssuerSigningKey.signMessage(
-    ethers.getBytes(
-      ethers.keccak256(
-        abiByteString,
-      ),
-    ),
-  );
 
-  const aliceAddClaimResult = await (await aliceIdentity.getContract(newPersona.personalAccount))
-    .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
+  /**
+   * 3 register this identity 
+   */
+  await tokenAgentDSL(admin.tokenAgent).registerUserIdentity(chainId, trex.suite.identityRegistry.address, {
+    accountAddress: user.addresses.personalAccount,
+    identityAddress: userIdentity.address,
+    countryCode: user.countryCode
+  });
+
+
+  /**
+   * 4. The user creates a KYC claim
+   */
+  const claimForAlice = createKYCClaim(userIdentity.address, trex.suite.claimIssuerContract.address, user.userClaim);
+
+  /**
+   * 4.1 : the claims issuer (w/ their signing key) signs the claim
+   */
+  claimForAlice.signature = await claimsSigningKeyDSL(admin.claimIssuerSigningKey).signKYCClaim(chainId, userIdentity.address, claimForAlice.data);
+
+  /**
+   * 4.2 : the user adds the signed claim to their identity
+   */
+  const aliceAddClaimResult = await userDSL(userPersona.personalAccount).addSignedClaim(chainId, userIdentity.address, claimForAlice);
+
+  // const aliceAddClaimResult = await (await userIdentity.getContract(userPersona.personalAccount))
+  //   .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
 
 
   return {
-    identityContract: aliceIdentity.address,
+    identityContract: userIdentity.address,
     claimsHash: aliceAddClaimResult.hash,
     actionHash: aliceAddKeyResult.hash
   }
-
 }
 
 
+export const tokenContract = async (chainId: string, tokenAddress: string, account: PrivateAccount) => {
+  return new ethers.Contract(
+    tokenAddress, // proxy address
+    Token.abi,                // implementation ABI
+    await getSigner(account, chainId)
+  );
+}
+
 export async function setupAccounts(chainId: string, admin: Accounts, newPersona: Persona, trex: TrexSuite) {
 
-
-  const alice = await setupAccount(chainId, admin, newPersona, trex, 'Some claim public data.', 42);
-
-  // const aliceIdentity = await deployIdentityProxy(chainId, trex, admin.deployer, newPersona.personalAccount.address);
-  // // the first arg is 1, 2 or 3
-  // // 1 is the key type for management keys
-  // // 2 is the key type for action keys
-  // // 3 is the key type for claim keys
-  // //
-  // // the second arg is the key type
-  // // 1 is ECDSA
-  // // 2 is RSA
-  // //
-  // const aliceAddKeyResult = await (await aliceIdentity.getContract(newPersona.personalAccount)).addKey(encodeAddress(newPersona.actionAccount.address), 2, 1);
-  // console.log('aliceAddKeyResult', aliceAddKeyResult.hash);
-
-
-  // // these are tuples of wallet addresses, on-chain identity addresses, and country codes
-
-
-  // const identityRegistryAtProxy = async () => {
-  //   return new ethers.Contract(
-  //     trex.suite.identityRegistry.address, // proxy address
-  //     IdentityRegistry.abi,     // implementation ABI
-  //     await getSigner(admin.tokenAgent, chainId) // <--- NOTE: this has to be the tokenAgent account (not the deployer) to register identities
-  //   );
-  // }
-
-  // await (await identityRegistryAtProxy()).batchRegisterIdentity([newPersona.personalAccount.address], [aliceIdentity.address], [42]);
-
-
-  // const claimForAlice = {
-  //   data: textAsHex('Some claim public data.'),
-  //   issuer: trex.suite.claimIssuerContract.address,
-  //   topic: id('CLAIM_TOPIC'),
-  //   scheme: 1,
-  //   identity: await aliceIdentity.address,
-  //   signature: '',
-  // };
-
-  // const claimIssuerSigningKey = await getSigner(admin.claimIssuerSigningKey, chainId)
-
-  // console.log('signing... claim for alice');
-  // const abiByteString = ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256', 'bytes'], [claimForAlice.identity, claimForAlice.topic, claimForAlice.data]);
-  // claimForAlice.signature = await claimIssuerSigningKey.signMessage(
-  //   ethers.getBytes(
-  //     ethers.keccak256(
-  //       abiByteString,
-  //     ),
-  //   ),
-  // );
-
-  // console.log('adding claim for alice');
-  // const aliceAddClaimResult = await (await aliceIdentity.getContract(newPersona.personalAccount))
-  //   .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
-  // console.log('aliceAddClaimResult', aliceAddClaimResult.hash);
-
-
-
-  // // await (await trex.suite.agentManager.getContract(admin.tokenAgent)).addAgentAdmin(admin.tokenAdmin.address);
-  // // await (await trex.suite.token.getContract(admin.tokenAgent)).addAgent(trex.suite.agentManager.address);
-  // // await (await trex.suite.identityRegistry.getContract(admin.tokenAgent)).addAgent(trex.suite.agentManager.address);
-
-  // // await (await trex.suite.token.getContract(admin.tokenAgent)).unpause();
-
-  // // const isPaused = await (await trex.suite.token.getContract(admin.tokenAgent)).paused();
-  // // console.log('Token paused:', isPaused);
-
-
-  // // console.log('minting 1000 for alice');
-
+  const alice = await deployAccountFlow(chainId, admin, trex, newPersona, {
+    addresses: {
+      personalAccount: newPersona.personalAccount.address,
+      actionAccount: newPersona.actionAccount.address,
+      managementAccount: newPersona.managementAccount.address
+    },
+    userClaim: 'Some claim public data.',
+    countryCode: 42
+  });
 
   // // Mint tokens for Alice using the implementation ABI at the proxy address
   const tokenAtProxy = new ethers.Contract(
@@ -468,7 +434,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
   );
 
 
-  const balanceResultBefore = await tokenAtProxy.balanceOf(newPersona.personalAccount.address);
+  const balanceResultBefore = await (await tokenContract(chainId, trex.suite.token.address, newPersona.personalAccount)).balanceOf(newPersona.personalAccount.address);
   console.log('before mint, balanceResult', balanceResultBefore);
 
   const mintResult = await tokenAtProxy.mint(newPersona.personalAccount.address, 1000);
@@ -489,8 +455,6 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
   return {
     identities: {
       aliceIdentity: alice.identityContract,
-      // bob: bobIdentity,
-      // charlie: charlieIdentity,
     }
   }
 
