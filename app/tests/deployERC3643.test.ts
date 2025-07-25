@@ -36,12 +36,8 @@ test('deploy an ERC3643 identity contract', async () => {
     await claimsDSL(accounts.claimIssuer).addSigningKey(trex, accounts.claimIssuerSigningKey.address);
 
 
-    const users = {
-        alice: await newPersona('Alice'),
-        bob: await newPersona('Bob'),
-        charlie: await newPersona('Charlie'),
-    }
-    const userAccounts = await setupAccounts(chainId, accounts, users, trex);
+    const alice = await newPersona('Alice')
+    const userAccounts = await setupAccounts(chainId, accounts, alice, trex);
     console.log('users', userAccounts);
     // const result = await deployTREXFactory(wallet, 'erc3643-chain-' + new Date().getTime());
     // expect(result.trexFactory).toBeDefined();

@@ -312,12 +312,6 @@ export const newPersona = async (name: string): Promise<Persona> => {
   return { personalAccount, actionAccount, managementAccount };
 }
 
-export type UserAccounts = {
-  alice: Persona;
-  bob: Persona;
-  charlie: Persona;
-}
-
 
 async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: PrivateAccount, userAddress: string): Promise<Deployed> {
   const implementationAuthorityContractAddress = trex.authorities.identityImplementationAuthority.address
@@ -335,10 +329,10 @@ async function deployIdentityProxy(chainId: string, trex: TrexSuite, deployer: P
   }
 }
 
-export async function setupAccounts(chainId: string, admin: Accounts, users: UserAccounts, trex: TrexSuite) {
+export async function setupAccounts(chainId: string, admin: Accounts, alice: Persona, trex: TrexSuite) {
 
 
-  const aliceIdentity = await deployIdentityProxy(chainId, trex, admin.deployer, users.alice.personalAccount.address);
+  const aliceIdentity = await deployIdentityProxy(chainId, trex, admin.deployer, alice.personalAccount.address);
   // the first arg is 1, 2 or 3
   // 1 is the key type for management keys
   // 2 is the key type for action keys
@@ -348,7 +342,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   // 1 is ECDSA
   // 2 is RSA
   //
-  const aliceAddKeyResult = await (await aliceIdentity.getContract(users.alice.personalAccount)).addKey(encodeAddress(users.alice.actionAccount.address), 2, 1);
+  const aliceAddKeyResult = await (await aliceIdentity.getContract(alice.personalAccount)).addKey(encodeAddress(alice.actionAccount.address), 2, 1);
   console.log('aliceAddKeyResult', aliceAddKeyResult.hash);
 
 
@@ -363,7 +357,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
     );
   }
 
-  await (await identityRegistryAtProxy()).batchRegisterIdentity([users.alice.personalAccount.address], [aliceIdentity.address], [42]);
+  await (await identityRegistryAtProxy()).batchRegisterIdentity([alice.personalAccount.address], [aliceIdentity.address], [42]);
 
   const textAsHex = (text: string) => ethers.hexlify(ethers.toUtf8Bytes(text))
 
@@ -389,7 +383,7 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   );
 
   console.log('adding claim for alice');
-  const aliceAddClaimResult = await (await aliceIdentity.getContract(users.alice.personalAccount))
+  const aliceAddClaimResult = await (await aliceIdentity.getContract(alice.personalAccount))
     .addClaim(claimForAlice.topic, claimForAlice.scheme, claimForAlice.issuer, claimForAlice.signature, claimForAlice.data, '');
   console.log('aliceAddClaimResult', aliceAddClaimResult.hash);
 
@@ -422,14 +416,14 @@ export async function setupAccounts(chainId: string, admin: Accounts, users: Use
   );
 
 
-  const balanceResultBefore = await tokenAtProxy.balanceOf(users.alice.personalAccount.address);
+  const balanceResultBefore = await tokenAtProxy.balanceOf(alice.personalAccount.address);
   console.log('before mint, balanceResult', balanceResultBefore);
 
-  const mintResult = await tokenAtProxy.mint(users.alice.personalAccount.address, 1000);
+  const mintResult = await tokenAtProxy.mint(alice.personalAccount.address, 1000);
   console.log('mintResult', mintResult.hash);
   // await token.connect(tokenAgent).mint(bobWallet.address, 500);
 
-  const balanceResult = await tokenAtProxy.balanceOf(users.alice.personalAccount.address);
+  const balanceResult = await tokenAtProxy.balanceOf(alice.personalAccount.address);
   console.log('after mint, balanceResult', balanceResult);
 
   // await (await trex.suite.agentManager.getContract(admin.deployer)).addAgentAdmin(admin.tokenAdmin.address);
