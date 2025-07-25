@@ -34,10 +34,25 @@ export const tokenAgentDSL = (tokenAgent: PrivateAccount) => {
         return await tokenAtProxy.mint(userAddress, amount);
     }
 
+    const balanceOf = async (chainId: string, tokenAddress: string, userAddress: string) => {
+        const tokenAtProxy = await tokenContract(chainId, tokenAddress, tokenAgent);
+        return await tokenAtProxy.balanceOf(userAddress);
+    }
+
+    const metadata = async (chainId: string, tokenAddress: string) => {
+        const tokenAtProxy = await tokenContract(chainId, tokenAddress, tokenAgent);
+        const name = await tokenAtProxy.name();
+        const symbol = await tokenAtProxy.symbol();
+        const decimals = await tokenAtProxy.decimals();
+        return { name, symbol, decimals };
+    }
+
 
     return {
         registerUserIdentity,
         createUserIdentity,
-        mintTokens
+        mintTokens,
+        balanceOf,
+        metadata
     }
 }
