@@ -430,7 +430,8 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
   const balanceResultBefore = await (await tokenContract(chainId, trex.suite.token.address, newPersona.personalAccount)).balanceOf(newPersona.personalAccount.address);
   console.log('before mint, balanceResult', balanceResultBefore);
 
-  const mintResult = await tokenAtProxy.mint(newPersona.personalAccount.address, 1000);
+  // const mintResult = await tokenAtProxy.mint(newPersona.personalAccount.address, 1000);
+  const mintResult = await tokenAgentDSL(admin.tokenAgent).mintTokens(chainId, trex.suite.token.address, newPersona.personalAccount.address, 1000);
   console.log('mintResult', mintResult.hash);
   // await token.connect(tokenAgent).mint(bobWallet.address, 500);
 

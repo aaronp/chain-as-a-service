@@ -2,7 +2,7 @@ import { PrivateAccount } from '@/ui/wallet/accounts';
 import { ethers } from 'ethers';
 import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json';
 import { getSigner, TrexSuite } from '../erc3643';
-import { deployIdentityProxy } from '../deploy';
+import { deployIdentityProxy, tokenContract } from '../deploy';
 
 type User = {
     accountAddress: string,
@@ -29,9 +29,15 @@ export const tokenAgentDSL = (tokenAgent: PrivateAccount) => {
         return await deployIdentityProxy(chainId, trex.authorities.identityImplementationAuthority.address, tokenAgent, userAddress);
     }
 
+    const mintTokens = async (chainId: string, tokenAddress: string, userAddress: string, amount: number) => {
+        const tokenAtProxy = await tokenContract(chainId, tokenAddress, tokenAgent);
+        return await tokenAtProxy.mint(userAddress, amount);
+    }
+
 
     return {
         registerUserIdentity,
         createUserIdentity,
+        mintTokens
     }
 }
