@@ -3,21 +3,39 @@ import { newAccount, PrivateAccount } from "@/ui/wallet/accounts";
 import OnchainID from '@onchain-id/solidity';
 import { Accounts, Deployed, encodeAddress, getSigner, TrexSuite } from './erc3643';
 
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/registry/implementation/ClaimTopicsRegistry.sol
 import ClaimTopicsRegistry from '@/contracts/erc3643/contracts/registry/implementation/ClaimTopicsRegistry.sol/ClaimTopicsRegistry.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/registry/implementation/TrustedIssuersRegistry.sol
 import TrustedIssuersRegistry from '@/contracts/erc3643/contracts/registry/implementation/TrustedIssuersRegistry.sol/TrustedIssuersRegistry.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/registry/implementation/IdentityRegistryStorage.sol
 import IdentityRegistryStorage from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistryStorage.sol/IdentityRegistryStorage.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/registry/implementation/IdentityRegistry.sol
 import IdentityRegistry from '@/contracts/erc3643/contracts/registry/implementation/IdentityRegistry.sol/IdentityRegistry.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/compliance/modular/ModularCompliance.sol
 import ModularCompliance from '@/contracts/erc3643/contracts/compliance/modular/ModularCompliance.sol/ModularCompliance.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/token/Token.sol
 import Token from '@/contracts/erc3643/contracts/token/Token.sol/Token.json';
+
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/proxy/authority/TREXImplementationAuthority.sol
 import TREXImplementationAuthority from '@/contracts/erc3643/contracts/proxy/authority/TREXImplementationAuthority.sol/TREXImplementationAuthority.json';
+
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/factory/TREXFactory.sol
 import TREXFactory from '@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/proxy/ClaimTopicsRegistryProxy.sol
 import ClaimTopicsRegistryProxy from '@/contracts/erc3643/contracts/proxy/ClaimTopicsRegistryProxy.sol/ClaimTopicsRegistryProxy.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/proxy/TrustedIssuersRegistryProxy.sol
 import TrustedIssuersRegistryProxy from '@/contracts/erc3643/contracts/proxy/TrustedIssuersRegistryProxy.sol/TrustedIssuersRegistryProxy.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/proxy/IdentityRegistryStorageProxy.sol
 import IdentityRegistryStorageProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryStorageProxy.sol/IdentityRegistryStorageProxy.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/compliance/legacy/DefaultCompliance.sol
 import DefaultCompliance from '@/contracts/erc3643/contracts/compliance/legacy/DefaultCompliance.sol/DefaultCompliance.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/proxy/IdentityRegistryProxy.sol
 import IdentityRegistryProxy from '@/contracts/erc3643/contracts/proxy/IdentityRegistryProxy.sol/IdentityRegistryProxy.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/proxy/TokenProxy.sol
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
+//https://github.com/TokenySolutions/T-REX/blob/main/contracts/roles/permissioning/agent/AgentManager.sol
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
+
 import { client } from '@/api/client';
 import { bytecodeToBase64 } from '@/lib/utils';
 import { userDSL } from './dsl/userDSL';
@@ -30,16 +48,6 @@ import { claimsSigningKeyDSL } from './dsl/claimsSigningKeyDSL';
 export const deployContract = async (chainId: string, deployer: PrivateAccount, contractName: string, abi: Interface | InterfaceAbi, bytecode: BytesLike, ...args: any[]): Promise<Deployed> => {
   const signer = await getSigner(deployer, chainId);
 
-
-  // // prove we can read/write the abi as json
-  // const abiJson = JSON.parse(JSON.stringify(abi));
-  // client().registerContract({
-  //   chainId,
-  //   issuerAddress: deployer.address,
-  //   contractAddress: '',
-  //   contractType: contractName,
-  //   parameters: abiJson,
-  // })
   const found = await client().listContracts({ type: contractName, chain: chainId })
   if (found.length > 0) {
     console.log(`🔍 found ${contractName} created on ${new Date(found[0].created).toLocaleString()} 🙌`);
