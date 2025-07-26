@@ -4,8 +4,11 @@ import { TrexSuite } from '../erc3643';
 import { tokenContract, deployContract } from '../deploy';
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
+import TREXFactory from '@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json';
 import OnchainID from '@onchain-id/solidity';
 import { client } from '@/api/client';
+import { ethers } from 'ethers';
+import { getSigner } from '../erc3643';
 
 
 type TokenArgs = {
@@ -24,77 +27,126 @@ export const platformDSL = (deployer: PrivateAccount) => {
      */
     const deploySuite = async (chainId: string, accounts: SetupAccounts) => deployTrexSuite(chainId, deployer, accounts)
 
+    const deployToken = async (chainId: string, trex: TrexSuite, tokenArgs: TokenArgs & {
+        owner: string,
+        salt: string,
+        irAgents?: string[],
+        tokenAgents?: string[],
+        complianceModules?: string[],
+        complianceSettings?: any[],
+        claimTopics?: string[],
+        issuers?: string[],
+        issuerClaims?: any[]
+    }) => {
+        // Get the TREXFactory contract
+        const trexFactory = new ethers.Contract(
+            trex.factories.trexFactory.address,
+            TREXFactory.abi,
+            await getSigner(deployer, chainId)
+        );
 
-    const createToken = async (chainId: string, trex: TrexSuite,
-        tokenIssuerAddress: string,
-        tokenAgentAddress: string,
-        tokenArgs: TokenArgs) => {
-        // Deploy token-specific contracts (reusing existing infrastructure)
+        // Prepare the token deployment parameters
+        const tokenDeploymentArgs = {
+            owner: tokenArgs.owner,
+            name: tokenArgs.name,
+            symbol: tokenArgs.symbol,
+            decimals: parseInt(tokenArgs.decimals),
+            irs: ethers.ZeroAddress, // Will be deployed automatically
+            ONCHAINID: ethers.ZeroAddress, // Will be deployed automatically
+            irAgents: tokenArgs.irAgents || [],
+            tokenAgents: tokenArgs.tokenAgents || [],
+            complianceModules: tokenArgs.complianceModules || [],
+            complianceSettings: tokenArgs.complianceSettings || [],
+        };
 
-        // 1. Deploy token OID (token-specific identity)
-        // there should be one token identity per token Issuer.
-        // that means that if we already have one, we should reuse that.
-        const existingTokenOID = await client().listContracts({
-            chain: chainId,
-            type: `TokenOID`
+        const claimDeploymentArgs = {
+            claimTopics: tokenArgs.claimTopics || [],
+            issuers: tokenArgs.issuers || [],
+            issuerClaims: tokenArgs.issuerClaims || [],
+        };
+
+        console.log('Deploying token suite using TREXFactory:', tokenArgs.name);
+        console.log('Token deployment args:', tokenDeploymentArgs);
+        console.log('Claim deployment args:', claimDeploymentArgs);
+
+        // Deploy the complete token suite using TREXFactory
+        const tx = await trexFactory.deployTREXSuite(
+            tokenArgs.salt,
+            tokenDeploymentArgs,
+            claimDeploymentArgs
+        );
+
+        console.log('TREXFactory deployment transaction:', tx.hash);
+        const receipt = await tx.wait();
+
+        console.log('TREXFactory deployment receipt w/ logs:', receipt.logs.length);
+
+        // Parse events from the transaction receipt
+        const events = receipt.logs.map((log: any) => {
+            try {
+                // Try to parse the log using the factory ABI
+                const parsedLog = trexFactory.interface.parseLog(log);
+                if (parsedLog) {
+                    return {
+                        eventName: parsedLog.name,
+                        args: parsedLog.args,
+                        address: log.address,
+                        topics: log.topics,
+                        data: log.data
+                    };
+                } else {
+                    return {
+                        eventName: 'Unknown',
+                        args: {},
+                        address: log.address,
+                        topics: log.topics,
+                        data: log.data,
+                        parseError: 'Failed to parse log'
+                    };
+                }
+            } catch (error: any) {
+                // If parsing fails, return raw log data
+                return {
+                    eventName: 'Unknown',
+                    args: {},
+                    address: log.address,
+                    topics: log.topics,
+                    data: log.data,
+                    parseError: error?.message || 'Unknown error'
+                };
+            }
         });
-        if (existingTokenOID.length > 0) {
-            console.log('reusing existing token OID', existingTokenOID[0].contractAddress);
-            return existingTokenOID[0].contractAddress;
-        }
 
-        // this should be cached if a tokenOID already exists
-        const tokenOID = await deployContract(
-            chainId,
-            deployer,
-            `TokenOID`,
-            OnchainID.contracts.IdentityProxy.abi,
-            OnchainID.contracts.IdentityProxy.bytecode,
-            trex.authorities.identityImplementationAuthority.address,
-            tokenIssuerAddress
-        );
+        console.log('Deployment events:', events.length);
 
-        // 2. Deploy token proxy (the actual token contract)
-        console.log('deploying token proxy', tokenArgs.name);
-        const token = await deployContract(
-            chainId,
-            deployer,
-            `TokenProxy-${tokenArgs.name}`,
-            TokenProxy.abi,
-            TokenProxy.bytecode,
-            trex.authorities.trexImplementationAuthority.address,
-            trex.suite.identityRegistry.address,
-            trex.suite.defaultCompliance.address,
-            tokenArgs.name,
-            tokenArgs.symbol,
-            tokenArgs.decimals,
-            tokenOID.address,
-        );
-
-        // 3. Deploy agent manager for this token
-        const agentManager = await deployContract(
-            chainId,
-            deployer,
-            `AgentManager-${tokenArgs.name}`,
-            AgentManager.abi,
-            AgentManager.bytecode,
-            token.address
-        );
-
-        // 4. Add token agent to the token
-        const tokenAtProxy = await tokenContract(chainId, token.address, deployer);
-        await tokenAtProxy.addAgent(tokenAgentAddress);
+        // Extract specific addresses from events if available
+        let deployedAddresses: any = {};
+        events.forEach((event: any) => {
+            console.log('event:', event.eventName);
+            if (event.eventName === 'TREXSuiteDeployed') {
+                console.log('TREXSuiteDeployed event:', event.args);
+                deployedAddresses.tokenAddress = event.args[0];
+            } else if (event.eventName === 'IdentityRegistryDeployed') {
+                deployedAddresses.identityRegistryAddress = event.args?.identityRegistryAddress;
+            } else if (event.eventName === 'ComplianceDeployed') {
+                deployedAddresses.complianceAddress = event.args?.complianceAddress;
+            }
+            // Add more event parsing as needed
+        });
 
         return {
-            token,
-            tokenOID,
-            agentManager,
-            tokenAddress: token.address
+            transactionHash: tx.hash,
+            tokenName: tokenArgs.name,
+            tokenSymbol: tokenArgs.symbol,
+            salt: tokenArgs.salt,
+            events: events,
+            deployedAddresses: deployedAddresses,
+            receipt: receipt
         };
     }
 
     return {
         deploySuite,
-        createToken
+        deployToken
     }
 }

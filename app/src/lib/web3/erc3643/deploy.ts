@@ -409,6 +409,10 @@ async function onboardUserFlow(chainId: string, admin: Accounts, trex: TrexSuite
 
 
 export const tokenContract = async (chainId: string, tokenAddress: string, account: PrivateAccount) => {
+  if (!tokenAddress || tokenAddress === '0x0000000000000000000000000000000000000000') {
+    throw new Error(`Invalid token address: ${tokenAddress}`);
+  }
+
   return new ethers.Contract(
     tokenAddress, // proxy address
     Token.abi,                // implementation ABI
@@ -483,7 +487,17 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
     await (await identityRegistryAtProxy()).addAgent(trex.suite.agentManager.address);
   }
 
-  // const unpauseResult = await (await trex.suite.token.getContract(admin.tokenAgent)).unpause();
+  console.log('Token address for pause check:', trex.suite.token.address);
+  const isPaused = await (await tokenContract(chainId, trex.suite.token.address, admin.tokenAgent)).paused();
+  if (isPaused) {
+    console.log('token is paused, unpausing it');
+    const unpauseResult = await (await tokenContract(chainId, trex.suite.token.address, admin.tokenAgent)).unpause();
+    console.log('unpauseResult', unpauseResult);
+    console.log('unpauseResult', unpauseResult.hash);
+  } else {
+    console.log('token is not paused, skipping unpause');
+  }
+  // const unpauseResult = await (await tokenContract(chainId, trex.suite.token.address, admin.tokenAgent)).unpause();
   // console.log('unpauseResult', unpauseResult);
   // console.log('unpauseResult', unpauseResult.hash);
 

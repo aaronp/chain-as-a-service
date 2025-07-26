@@ -59,13 +59,33 @@ test('deploy an ERC3643 identity contract', async () => {
     expect(aliceBalance.toString()).toBe("1000");
     console.log('deploy time', after - before);
 
-    // console.log('About to deploy second token...');
+    console.log('About to deploy second token...');
+
+    const tokenTwo = 'Pound' + new Date().getTime()
+    const secondToken = await platformDSL(accounts.deployer).deployToken(chainId, trex, {
+        owner: accounts.tokenIssuer.address,
+        salt: tokenTwo,
+        name: tokenTwo,
+        symbol: 'GBP',
+        decimals: '0',
+    });
+    console.log('secondToken', secondToken);
     // const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {
     //     name: 'Pound',
     //     symbol: 'GBP',
     //     decimals: '0',
     // });
     // console.log('secondToken', secondToken);
+
+    const secondTokenAddress = secondToken.deployedAddresses.tokenAddress;
+    console.log('secondTokenAddress', secondTokenAddress);
+    // const secondTokenMetadata = await tokenAgent.metadata(chainId, secondTokenAddress);
+    // console.log('secondTokenMetadata', secondTokenMetadata);
+    const secondTokenBalance = await tokenAgent.balanceOf(chainId, secondTokenAddress, alice.personalAccount.address);
+    console.log('secondTokenBalance', secondTokenBalance);
+    expect(secondTokenBalance.toString()).toBe("0");
+    const secondTokenMintResult = await tokenAgent.mintTokens(chainId, secondTokenAddress, alice.personalAccount.address, 123);
+    console.log('secondTokenMintResult', secondTokenMintResult);
 
 
     // Clean up timeout
