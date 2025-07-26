@@ -5,12 +5,13 @@ import { tokenContract, deployContract } from '../deploy';
 import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
 import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
 import OnchainID from '@onchain-id/solidity';
+import { client } from '@/api/client';
 
 
 type TokenArgs = {
     name: string,
     symbol: string,
-    decimals: number,
+    decimals: string,
 }
 
 
@@ -31,10 +32,22 @@ export const platformDSL = (deployer: PrivateAccount) => {
         // Deploy token-specific contracts (reusing existing infrastructure)
 
         // 1. Deploy token OID (token-specific identity)
+        // there should be one token identity per token Issuer.
+        // that means that if we already have one, we should reuse that.
+        const existingTokenOID = await client().listContracts({
+            chain: chainId,
+            type: `TokenOID`
+        });
+        if (existingTokenOID.length > 0) {
+            console.log('reusing existing token OID', existingTokenOID[0].contractAddress);
+            return existingTokenOID[0].contractAddress;
+        }
+
+        // this should be cached if a tokenOID already exists
         const tokenOID = await deployContract(
             chainId,
             deployer,
-            `TokenOID-${tokenArgs.name}`,
+            `TokenOID`,
             OnchainID.contracts.IdentityProxy.abi,
             OnchainID.contracts.IdentityProxy.bytecode,
             trex.authorities.identityImplementationAuthority.address,
@@ -42,6 +55,7 @@ export const platformDSL = (deployer: PrivateAccount) => {
         );
 
         // 2. Deploy token proxy (the actual token contract)
+        console.log('deploying token proxy', tokenArgs.name);
         const token = await deployContract(
             chainId,
             deployer,
