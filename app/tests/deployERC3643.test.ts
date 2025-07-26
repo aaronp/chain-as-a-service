@@ -9,6 +9,13 @@ import { tokenAgentDSL } from '@/lib/web3/erc3643/dsl/tokenAgentDSL';
 
 
 test('deploy an ERC3643 identity contract', async () => {
+    // Increase timeout for this test
+    const timeout = setTimeout(() => {
+        console.log('Test timed out after 30 seconds');
+        process.exit(1);
+    }, 30000);
+
+    console.log('Starting test...');
 
     await ensureServerRunning();
 
@@ -51,4 +58,16 @@ test('deploy an ERC3643 identity contract', async () => {
     console.log('aliceBalance type', typeof aliceBalance);
     expect(aliceBalance.toString()).toBe("1000");
     console.log('deploy time', after - before);
+
+    console.log('About to deploy second token...');
+    const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {
+        name: 'Pound',
+        symbol: 'GBP',
+        decimals: '0',
+    });
+    console.log('secondToken', secondToken);
+
+
+    // Clean up timeout
+    clearTimeout(timeout);
 }); 
