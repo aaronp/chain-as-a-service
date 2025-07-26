@@ -447,7 +447,7 @@ export const checkSwapReadiness = async (
 }
 
 export const hostUrl = () => {
-    return process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : window.location.origin;
+    return process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 }
 
 export const providerForChain = async (chainId: string) => {
