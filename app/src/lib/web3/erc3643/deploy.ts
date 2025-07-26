@@ -442,9 +442,46 @@ export async function setupAccounts(chainId: string, admin: Accounts, newPersona
   const balanceResult = await tokenAtProxy.balanceOf(newPersona.personalAccount.address);
   console.log('after mint, balanceResult', balanceResult);
 
-  // await (await trex.suite.agentManager.getContract(admin.deployer)).addAgentAdmin(admin.tokenAdmin.address);
-  // await (await trex.suite.token.getContract(admin.deployer)).addAgent(trex.suite.agentManager.address);
-  // await (await trex.suite.identityRegistry.getContract(admin.deployer)).addAgent(trex.suite.agentManager.address);
+  // Use the implementation ABI at the proxy address for AgentManager
+  const agentManagerAtProxy = new ethers.Contract(
+    trex.suite.agentManager.address, // proxy address
+    AgentManager.abi,                // implementation ABI
+    await getSigner(admin.deployer, chainId)
+  );
+
+  if (await agentManagerAtProxy.isAgentAdmin(admin.tokenAdmin.address)) {
+    console.log('token admin is already an agent admin on the agent manager');
+  } else {
+    console.log('adding token admin as agent admin on the agent manager');
+    await agentManagerAtProxy.addAgentAdmin(admin.tokenAdmin.address);
+  }
+
+  // if (await agentManagerAtProxy.isAgent(trex.suite.token.address)) {
+  //   console.log('token is already an agent');
+  // } else {
+  // }
+
+  console.log('adding agent manager to token');
+  // const tc = async () => await trex.suite.token.getContract(admin.deployer)
+  const tc = async () => await tokenContract(chainId, trex.suite.token.address, admin.deployer)
+  if (await (await tc()).isAgent(trex.suite.agentManager.address)) {
+    console.log('agent manager is already an agent on the token');
+  } else {
+    console.log('adding agent manager to token');
+    await (await tc()).addAgent(trex.suite.agentManager.address);
+  }
+
+  const identityRegistryAtProxy = async () => new ethers.Contract(
+    trex.suite.identityRegistry.address, // proxy address
+    IdentityRegistry.abi,     // implementation ABI
+    await getSigner(admin.deployer, chainId)
+  );
+  if (await (await identityRegistryAtProxy()).isAgent(trex.suite.agentManager.address)) {
+    console.log('agent manager is already an agent on the identity registry');
+  } else {
+    console.log('adding agent manager to identity registry');
+    await (await identityRegistryAtProxy()).addAgent(trex.suite.agentManager.address);
+  }
 
   // const unpauseResult = await (await trex.suite.token.getContract(admin.tokenAgent)).unpause();
   // console.log('unpauseResult', unpauseResult);

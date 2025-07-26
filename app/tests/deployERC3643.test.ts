@@ -59,13 +59,13 @@ test('deploy an ERC3643 identity contract', async () => {
     expect(aliceBalance.toString()).toBe("1000");
     console.log('deploy time', after - before);
 
-    console.log('About to deploy second token...');
-    const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {
-        name: 'Pound',
-        symbol: 'GBP',
-        decimals: '0',
-    });
-    console.log('secondToken', secondToken);
+    // console.log('About to deploy second token...');
+    // const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {
+    //     name: 'Pound',
+    //     symbol: 'GBP',
+    //     decimals: '0',
+    // });
+    // console.log('secondToken', secondToken);
 
 
     // Clean up timeout
