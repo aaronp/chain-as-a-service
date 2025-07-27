@@ -126,6 +126,7 @@ export const platformDSL = (deployer: PrivateAccount) => {
             if (event.eventName === 'TREXSuiteDeployed') {
                 console.log('TREXSuiteDeployed event:', event.args);
                 deployedAddresses.tokenAddress = event.args[0];
+                deployedAddresses.identityRegistryAddress = event.args[3]; // Identity registry is the 4th parameter
             } else if (event.eventName === 'IdentityRegistryDeployed') {
                 deployedAddresses.identityRegistryAddress = event.args?.identityRegistryAddress;
             } else if (event.eventName === 'ComplianceDeployed') {
