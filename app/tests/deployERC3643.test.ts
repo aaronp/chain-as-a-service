@@ -6,6 +6,7 @@ import { testAccounts } from '@/lib/web3/erc3643/erc3643';
 import { platformDSL } from '@/lib/web3/erc3643/dsl/platformDSL';
 import { claimsDSL } from '@/lib/web3/erc3643/dsl/claimsDSL';
 import { tokenAgentDSL } from '@/lib/web3/erc3643/dsl/tokenAgentDSL';
+import { tokenIssuerDSL } from '@/lib/web3/erc3643/dsl/tokenIssuerDSL';
 
 
 test('deploy an ERC3643 identity contract', async () => {
@@ -81,9 +82,17 @@ test('deploy an ERC3643 identity contract', async () => {
     console.log('secondTokenAddress', secondTokenAddress);
     // const secondTokenMetadata = await tokenAgent.metadata(chainId, secondTokenAddress);
     // console.log('secondTokenMetadata', secondTokenMetadata);
+
     const secondTokenBalance = await tokenAgent.balanceOf(chainId, secondTokenAddress, alice.personalAccount.address);
-    console.log('secondTokenBalance', secondTokenBalance);
+    console.log('before adding agent,secondTokenBalance', secondTokenBalance);
+    // const added = await platformDSL(accounts.deployer).addAgent(chainId, secondTokenAddress, accounts.tokenAgent.address);
+    const added = await tokenIssuerDSL(accounts.tokenIssuer).addAgent(chainId, secondTokenAddress, accounts.tokenAgent.address);
+    console.log('added agent', added.hash);
+
     expect(secondTokenBalance.toString()).toBe("0");
+    console.log('minting GBP tokens to alice');
+
+
     const secondTokenMintResult = await tokenAgent.mintTokens(chainId, secondTokenAddress, alice.personalAccount.address, 123);
     console.log('secondTokenMintResult', secondTokenMintResult);
 
