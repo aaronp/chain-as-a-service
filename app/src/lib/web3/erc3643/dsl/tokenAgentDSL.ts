@@ -44,7 +44,7 @@ export const tokenAgentDSL = (tokenAgent: PrivateAccount) => {
         const name = await tokenAtProxy.name();
         const symbol = await tokenAtProxy.symbol();
         const decimals = await tokenAtProxy.decimals();
-        return { name, symbol, decimals };
+        return { name, symbol, decimals, tokenAddress };
     }
 
 

@@ -93,6 +93,13 @@ test('deploy an ERC3643 identity contract', async () => {
     console.log('minting GBP tokens to alice');
 
 
+    const secondTestTokenMintResult = await tokenAgent.mintTokens(chainId, tokenMetadata.tokenAddress, alice.personalAccount.address, 123);
+    console.log('secondTestTokenMintResult', secondTestTokenMintResult);
+
+    const secondBalanceCheck = await tokenAgent.balanceOf(chainId, tokenMetadata.tokenAddress, alice.personalAccount.address);
+    console.log('secondBalanceCheck', secondBalanceCheck);
+    expect(secondBalanceCheck.toString()).toBe("1123");
+
     const secondTokenMintResult = await tokenAgent.mintTokens(chainId, secondTokenAddress, alice.personalAccount.address, 123);
     console.log('secondTokenMintResult', secondTokenMintResult);
 
