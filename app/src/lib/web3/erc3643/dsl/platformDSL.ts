@@ -46,8 +46,8 @@ export const platformDSL = (deployer: PrivateAccount) => {
             name: tokenArgs.name,
             symbol: tokenArgs.symbol,
             decimals: parseInt(tokenArgs.decimals),
-            irs: ethers.ZeroAddress, // Will be deployed automatically
-            ONCHAINID: ethers.ZeroAddress, // Will be deployed automatically
+            irs: trex.implementations.identityRegistryStorageImplementation.address, // create a new identity registry storage
+            ONCHAINID: ethers.ZeroAddress, //create a new onchain id
             irAgents: tokenArgs.irAgents || [],
             tokenAgents: tokenArgs.tokenAgents || [],
             complianceModules: tokenArgs.complianceModules || [],

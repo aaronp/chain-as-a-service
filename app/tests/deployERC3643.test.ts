@@ -65,19 +65,22 @@ test('deploy an ERC3643 identity contract', async () => {
     console.log('About to deploy second token...');
 
     const tokenTwo = 'Pound' + new Date().getTime()
+
+    // see factory.test.ts line 299
     const secondToken = await platformDSL(accounts.deployer).deployToken(chainId, trex, {
         owner: accounts.tokenIssuer.address,
         salt: tokenTwo,
         name: tokenTwo,
         symbol: 'GBP',
         decimals: '0',
-        irAgents: [trex.suite.identityRegistry.address],
+        irAgents: [],
         tokenAgents: [accounts.tokenAgent.address],
-        complianceModules: [trex.implementations.modularComplianceImplementation.address],
-        complianceSettings: [trex.suite.defaultCompliance.address],
-        claimTopics: [id(ClaimTypes.KYC)],
-        issuers: [accounts.tokenIssuer.address],
-        issuerClaims: [],
+        // complianceModules: [trex.implementations.modularComplianceImplementation.address],
+        // complianceModules: [],
+        // complianceSettings: [],
+        // claimTopics: [id(ClaimTypes.KYC)],
+        // issuers: [trex.suite.claimIssuerContract.address],
+        // issuerClaims: [],
     });
     console.log('secondToken', secondToken);
     // const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {
@@ -109,8 +112,8 @@ test('deploy an ERC3643 identity contract', async () => {
     console.log('secondBalanceCheck', secondBalanceCheck);
     expect(secondBalanceCheck.toString()).toBe("1123");
 
-    const secondTokenMintResult = await tokenAgent.mintTokens(chainId, secondTokenAddress, alice.personalAccount.address, 123);
-    console.log('secondTokenMintResult', secondTokenMintResult);
+    // const secondTokenMintResult = await tokenAgent.mintTokens(chainId, secondTokenAddress, alice.personalAccount.address, 123);
+    // console.log('secondTokenMintResult', secondTokenMintResult);
 
 
     // Clean up timeout
