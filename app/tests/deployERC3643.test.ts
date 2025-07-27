@@ -7,6 +7,8 @@ import { platformDSL } from '@/lib/web3/erc3643/dsl/platformDSL';
 import { claimsDSL } from '@/lib/web3/erc3643/dsl/claimsDSL';
 import { tokenAgentDSL } from '@/lib/web3/erc3643/dsl/tokenAgentDSL';
 import { tokenIssuerDSL } from '@/lib/web3/erc3643/dsl/tokenIssuerDSL';
+import { id } from 'ethers';
+import { ClaimTypes } from '@/lib/web3/erc3643/claims';
 
 
 test('deploy an ERC3643 identity contract', async () => {
@@ -69,6 +71,13 @@ test('deploy an ERC3643 identity contract', async () => {
         name: tokenTwo,
         symbol: 'GBP',
         decimals: '0',
+        irAgents: [trex.suite.identityRegistry.address],
+        tokenAgents: [accounts.tokenAgent.address],
+        complianceModules: [trex.implementations.modularComplianceImplementation.address],
+        complianceSettings: [trex.suite.defaultCompliance.address],
+        claimTopics: [id(ClaimTypes.KYC)],
+        issuers: [accounts.tokenIssuer.address],
+        issuerClaims: [],
     });
     console.log('secondToken', secondToken);
     // const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {

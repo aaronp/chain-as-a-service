@@ -1,12 +1,7 @@
 import { PrivateAccount } from '@/ui/wallet/accounts';
 import { deployTrexSuite, SetupAccounts } from '@/lib/web3/erc3643/deploy';
 import { TrexSuite } from '../erc3643';
-import { tokenContract, deployContract } from '../deploy';
-import TokenProxy from '@/contracts/erc3643/contracts/proxy/TokenProxy.sol/TokenProxy.json';
-import AgentManager from '@/contracts/erc3643/contracts/roles/permissioning/agent/AgentManager.sol/AgentManager.json';
 import TREXFactory from '@/contracts/erc3643/contracts/factory/TREXFactory.sol/TREXFactory.json';
-import OnchainID from '@onchain-id/solidity';
-import { client } from '@/api/client';
 import { ethers } from 'ethers';
 import { getSigner } from '../erc3643';
 
