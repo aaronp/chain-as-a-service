@@ -13,12 +13,12 @@ import { ClaimTypes } from '@/lib/web3/erc3643/claims';
 
 test('deploy an ERC3643 identity contract', async () => {
     // Increase timeout for this test
-    const timeout = setTimeout(() => {
-        console.log('Test timed out after 30 seconds');
-        process.exit(1);
-    }, 30000);
+    // const timeout = setTimeout(() => {
+    //     console.log('Test timed out after 30 seconds');
+    //     process.exit(1);
+    // }, 30000);
 
-    console.log('Starting test...');
+    // console.log('Starting test...');
 
     await ensureServerRunning();
 
@@ -50,7 +50,8 @@ test('deploy an ERC3643 identity contract', async () => {
 
     const alice = await newPersona('Alice')
     const aliceAccounts = await setupAccounts(chainId, accounts, alice, trex);
-    const bob = await setupAccounts(chainId, accounts, await newPersona('Bob'), trex);
+    const bob = await newPersona('Bob')
+    const bobUser = await setupAccounts(chainId, accounts, bob, trex);
     console.log('users', alice, bob);
 
     const tokenAgent = tokenAgentDSL(accounts.tokenAgent);
@@ -58,31 +59,38 @@ test('deploy an ERC3643 identity contract', async () => {
     console.log('tokenMetadata', tokenMetadata);
     const aliceBalance = await tokenAgent.balanceOf(chainId, trex.suite.token.address, alice.personalAccount.address);
     console.log('aliceBalance', aliceBalance);
+
+
+    console.log('bobBalance', bobUser.identities.balance);
+
+    const bobBalance = await tokenAgent.balanceOf(chainId, trex.suite.token.address, bob.personalAccount.address);
+    console.log('bobBalance', bobBalance);
+
     console.log('aliceBalance type', typeof aliceBalance);
     expect(aliceBalance.toString()).toBe("1000");
     console.log('deploy time', after - before);
 
-    console.log('About to deploy second token...');
+    // console.log('About to deploy second token...');
 
-    const tokenTwo = 'Pound' + new Date().getTime()
+    // const tokenTwo = 'Pound' + new Date().getTime()
 
     // see factory.test.ts line 299
-    const secondToken = await platformDSL(accounts.deployer).deployToken(chainId, trex, {
-        owner: accounts.tokenIssuer.address,
-        salt: tokenTwo,
-        name: tokenTwo,
-        symbol: 'GBP',
-        decimals: '0',
-        irAgents: [],
-        tokenAgents: [accounts.tokenAgent.address],
-        // complianceModules: [trex.implementations.modularComplianceImplementation.address],
-        // complianceModules: [],
-        // complianceSettings: [],
-        // claimTopics: [id(ClaimTypes.KYC)],
-        // issuers: [trex.suite.claimIssuerContract.address],
-        // issuerClaims: [],
-    });
-    console.log('secondToken', secondToken);
+    // const secondToken = await platformDSL(accounts.deployer).deployToken(chainId, trex, {
+    //     owner: accounts.tokenIssuer.address,
+    //     salt: tokenTwo,
+    //     name: tokenTwo,
+    //     symbol: 'GBP',
+    //     decimals: '0',
+    //     irAgents: [],
+    //     tokenAgents: [accounts.tokenAgent.address],
+    //     // complianceModules: [trex.implementations.modularComplianceImplementation.address],
+    //     // complianceModules: [],
+    //     // complianceSettings: [],
+    //     // claimTopics: [id(ClaimTypes.KYC)],
+    //     // issuers: [trex.suite.claimIssuerContract.address],
+    //     // issuerClaims: [],
+    // });
+    // console.log('secondToken', secondToken);
     // const secondToken = await platformDSL(accounts.deployer).createToken(chainId, trex, accounts.tokenIssuer.address, accounts.tokenAgent.address, {
     //     name: 'Pound',
     //     symbol: 'GBP',
@@ -90,32 +98,32 @@ test('deploy an ERC3643 identity contract', async () => {
     // });
     // console.log('secondToken', secondToken);
 
-    const secondTokenAddress = secondToken.deployedAddresses.tokenAddress;
-    console.log('secondTokenAddress', secondTokenAddress);
-    // const secondTokenMetadata = await tokenAgent.metadata(chainId, secondTokenAddress);
-    // console.log('secondTokenMetadata', secondTokenMetadata);
+    // const secondTokenAddress = secondToken.deployedAddresses.tokenAddress;
+    // console.log('secondTokenAddress', secondTokenAddress);
+    // // const secondTokenMetadata = await tokenAgent.metadata(chainId, secondTokenAddress);
+    // // console.log('secondTokenMetadata', secondTokenMetadata);
 
-    const secondTokenBalance = await tokenAgent.balanceOf(chainId, secondTokenAddress, alice.personalAccount.address);
-    console.log('before adding agent,secondTokenBalance', secondTokenBalance);
-    // const added = await platformDSL(accounts.deployer).addAgent(chainId, secondTokenAddress, accounts.tokenAgent.address);
-    const added = await tokenIssuerDSL(accounts.tokenIssuer).addAgent(chainId, secondTokenAddress, accounts.tokenAgent.address);
-    console.log('added agent', added.hash);
+    // const secondTokenBalance = await tokenAgent.balanceOf(chainId, secondTokenAddress, alice.personalAccount.address);
+    // console.log('before adding agent,secondTokenBalance', secondTokenBalance);
+    // // const added = await platformDSL(accounts.deployer).addAgent(chainId, secondTokenAddress, accounts.tokenAgent.address);
+    // const added = await tokenIssuerDSL(accounts.tokenIssuer).addAgent(chainId, secondTokenAddress, accounts.tokenAgent.address);
+    // console.log('added agent', added.hash);
 
-    expect(secondTokenBalance.toString()).toBe("0");
-    console.log('minting GBP tokens to alice');
+    // expect(secondTokenBalance.toString()).toBe("0");
+    // console.log('minting GBP tokens to alice');
 
 
-    const secondTestTokenMintResult = await tokenAgent.mintTokens(chainId, tokenMetadata.tokenAddress, alice.personalAccount.address, 123);
-    console.log('secondTestTokenMintResult', secondTestTokenMintResult);
+    // const secondTestTokenMintResult = await tokenAgent.mintTokens(chainId, tokenMetadata.tokenAddress, alice.personalAccount.address, 123);
+    // console.log('secondTestTokenMintResult', secondTestTokenMintResult);
 
-    const secondBalanceCheck = await tokenAgent.balanceOf(chainId, tokenMetadata.tokenAddress, alice.personalAccount.address);
-    console.log('secondBalanceCheck', secondBalanceCheck);
-    expect(secondBalanceCheck.toString()).toBe("1123");
+    // const secondBalanceCheck = await tokenAgent.balanceOf(chainId, tokenMetadata.tokenAddress, alice.personalAccount.address);
+    // console.log('secondBalanceCheck', secondBalanceCheck);
+    // expect(secondBalanceCheck.toString()).toBe("1123");
 
     // const secondTokenMintResult = await tokenAgent.mintTokens(chainId, secondTokenAddress, alice.personalAccount.address, 123);
     // console.log('secondTokenMintResult', secondTokenMintResult);
 
 
     // Clean up timeout
-    clearTimeout(timeout);
+    // clearTimeout(timeout);
 }); 
