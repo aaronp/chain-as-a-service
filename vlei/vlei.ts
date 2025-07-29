@@ -137,3 +137,4 @@ export async function verifyCredential(
     const { payload } = await jwtVerify(jwt, key);
     return payload;
 }
+

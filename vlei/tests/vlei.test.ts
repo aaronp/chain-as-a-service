@@ -6,7 +6,7 @@ import {
     createSigner,
     type VLEIIssuer
 } from "../index"
-import { createIssuer, generateKeypair, newDiD, newVLEIDiD } from "../vlei"
+import { createIssuer, generateKeypair, newVLEIDiD, signCredential, verifyCredential } from "../vlei"
 
 describe("vLEI Credential Functions", () => {
     let issuer: VLEIIssuer
@@ -236,18 +236,22 @@ describe("vLEI Credential Functions", () => {
 
         it("should use vlei", async () => {
 
-            // Step 0: generate a keypair for the LOU
-            const louKeyPair = generateKeypair()
-            const louDid = newVLEIDiD()
-            const louIssuer = createIssuer(louDid, louKeyPair)
+            // Step 1: create our own identity (our keys we'll sign with)
+            const issuerIdentity = createIssuer(newVLEIDiD(), generateKeypair())
 
-            // Step 1: a LOU (Local Operating Unit) issues an applicant an LEI
-            const lei = "thisismyLEI"
-
+            // Step 2: a LOU (Local Operating Unit) issues an applicant an LEI
+            // somebody's gotten in touch to create an LEI.
+            // we've done the due diligence, and come up with this LEI:
+            const lei = "this is your newly issued LEI for acme corp"
 
             // Step 2: generate DIDs
-            const representativeDID = newVLEIDiD(lei)
-            const legalEntityDID = "did:ethr:0xfedcba0987654321fedcba0987654321fedcba09"
+            // now let's turn that into a verifiable LEI.
+
+            // we need a DID for the representative (the actor on behalf of the legal entity applying for the LEI)
+            const representativeDID = newVLEIDiD()
+
+            // and the identitier for the DiD
+            const legalEntityDID = newVLEIDiD()
 
             const entityName = "Global Tech Solutions Ltd"
             const role = "CTO"
@@ -261,23 +265,20 @@ describe("vLEI Credential Functions", () => {
                 role
             )
 
-            // Step 2: Verify the JWT structure
-            expect(vleiJwt).toBeDefined()
-            expect(typeof vleiJwt).toBe("string")
-            expect(vleiJwt.split(".")).toHaveLength(3)
-
-            // Step 3: Decode and verify the payload content
-            const parts = vleiJwt.split(".")
-            const payloadBase64 = parts[1]
-            if (payloadBase64) {
-                const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString())
-
-                expect(payload.vc.type).toContain("vLEICredential")
-                expect(payload.vc.credentialSubject.lei).toBe(lei)
-                expect(payload.vc.credentialSubject.entityName).toBe(entityName)
-                expect(payload.vc.credentialSubject.role).toBe(role)
-                expect(payload.vc.credentialSubject.entityDID).toBe(legalEntityDID)
+            // prove another party can't verify the credential
+            try {
+                const differentKey = generateKeypair()
+                await verifyCredential(vleiJwt, differentKey.publicKey)
+            } catch (error) {
+                expect(error).toBeDefined()
             }
+
+            // Step 3: the LOU can now issue the LEI to the applicant
+            const payload = await verifyCredential(vleiJwt, issuerIdentity.signer.publicKey)
+            expect(payload).toBeDefined()
+            expect(payload.sub).toBe(representativeDID)
+            console.log(payload)
+
         })
     })
 }) 
