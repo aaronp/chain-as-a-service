@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLEI Demo - Verifiable Legal Entity Identifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/jose@6.0.12/dist/browser/jose.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .success-glow {
+            animation: successGlow 2s ease-in-out;
+        }
+        @keyframes successGlow {
+            0%, 100% { box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+            50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold text-center mb-2">
+                <i class="fas fa-shield-alt mr-3"></i>
+                VLEI Demo
+            </h1>
+            <p class="text-xl text-center opacity-90">
+                Verifiable Legal Entity Identifier System
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Step Navigation -->
+        <div class="flex justify-center mb-8">
+            <div class="flex space-x-4">
+                <div class="step-indicator active" data-step="1">
+                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                    <span class="text-sm mt-1">Generate Keys</span>
+                </div>
+                <div class="step-indicator" data-step="2">
+                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">2</div>
+                    <span class="text-sm mt-1">Create Credential</span>
+                </div>
+                <div class="step-indicator" data-step="3">
+                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
+                    <span class="text-sm mt-1">Verify Claims</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Key Generation -->
+        <div id="step-1" class="step-content">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-key mr-2 text-blue-500"></i>
+                        Step 1: Generate Cryptographic Keys
+                    </h2>
+                    <p class="text-gray-600 mb-6">
+                        Generate unique cryptographic key pairs for the VLEI issuer, legal entity, and representative.
+                    </p>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- Issuer -->
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                            <h3 class="font-semibold text-purple-800 mb-3">
+                                <i class="fas fa-crown mr-2"></i>VLEI Issuer
+                            </h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" id="issuer-name" value="VLEI Authority" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">DID</label>
+                                    <input type="text" id="issuer-did" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Private Key</label>
+                                    <input type="text" id="issuer-private-key" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legal Entity -->
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                            <h3 class="font-semibold text-green-800 mb-3">
+                                <i class="fas fa-building mr-2"></i>Legal Entity
+                            </h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" id="entity-name" value="Acme Corp" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">DID</label>
+                                    <input type="text" id="entity-did" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Private Key</label>
+                                    <input type="text" id="entity-private-key" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Representative -->
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                            <h3 class="font-semibold text-blue-800 mb-3">
+                                <i class="fas fa-user-tie mr-2"></i>Representative
+                            </h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" id="representative-name" value="Jane Doe" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">DID</label>
+                                    <input type="text" id="representative-did" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Private Key</label>
+                                    <input type="text" id="representative-private-key" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-xs">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 text-center">
+                        <button id="generate-keys" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-magic mr-2"></i>Generate Keys
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Credential Creation -->
+        <div id="step-2" class="step-content hidden">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-certificate mr-2 text-green-500"></i>
+                        Step 2: Create vLEI Credential
+                    </h2>
+                    <p class="text-gray-600 mb-6">
+                        Create a verifiable credential establishing the representative's role within the legal entity.
+                    </p>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Legal Entity Identifier (LEI)</label>
+                                <input type="text" id="lei" value="529900WXKG14MWNYUQ33" 
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Role</label>
+                                <select id="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                    <option value="CTO">CTO</option>
+                                    <option value="CEO">CEO</option>
+                                    <option value="CFO">CFO</option>
+                                    <option value="COO">COO</option>
+                                    <option value="Director">Director</option>
+                                    <option value="Manager">Manager</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Issuance Date</label>
+                                <input type="datetime-local" id="issuance-date" 
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Credential Preview</h3>
+                            <div id="credential-preview" class="text-sm text-gray-600 space-y-2">
+                                <div><strong>Issuer:</strong> <span id="preview-issuer">-</span></div>
+                                <div><strong>Subject:</strong> <span id="preview-subject">-</span></div>
+                                <div><strong>Entity:</strong> <span id="preview-entity">-</span></div>
+                                <div><strong>Role:</strong> <span id="preview-role">-</span></div>
+                                <div><strong>LEI:</strong> <span id="preview-lei">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 text-center">
+                        <button id="create-credential" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-plus mr-2"></i>Create Credential
+                        </button>
+                    </div>
+
+                    <div id="credential-result" class="mt-6 hidden">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h3 class="font-semibold text-green-800 mb-2">
+                                <i class="fas fa-check-circle mr-2"></i>Credential Created Successfully!
+                            </h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">JWT Token</label>
+                                    <textarea id="jwt-token" readonly rows="4" 
+                                              class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-xs font-mono"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Verification -->
+        <div id="step-3" class="step-content hidden">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-search mr-2 text-purple-500"></i>
+                        Step 3: Verify Claims
+                    </h2>
+                    <p class="text-gray-600 mb-6">
+                        Verify the representative's role and validate the credential's authenticity.
+                    </p>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Verification Type</label>
+                                <select id="verification-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                                    <option value="role">Role Verification</option>
+                                    <option value="credential">Credential Validation</option>
+                                    <option value="signature">Signature Verification</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Expected Role</label>
+                                <select id="expected-role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                                    <option value="CTO">CTO</option>
+                                    <option value="CEO">CEO</option>
+                                    <option value="CFO">CFO</option>
+                                    <option value="COO">COO</option>
+                                    <option value="Director">Director</option>
+                                    <option value="Manager">Manager</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Representative DID</label>
+                                <input type="text" id="verify-representative-did" readonly 
+                                       class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Entity DID</label>
+                                <input type="text" id="verify-entity-did" readonly 
+                                       class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Verification Results</h3>
+                            <div id="verification-results" class="space-y-3">
+                                <div class="text-center text-gray-500">
+                                    <i class="fas fa-info-circle text-2xl mb-2"></i>
+                                    <p>Click "Verify Claims" to see results</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 text-center">
+                        <button id="verify-claims" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-search mr-2"></i>Verify Claims
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-between max-w-4xl mx-auto mt-8">
+            <button id="prev-step" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 hidden">
+                <i class="fas fa-arrow-left mr-2"></i>Previous
+            </button>
+            <button id="next-step" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                Next<i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-400">
+                VLEI Demo - Verifiable Legal Entity Identifier System
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // VLEI System Implementation
+        class VLEISystem {
+            constructor() {
+                this.ethers = window.ethers;
+                this.jose = window.jose;
+                this.currentStep = 1;
+                this.credentials = [];
+                this.identities = {};
+            }
+
+            newKeyPair() {
+                const wallet = this.ethers.Wallet.createRandom();
+                return {
+                    privateKey: wallet.privateKey,
+                    publicKey: wallet.publicKey,
+                    did: `did:ethr:${wallet.address}`
+                };
+            }
+
+            createIdentity(name, keyPair = null) {
+                const pair = keyPair || this.newKeyPair();
+                const signer = new this.ethers.Wallet(pair.privateKey);
+                
+                return {
+                    did: pair.did,
+                    name,
+                    keyPair: pair,
+                    signer
+                };
+            }
+
+            createIssuer(name, keyPair = null) {
+                const identity = this.createIdentity(name, keyPair);
+                return {
+                    did: identity.did,
+                    signer: identity.signer
+                };
+            }
+
+            async createVLEI(issuer, representativeDID, legalEntityDID, lei, entityName, role) {
+                const credential = {
+                    '@context': [
+                        'https://www.w3.org/2018/credentials/v1',
+                        'https://www.gleif.org/vc/v1'
+                    ],
+                    type: ['VerifiableCredential', 'vLEICredential'],
+                    issuer: { id: issuer.did },
+                    issuanceDate: new Date().toISOString(),
+                    credentialSubject: {
+                        id: representativeDID,
+                        lei,
+                        entityName,
+                        role,
+                        entityDID: legalEntityDID
+                    }
+                };
+
+                const privateKey = new TextEncoder().encode(issuer.signer.privateKey);
+                const jwt = await new this.jose.SignJWT({ vc: credential })
+                    .setProtectedHeader({ alg: 'HS256' })
+                    .setIssuedAt()
+                    .setIssuer(issuer.did)
+                    .setSubject(representativeDID)
+                    .sign(privateKey);
+
+                return jwt;
+            }
+
+            async validateVLEI(vleiJwt, issuerPrivateKey = null) {
+                try {
+                    if (!issuerPrivateKey) {
+                        const [, payloadBase64] = vleiJwt.split('.');
+                        if (!payloadBase64) {
+                            return { isValid: false, error: 'Invalid JWT format' };
+                        }
+
+                        const payload = JSON.parse(atob(payloadBase64));
+                        const vc = payload.vc;
+
+                        if (!vc.credentialSubject.lei || !vc.credentialSubject.entityName || 
+                            !vc.credentialSubject.role || !vc.credentialSubject.entityDID) {
+                            return { isValid: false, error: 'Missing required fields' };
+                        }
+
+                        return {
+                            isValid: true,
+                            issuer: vc.issuer.id,
+                            subject: vc.credentialSubject.id,
+                            lei: vc.credentialSubject.lei,
+                            entityName: vc.credentialSubject.entityName,
+                            role: vc.credentialSubject.role,
+                            entityDID: vc.credentialSubject.entityDID,
+                            issuanceDate: vc.issuanceDate
+                        };
+                    }
+
+                    const privateKey = new TextEncoder().encode(issuerPrivateKey);
+                    const { payload } = await this.jose.jwtVerify(vleiJwt, privateKey);
+                    const vc = payload.vc;
+
+                    return {
+                        isValid: true,
+                        issuer: vc.issuer.id,
+                        subject: vc.credentialSubject.id,
+                        lei: vc.credentialSubject.lei,
+                        entityName: vc.credentialSubject.entityName,
+                        role: vc.credentialSubject.role,
+                        entityDID: vc.credentialSubject.entityDID,
+                        issuanceDate: vc.issuanceDate
+                    };
+                } catch (error) {
+                    return {
+                        isValid: false,
+                        error: error.message || 'Unknown validation error'
+                    };
+                }
+            }
+
+            async verifyRepresentativeRole(representativeDID, entityDID, expectedRole, vleiJwt, issuerPrivateKey = null) {
+                const validationResult = await this.validateVLEI(vleiJwt, issuerPrivateKey);
+                
+                if (!validationResult.isValid) {
+                    return false;
+                }
+
+                return (
+                    validationResult.subject === representativeDID &&
+                    validationResult.entityDID === entityDID &&
+                    validationResult.role === expectedRole
+                );
+            }
+        }
+
+        // UI Controller
+        class VLEIDemo {
+            constructor() {
+                this.vlei = new VLEISystem();
+                this.currentStep = 1;
+                this.identities = {};
+                this.currentCredential = null;
+                this.initializeEventListeners();
+                this.setCurrentDate();
+            }
+
+            initializeEventListeners() {
+                // Navigation
+                document.getElementById('next-step').addEventListener('click', () => this.nextStep());
+                document.getElementById('prev-step').addEventListener('click', () => this.prevStep());
+
+                // Key generation
+                document.getElementById('generate-keys').addEventListener('click', () => this.generateKeys());
+
+                // Credential creation
+                document.getElementById('create-credential').addEventListener('click', () => this.createCredential());
+
+                // Verification
+                document.getElementById('verify-claims').addEventListener('click', () => this.verifyClaims());
+
+                // Form updates
+                document.getElementById('role').addEventListener('change', () => this.updateCredentialPreview());
+                document.getElementById('verification-type').addEventListener('change', () => this.updateVerificationForm());
+            }
+
+            setCurrentDate() {
+                const now = new Date();
+                const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('issuance-date').value = localDateTime;
+            }
+
+            async generateKeys() {
+                const button = document.getElementById('generate-keys');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner loading mr-2"></i>Generating...';
+                button.disabled = true;
+
+                try {
+                    // Generate identities
+                    const issuer = this.vlei.createIssuer(document.getElementById('issuer-name').value);
+                    const entity = this.vlei.createIdentity(document.getElementById('entity-name').value);
+                    const representative = this.vlei.createIdentity(document.getElementById('representative-name').value);
+
+                    this.identities = { issuer, entity, representative };
+
+                    // Update UI
+                    document.getElementById('issuer-did').value = issuer.did;
+                    document.getElementById('issuer-private-key').value = issuer.signer.privateKey;
+                    document.getElementById('entity-did').value = entity.did;
+                    document.getElementById('entity-private-key').value = entity.signer.privateKey;
+                    document.getElementById('representative-did').value = representative.did;
+                    document.getElementById('representative-private-key').value = representative.signer.privateKey;
+
+                    // Update verification form
+                    document.getElementById('verify-representative-did').value = representative.did;
+                    document.getElementById('verify-entity-did').value = entity.did;
+
+                    // Update credential preview
+                    this.updateCredentialPreview();
+
+                    // Success animation
+                    document.getElementById('step-1').querySelector('.bg-white').classList.add('success-glow');
+                    setTimeout(() => {
+                        document.getElementById('step-1').querySelector('.bg-white').classList.remove('success-glow');
+                    }, 2000);
+
+                    this.showNotification('Keys generated successfully!', 'success');
+                } catch (error) {
+                    this.showNotification('Error generating keys: ' + error.message, 'error');
+                } finally {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            updateCredentialPreview() {
+                if (!this.identities.issuer || !this.identities.representative || !this.identities.entity) return;
+
+                document.getElementById('preview-issuer').textContent = this.identities.issuer.did;
+                document.getElementById('preview-subject').textContent = this.identities.representative.did;
+                document.getElementById('preview-entity').textContent = this.identities.entity.name;
+                document.getElementById('preview-role').textContent = document.getElementById('role').value;
+                document.getElementById('preview-lei').textContent = document.getElementById('lei').value;
+            }
+
+            async createCredential() {
+                if (!this.identities.issuer || !this.identities.representative || !this.identities.entity) {
+                    this.showNotification('Please generate keys first!', 'error');
+                    return;
+                }
+
+                const button = document.getElementById('create-credential');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner loading mr-2"></i>Creating...';
+                button.disabled = true;
+
+                try {
+                    const lei = document.getElementById('lei').value;
+                    const role = document.getElementById('role').value;
+                    const entityName = this.identities.entity.name;
+
+                    this.currentCredential = await this.vlei.createVLEI(
+                        this.identities.issuer,
+                        this.identities.representative.did,
+                        this.identities.entity.did,
+                        lei,
+                        entityName,
+                        role
+                    );
+
+                    document.getElementById('jwt-token').value = this.currentCredential;
+                    document.getElementById('credential-result').classList.remove('hidden');
+
+                    this.showNotification('Credential created successfully!', 'success');
+                } catch (error) {
+                    this.showNotification('Error creating credential: ' + error.message, 'error');
+                } finally {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            updateVerificationForm() {
+                const type = document.getElementById('verification-type').value;
+                const roleSection = document.getElementById('expected-role').parentElement;
+                const didSection = document.getElementById('verify-representative-did').parentElement;
+
+                if (type === 'role') {
+                    roleSection.classList.remove('hidden');
+                    didSection.classList.remove('hidden');
+                } else {
+                    roleSection.classList.add('hidden');
+                    didSection.classList.add('hidden');
+                }
+            }
+
+            async verifyClaims() {
+                if (!this.currentCredential) {
+                    this.showNotification('Please create a credential first!', 'error');
+                    return;
+                }
+
+                const button = document.getElementById('verify-claims');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner loading mr-2"></i>Verifying...';
+                button.disabled = true;
+
+                try {
+                    const verificationType = document.getElementById('verification-type').value;
+                    const resultsDiv = document.getElementById('verification-results');
+                    let results = '';
+
+                    if (verificationType === 'credential') {
+                        const result = await this.vlei.validateVLEI(this.currentCredential);
+                        if (result.isValid) {
+                            results = `
+                                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        <strong>Credential Valid</strong>
+                                    </div>
+                                    <div class="mt-2 text-sm">
+                                        <div><strong>Issuer:</strong> ${result.issuer}</div>
+                                        <div><strong>Subject:</strong> ${result.subject}</div>
+                                        <div><strong>Entity:</strong> ${result.entityName}</div>
+                                        <div><strong>Role:</strong> ${result.role}</div>
+                                        <div><strong>LEI:</strong> ${result.lei}</div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            results = `
+                                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-times-circle mr-2"></i>
+                                        <strong>Credential Invalid</strong>
+                                    </div>
+                                    <div class="mt-2 text-sm">${result.error}</div>
+                                </div>
+                            `;
+                        }
+                    } else if (verificationType === 'role') {
+                        const expectedRole = document.getElementById('expected-role').value;
+                        const representativeDID = document.getElementById('verify-representative-did').value;
+                        const entityDID = document.getElementById('verify-entity-did').value;
+
+                        const isValid = await this.vlei.verifyRepresentativeRole(
+                            representativeDID,
+                            entityDID,
+                            expectedRole,
+                            this.currentCredential
+                        );
+
+                        if (isValid) {
+                            results = `
+                                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        <strong>Role Verified</strong>
+                                    </div>
+                                    <div class="mt-2 text-sm">
+                                        The representative has the role of <strong>${expectedRole}</strong> in the specified entity.
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            results = `
+                                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-times-circle mr-2"></i>
+                                        <strong>Role Verification Failed</strong>
+                                    </div>
+                                    <div class="mt-2 text-sm">
+                                        The representative does not have the role of <strong>${expectedRole}</strong> in the specified entity.
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } else if (verificationType === 'signature') {
+                        const result = await this.vlei.validateVLEI(this.currentCredential, this.identities.issuer.signer.privateKey);
+                        if (result.isValid) {
+                            results = `
+                                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        <strong>Signature Verified</strong>
+                                    </div>
+                                    <div class="mt-2 text-sm">
+                                        The credential signature has been cryptographically verified.
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            results = `
+                                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-times-circle mr-2"></i>
+                                        <strong>Signature Verification Failed</strong>
+                                    </div>
+                                    <div class="mt-2 text-sm">${result.error}</div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    resultsDiv.innerHTML = results;
+                    this.showNotification('Verification completed!', 'success');
+                } catch (error) {
+                    this.showNotification('Error during verification: ' + error.message, 'error');
+                } finally {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            nextStep() {
+                if (this.currentStep < 3) {
+                    this.currentStep++;
+                    this.updateStepDisplay();
+                }
+            }
+
+            prevStep() {
+                if (this.currentStep > 1) {
+                    this.currentStep--;
+                    this.updateStepDisplay();
+                }
+            }
+
+            updateStepDisplay() {
+                // Hide all steps
+                document.querySelectorAll('.step-content').forEach(step => step.classList.add('hidden'));
+                
+                // Show current step
+                document.getElementById(`step-${this.currentStep}`).classList.remove('hidden');
+
+                // Update step indicators
+                document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                    const stepNumber = index + 1;
+                    const circle = indicator.querySelector('div');
+                    const text = indicator.querySelector('span');
+
+                    if (stepNumber === this.currentStep) {
+                        circle.className = 'w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold';
+                        text.className = 'text-sm mt-1 text-blue-600 font-medium';
+                    } else if (stepNumber < this.currentStep) {
+                        circle.className = 'w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold';
+                        text.className = 'text-sm mt-1 text-green-600 font-medium';
+                    } else {
+                        circle.className = 'w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold';
+                        text.className = 'text-sm mt-1 text-gray-500';
+                    }
+                });
+
+                // Update navigation buttons
+                const prevButton = document.getElementById('prev-step');
+                const nextButton = document.getElementById('next-step');
+
+                if (this.currentStep === 1) {
+                    prevButton.classList.add('hidden');
+                    nextButton.textContent = 'Next';
+                } else if (this.currentStep === 3) {
+                    prevButton.classList.remove('hidden');
+                    nextButton.textContent = 'Finish';
+                } else {
+                    prevButton.classList.remove('hidden');
+                    nextButton.textContent = 'Next';
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+                
+                if (type === 'success') {
+                    notification.className += ' bg-green-500 text-white';
+                } else if (type === 'error') {
+                    notification.className += ' bg-red-500 text-white';
+                } else {
+                    notification.className += ' bg-blue-500 text-white';
+                }
+
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                // Animate in
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                }, 100);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // Initialize the demo when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VLEIDemo();
+        });
+    </script>
+</body>
+</html> 
