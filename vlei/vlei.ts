@@ -40,6 +40,7 @@ export const newVLEIDiD = (lei: string = crypto.randomUUID()): string => `did:vl
 export const newEthrDiD = (address: string): string => `did:ethr:${address}`;
 export const newWebDiD = (domain: string): string => `did:web:${domain}`;
 
+
 // ---------------------------------------------
 // STEP 3: Create Issuer
 // ---------------------------------------------

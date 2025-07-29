@@ -6,7 +6,7 @@ import {
     createSigner,
     type VLEIIssuer
 } from "../index"
-import { newDiD, newVLEIDiD } from "../vlei"
+import { createIssuer, generateKeypair, newDiD, newVLEIDiD } from "../vlei"
 
 describe("vLEI Credential Functions", () => {
     let issuer: VLEIIssuer
@@ -235,10 +235,17 @@ describe("vLEI Credential Functions", () => {
         })
 
         it("should use vlei", async () => {
-            // Step 1: get LEI from LOU
+
+            // Step 0: generate a keypair for the LOU
+            const louKeyPair = generateKeypair()
+            const louDid = newVLEIDiD()
+            const louIssuer = createIssuer(louDid, louKeyPair)
+
+            // Step 1: a LOU (Local Operating Unit) issues an applicant an LEI
             const lei = "thisismyLEI"
 
 
+            // Step 2: generate DIDs
             const representativeDID = newVLEIDiD(lei)
             const legalEntityDID = "did:ethr:0xfedcba0987654321fedcba0987654321fedcba09"
 
