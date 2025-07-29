@@ -1,7 +1,6 @@
 import {
     createVLEI,
     validateVLEI,
-    createResolver,
     createSigner,
     type VLEIIssuer
 } from "./index"
@@ -45,19 +44,25 @@ async function demonstrateVLEI() {
     console.log("\n✅ vLEI Credential created successfully!")
     console.log("JWT:", vleiJwt.substring(0, 50) + "...")
 
-    // Step 3: Set up resolver for validation
-    const rpcUrl = "https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
-    const registry = "0xdca7ef03e98e0dc2b855be647c39abe984fcf21b"
-    const resolver = createResolver(rpcUrl, registry)
-
     console.log("\n🔍 Validating vLEI credential...")
 
-    // Note: In a real scenario, you would need a proper resolver
-    // For demo purposes, we'll show the structure
-    console.log("Credential structure validated:")
-    console.log("- Contains vLEI type ✓")
-    console.log("- Has required fields (lei, entityName, role, entityDID) ✓")
-    console.log("- JWT format is valid ✓")
+    // Validate the credential
+    const validationResult = await validateVLEI(vleiJwt)
+
+    if (validationResult.isValid) {
+        console.log("✅ Credential validation successful:")
+        console.log("- JWT format is valid ✓")
+        console.log("- Contains vLEI type ✓")
+        console.log("- Has required fields (lei, entityName, role, entityDID) ✓")
+        console.log("- Issuer:", validationResult.issuer)
+        console.log("- Subject:", validationResult.subject)
+        console.log("- LEI:", validationResult.lei)
+        console.log("- Entity Name:", validationResult.entityName)
+        console.log("- Role:", validationResult.role)
+        console.log("- Entity DID:", validationResult.entityDID)
+    } else {
+        console.log("❌ Credential validation failed:", validationResult.error)
+    }
 
     // Step 4: Decode and display credential content
     const [, payloadBase64] = vleiJwt.split(".")

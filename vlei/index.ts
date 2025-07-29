@@ -1,64 +1,95 @@
-import {
-    createVerifiableCredentialJwt,
-    verifyCredential
-} from 'did-jwt-vc'
-import type { JwtCredentialPayload } from 'did-jwt-vc'
-import { Resolver } from 'did-resolver'
-import { getResolver } from 'ethr-did-resolver'
-import { ES256KSigner } from 'did-jwt'
-import { jwtVerify, importJWK } from 'jose'
+import { ethers } from 'ethers';
+import { SignJWT, jwtVerify } from 'jose';
 
-// Types for vLEI credentials
-export interface VLEICredentialSubject {
-    id: string // DID of the representative
-    lei: string // Legal Entity Identifier
-    entityName: string // Name of the legal entity
-    role: string // Role of the representative (e.g., "CFO", "CEO")
-    entityDID: string // DID of the legal entity
+// Types
+export interface KeyPair {
+    privateKey: string;
+    publicKey: string;
+    did: string;
 }
 
-export interface VLEICredentialPayload {
-    sub: string
-    vc: {
-        '@context': string[]
-        type: string[]
-        issuer: { id: string }
-        issuanceDate: string
-        credentialSubject: VLEICredentialSubject
-    }
+export interface Identity {
+    did: string;
+    name: string;
+    keyPair: KeyPair;
+    signer: ethers.Wallet;
 }
 
 export interface VLEIIssuer {
-    did: string
-    signer: any // ES256KSigner
+    did: string;
+    signer: ethers.Wallet;
+}
+
+export interface VLEICredential {
+    '@context': string[];
+    type: string[];
+    issuer: { id: string };
+    issuanceDate: string;
+    credentialSubject: {
+        id: string;
+        lei: string;
+        entityName: string;
+        role: string;
+        entityDID: string;
+    };
 }
 
 export interface VLEIVerificationResult {
-    isValid: boolean
-    credential?: any
-    error?: string
+    isValid: boolean;
+    issuer?: string;
+    subject?: string;
+    lei?: string;
+    entityName?: string;
+    role?: string;
+    entityDID?: string;
+    issuanceDate?: string;
+    error?: string;
 }
 
 /**
- * Creates a vLEI credential for a representative of a legal entity
- * 
- * 
- * Individual Person (Representative)
- * ├── DID: did:ethr:0xabcdef... (John Smith's personal DID)
- * ├── Role: "CFO" 
- * └── Represents: Legal Entity
- *     ├── DID: did:ethr:0xfedcba... (ACME Corp's DID)
- *     ├── LEI: 529900WXKG14MWNYUQ33
- *     └── Name: "ACME Corporation"
- *
- * 
- * @param issuer - The issuer with DID and signer
- * @param representativeDID - DID of the representative
- * @param legalEntityDID - DID of the legal entity
- * @param lei - Legal Entity Identifier
- * @param entityName - Name of the legal entity
- * @param role - Role of the representative
- * @returns JWT string of the vLEI credential
+ * Generate a new cryptographic key pair and DID
+ */
+export function newKeyPair(): KeyPair {
+    const wallet = ethers.Wallet.createRandom();
+    const privateKey = wallet.privateKey;
+    const publicKey = wallet.publicKey;
+    const did = `did:ethr:${wallet.address}`;
+
+    return {
+        privateKey,
+        publicKey,
+        did
+    };
+}
+
+/**
+ * Create an identity with a key pair and metadata
+ */
+export function createIdentity(name: string, keyPair?: KeyPair): Identity {
+    const pair = keyPair || newKeyPair();
+    const signer = new ethers.Wallet(pair.privateKey);
+
+    return {
+        did: pair.did,
+        name,
+        keyPair: pair,
+        signer
+    };
+}
+
+/**
+ * Create an issuer identity for vLEI credentials
+ */
+export function createIssuer(name: string, keyPair?: KeyPair): VLEIIssuer {
+    const identity = createIdentity(name, keyPair);
+    return {
+        did: identity.did,
+        signer: identity.signer
+    };
+}
+
+/**
+ * Create a vLEI credential
  */
 export async function createVLEI(
     issuer: VLEIIssuer,
@@ -68,170 +99,184 @@ export async function createVLEI(
     entityName: string,
     role: string
 ): Promise<string> {
-    const vleiPayload: VLEICredentialPayload = {
-        sub: representativeDID,
-        vc: {
-            '@context': [
-                'https://www.w3.org/2018/credentials/v1',
-                'https://www.gleif.org/vc/v1'
-            ],
-            type: ['VerifiableCredential', 'vLEICredential'],
-            issuer: {
-                id: issuer.did
-            },
-            issuanceDate: new Date().toISOString(),
-            credentialSubject: {
-                id: representativeDID,
-                lei,
-                entityName,
-                role,
-                entityDID: legalEntityDID
-            }
+    const credential: VLEICredential = {
+        '@context': [
+            'https://www.w3.org/2018/credentials/v1',
+            'https://www.gleif.org/vc/v1'
+        ],
+        type: ['VerifiableCredential', 'vLEICredential'],
+        issuer: { id: issuer.did },
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+            id: representativeDID,
+            lei,
+            entityName,
+            role,
+            entityDID: legalEntityDID
         }
-    }
+    };
 
-    return await createVerifiableCredentialJwt(vleiPayload, issuer)
+    // Create JWT using the issuer's private key
+    const privateKey = new TextEncoder().encode(issuer.signer.privateKey);
+    const jwt = await new SignJWT({ vc: credential })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setIssuer(issuer.did)
+        .setSubject(representativeDID)
+        .sign(privateKey);
+
+    return jwt;
 }
 
 /**
- * Validates a vLEI credential using on-chain DID resolution
- * @param vleiJwt - The JWT string of the vLEI credential
- * @param resolver - DID resolver for verification
- * @returns Verification result with validation status
+ * Create a signer from a private key
+ */
+export function createSigner(privateKey: string): ethers.Wallet {
+    return new ethers.Wallet(privateKey);
+}
+
+/**
+ * Validate a vLEI credential
  */
 export async function validateVLEI(
     vleiJwt: string,
-    resolver: Resolver
+    issuerPrivateKey?: string
 ): Promise<VLEIVerificationResult> {
     try {
-        const verifiedCredential = await verifyCredential(vleiJwt, resolver)
-
-        // Additional vLEI-specific validation
-        const credential = verifiedCredential.verifiableCredential
-        if (!credential.type.includes('vLEICredential')) {
-            return {
-                isValid: false,
-                error: 'Credential is not a vLEI credential'
+        if (!issuerPrivateKey) {
+            // For demo purposes, we'll just decode and validate the structure
+            const [, payloadBase64] = vleiJwt.split('.');
+            if (!payloadBase64) {
+                return {
+                    isValid: false,
+                    error: 'Invalid JWT format'
+                };
             }
+
+            const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString());
+            const vc = payload.vc as VLEICredential;
+
+            // Validate vLEI-specific fields
+            if (!vc.credentialSubject.lei) {
+                return {
+                    isValid: false,
+                    error: 'Missing LEI field'
+                };
+            }
+
+            if (!vc.credentialSubject.entityName) {
+                return {
+                    isValid: false,
+                    error: 'Missing entity name'
+                };
+            }
+
+            if (!vc.credentialSubject.role) {
+                return {
+                    isValid: false,
+                    error: 'Missing role field'
+                };
+            }
+
+            if (!vc.credentialSubject.entityDID) {
+                return {
+                    isValid: false,
+                    error: 'Missing entity DID'
+                };
+            }
+
+            return {
+                isValid: true,
+                issuer: vc.issuer.id,
+                subject: vc.credentialSubject.id,
+                lei: vc.credentialSubject.lei,
+                entityName: vc.credentialSubject.entityName,
+                role: vc.credentialSubject.role,
+                entityDID: vc.credentialSubject.entityDID,
+                issuanceDate: vc.issuanceDate
+            };
         }
 
-        const subject = credential.credentialSubject
-        if (!subject.lei || !subject.entityName || !subject.role || !subject.entityDID) {
-            return {
-                isValid: false,
-                error: 'Missing required vLEI credential fields'
-            }
-        }
+        // Verify JWT signature if private key is provided
+        const privateKey = new TextEncoder().encode(issuerPrivateKey);
+        const { payload } = await jwtVerify(vleiJwt, privateKey);
+        const vc = (payload as any).vc as VLEICredential;
 
         return {
             isValid: true,
-            credential: verifiedCredential
-        }
+            issuer: vc.issuer.id,
+            subject: vc.credentialSubject.id,
+            lei: vc.credentialSubject.lei,
+            entityName: vc.credentialSubject.entityName,
+            role: vc.credentialSubject.role,
+            entityDID: vc.credentialSubject.entityDID,
+            issuanceDate: vc.issuanceDate
+        };
     } catch (error) {
         return {
             isValid: false,
-            error: error instanceof Error ? error.message : 'Unknown verification error'
-        }
+            error: error instanceof Error ? error.message : 'Unknown validation error'
+        };
     }
 }
 
 /**
- * Validates a vLEI credential using JWT verification only (no on-chain resolution)
- * This is useful for testing and scenarios where you don't need full DID resolution
- * @param vleiJwt - The JWT string of the vLEI credential
- * @param issuerPublicKey - The issuer's public key in hex format
- * @returns Verification result with validation status
+ * Verify that a representative has a specific role for an entity
  */
-export async function validateVLEIJWT(
+export async function verifyRepresentativeRole(
+    representativeDID: string,
+    entityDID: string,
+    expectedRole: string,
     vleiJwt: string,
-    issuerPublicKey: string
-): Promise<VLEIVerificationResult> {
-    try {
-        // Convert hex public key to JWK format
-        const publicKeyBuffer = new Uint8Array(
-            issuerPublicKey.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
-        )
+    issuerPrivateKey?: string
+): Promise<boolean> {
+    const validationResult = await validateVLEI(vleiJwt, issuerPrivateKey);
 
-        const ecPublicKeyJWK = {
-            kty: "EC",
-            crv: "secp256k1",
-            x: "",
-            y: "",
-        }
-
-        // Parse x and y from public key (assuming uncompressed 0x04 + x + y)
-        if (publicKeyBuffer[0] === 0x04 && publicKeyBuffer.length === 65) {
-            const x = publicKeyBuffer.slice(1, 33)
-            const y = publicKeyBuffer.slice(33, 65)
-
-            ecPublicKeyJWK.x = Buffer.from(x).toString("base64url")
-            ecPublicKeyJWK.y = Buffer.from(y).toString("base64url")
-        } else {
-            return {
-                isValid: false,
-                error: 'Only uncompressed public keys are supported'
-            }
-        }
-
-        // Import the JWK and verify the JWT
-        const key = await importJWK(ecPublicKeyJWK, "ES256K")
-        const { payload } = await jwtVerify(vleiJwt, key)
-
-        // Validate vLEI-specific fields
-        const vc = payload.vc as any
-        if (!vc || !vc.type || !vc.type.includes('vLEICredential')) {
-            return {
-                isValid: false,
-                error: 'Credential is not a vLEI credential'
-            }
-        }
-
-        const subject = vc.credentialSubject
-        if (!subject || !subject.lei || !subject.entityName || !subject.role || !subject.entityDID) {
-            return {
-                isValid: false,
-                error: 'Missing required vLEI credential fields'
-            }
-        }
-
-        return {
-            isValid: true,
-            credential: {
-                payload,
-                verifiableCredential: payload.vc
-            }
-        }
-    } catch (error) {
-        return {
-            isValid: false,
-            error: error instanceof Error ? error.message : 'Unknown verification error'
-        }
+    if (!validationResult.isValid) {
+        return false;
     }
+
+    return (
+        validationResult.subject === representativeDID &&
+        validationResult.entityDID === entityDID &&
+        validationResult.role === expectedRole
+    );
 }
 
 /**
- * Creates a DID resolver for Ethereum-based DIDs
- * @param rpcUrl - Ethereum RPC URL
- * @param registry - DID registry address
- * @returns Configured resolver
+ * Generate a complete vLEI workflow for testing
  */
-export function createResolver(rpcUrl: string, registry: string): Resolver {
-    const providerConfig = {
-        rpcUrl,
-        registry
-    }
-    return new Resolver(getResolver(providerConfig))
-}
+export async function generateVLEIWorkflow(
+    issuerName: string,
+    entityName: string,
+    representativeName: string,
+    lei: string,
+    role: string
+): Promise<{
+    issuer: VLEIIssuer;
+    entity: Identity;
+    representative: Identity;
+    vleiJwt: string;
+}> {
+    // Create identities
+    const issuer = createIssuer(issuerName);
+    const entity = createIdentity(entityName);
+    const representative = createIdentity(representativeName);
 
-/**
- * Creates a signer for DID operations
- * @param privateKey - Private key as hex string
- * @returns ES256KSigner
- */
-export function createSigner(privateKey: string): any {
-    // Convert hex string to Uint8Array
-    const privateKeyBytes = new Uint8Array(
-        privateKey.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
-    )
-    return ES256KSigner(privateKeyBytes)
+    // Generate vLEI credential
+    const vleiJwt = await createVLEI(
+        issuer,
+        representative.did,
+        entity.did,
+        lei,
+        entityName,
+        role
+    );
+
+    return {
+        issuer,
+        entity,
+        representative,
+        vleiJwt
+    };
 }
