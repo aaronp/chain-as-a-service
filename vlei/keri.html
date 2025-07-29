@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KERI vLEI Demo - Key Event Receipt Infrastructure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .keri-event {
+            transition: all 0.3s ease;
+        }
+        .keri-event:hover {
+            background-color: #f3f4f6;
+        }
+        .keri-event.selected {
+            background-color: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+        .drawer {
+            transition: transform 0.3s ease;
+        }
+        .drawer.open {
+            transform: translateX(0);
+        }
+        .drawer.closed {
+            transform: translateX(100%);
+        }
+        .success-glow {
+            animation: successGlow 2s ease-in-out;
+        }
+        @keyframes successGlow {
+            0%, 100% { box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+            50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold text-center mb-2">
+                <i class="fas fa-key mr-3"></i>
+                KERI vLEI Demo
+            </h1>
+            <p class="text-xl text-center opacity-90">
+                Key Event Receipt Infrastructure Lifecycle
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="flex h-screen">
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="container mx-auto px-4 py-8">
+                <!-- Step Navigation -->
+                <div class="flex justify-center mb-8">
+                    <div class="flex space-x-4">
+                        <div class="step-indicator active" data-step="1">
+                            <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                            <span class="text-sm mt-1">Issue vLEI</span>
+                        </div>
+                        <div class="step-indicator" data-step="2">
+                            <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">2</div>
+                            <span class="text-sm mt-1">Appoint CFO</span>
+                        </div>
+                        <div class="step-indicator" data-step="3">
+                            <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
+                            <span class="text-sm mt-1">Verify Claims</span>
+                        </div>
+                        <div class="step-indicator" data-step="4">
+                            <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">4</div>
+                            <span class="text-sm mt-1">Remove CFO</span>
+                        </div>
+                        <div class="step-indicator" data-step="5">
+                            <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">5</div>
+                            <span class="text-sm mt-1">Confirm Removal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Content will be added here -->
+                <div id="step-content" class="max-w-4xl mx-auto">
+                    <!-- Step content will be dynamically loaded -->
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between max-w-4xl mx-auto mt-8">
+                    <button id="prev-step" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 hidden">
+                        <i class="fas fa-arrow-left mr-2"></i>Previous
+                    </button>
+                    <button id="next-step" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                        Next<i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- KERI Event Log Drawer -->
+        <div id="keri-drawer" class="drawer closed w-96 bg-white border-l border-gray-200 shadow-lg">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-list mr-2"></i>KERI Event Log
+                    </h3>
+                    <button id="toggle-drawer" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto">
+                <!-- Event List -->
+                <div class="p-4">
+                    <h4 class="font-medium text-gray-700 mb-3">Events</h4>
+                    <div id="event-list" class="space-y-2">
+                        <!-- Events will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Event Details -->
+                <div class="border-t border-gray-200 p-4">
+                    <h4 class="font-medium text-gray-700 mb-3">Event Details</h4>
+                    <div id="event-details" class="text-sm">
+                        <div class="text-gray-500 text-center">
+                            <i class="fas fa-info-circle text-2xl mb-2"></i>
+                            <p>Select an event to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drawer Toggle Button -->
+    <button id="drawer-toggle" class="fixed top-20 right-4 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-50">
+        <i class="fas fa-list"></i>
+    </button>
+
+    <script>
+        // KERI System Implementation
+        class KERISystem {
+            constructor() {
+                this.ethers = window.ethers;
+                this.events = [];
+                this.identifiers = {};
+                this.credentials = {};
+                this.currentStep = 1;
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                // Navigation
+                document.getElementById('next-step').addEventListener('click', () => this.nextStep());
+                document.getElementById('prev-step').addEventListener('click', () => this.prevStep());
+                
+                // Drawer toggle
+                document.getElementById('drawer-toggle').addEventListener('click', () => this.toggleDrawer());
+                document.getElementById('toggle-drawer').addEventListener('click', () => this.toggleDrawer());
+                
+                // Initialize first step
+                this.loadStep(1);
+            }
+
+            // Add step-specific event handlers after loading step content
+            addStepEventHandlers() {
+                switch(this.currentStep) {
+                    case 1:
+                        document.getElementById('issue-vlei')?.addEventListener('click', () => this.executeStep1());
+                        break;
+                    case 2:
+                        document.getElementById('appoint-cfo')?.addEventListener('click', () => this.executeStep2());
+                        break;
+                    case 3:
+                        document.getElementById('verify-claims')?.addEventListener('click', () => this.executeStep3());
+                        break;
+                    case 4:
+                        document.getElementById('revoke-cfo')?.addEventListener('click', () => this.executeStep4());
+                        break;
+                    case 5:
+                        document.getElementById('confirm-revocation')?.addEventListener('click', () => this.executeStep5());
+                        break;
+                }
+            }
+
+            executeStep1() {
+                const companyName = document.getElementById('company-name').value;
+                const lei = document.getElementById('lei').value;
+                const qviName = document.getElementById('qvi-name').value;
+
+                // Create QVI identifier
+                const qvi = this.createKERIIdentifier(qviName, 'qvi');
+                
+                // Create ACME identifier
+                const acme = this.createKERIIdentifier(companyName, 'entity');
+                
+                // Issue vLEI credential for ACME
+                const acmeCredentialId = this.createCredential(qvi, acme, 'entity', companyName, lei);
+                
+                // Update UI
+                document.getElementById('acme-did').textContent = acme.did;
+                document.getElementById('qvi-did').textContent = qvi.did;
+                document.getElementById('issued-lei').textContent = lei;
+                document.getElementById('step1-result').classList.remove('hidden');
+                
+                // Update step events
+                const step1Events = document.getElementById('step1-events');
+                step1Events.innerHTML = `
+                    <div class="text-green-600">✓ QVI inception event</div>
+                    <div class="text-green-600">✓ ACME inception event</div>
+                    <div class="text-green-600">✓ vLEI credential issued</div>
+                `;
+
+                this.showNotification('vLEI issued successfully!', 'success');
+                
+                // Store for later steps
+                this.acme = acme;
+                this.qvi = qvi;
+                this.acmeCredentialId = acmeCredentialId;
+            }
+
+            executeStep2() {
+                const repName = document.getElementById('rep-name').value;
+                const role = document.getElementById('role').value;
+                
+                // Create Jane's identifier
+                const jane = this.createKERIIdentifier(repName, 'representative');
+                
+                // Create delegation credential
+                const delegationCredentialId = this.createCredential(this.acme, jane, role, this.acme.name, this.lei);
+                
+                // Update UI
+                document.getElementById('jane-did').textContent = jane.did;
+                document.getElementById('appointed-role').textContent = role;
+                document.getElementById('credential-id').textContent = delegationCredentialId;
+                document.getElementById('step2-result').classList.remove('hidden');
+                
+                // Update step events
+                const step2Events = document.getElementById('step2-events');
+                step2Events.innerHTML = `
+                    <div class="text-green-600">✓ Jane's inception event</div>
+                    <div class="text-green-600">✓ Delegation credential issued</div>
+                `;
+
+                this.showNotification('CFO appointed successfully!', 'success');
+                
+                // Store for later steps
+                this.jane = jane;
+                this.delegationCredentialId = delegationCredentialId;
+            }
+
+            executeStep3() {
+                const expectedRole = document.getElementById('verify-role').value;
+                const janeDid = this.jane.did;
+                const credentialId = this.delegationCredentialId;
+                
+                // Verify the credential
+                const credential = this.credentials[credentialId];
+                const isValid = credential && !credential.revoked && 
+                               credential.credentialSubject.role === expectedRole &&
+                               credential.credentialSubject.id === janeDid;
+                
+                const resultsDiv = document.getElementById('step3-results');
+                
+                if (isValid) {
+                    resultsDiv.innerHTML = `
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <strong>Verification Successful</strong>
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <div>✓ Jane's credential is valid</div>
+                                <div>✓ Role matches: ${expectedRole}</div>
+                                <div>✓ Credential not revoked</div>
+                                <div>✓ Cryptographic chain verified</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                            <div class="flex items-center">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <strong>Verification Failed</strong>
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <div>✗ Credential validation failed</div>
+                                <div>✗ Role mismatch or credential revoked</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                this.showNotification('Verification completed!', isValid ? 'success' : 'error');
+            }
+
+            executeStep4() {
+                const reason = document.getElementById('revocation-reason').value;
+                
+                // Revoke the credential
+                this.revokeCredential(this.delegationCredentialId, reason);
+                
+                // Update UI
+                document.getElementById('revoked-credential-id').textContent = this.delegationCredentialId;
+                document.getElementById('revocation-reason-display').textContent = reason;
+                document.getElementById('revocation-time').textContent = new Date().toLocaleString();
+                document.getElementById('step4-result').classList.remove('hidden');
+                
+                // Update step events
+                const step4Events = document.getElementById('step4-events');
+                step4Events.innerHTML = `
+                    <div class="text-red-600">✓ Credential revocation event</div>
+                `;
+
+                this.showNotification('CFO role revoked successfully!', 'success');
+            }
+
+            executeStep5() {
+                const credentialId = this.delegationCredentialId;
+                const credential = this.credentials[credentialId];
+                const isRevoked = credential && credential.revoked;
+                
+                const resultsDiv = document.getElementById('step5-results');
+                
+                if (isRevoked) {
+                    resultsDiv.innerHTML = `
+                        <div class="bg-orange-100 border border-orange-400 text-orange-700 px-4 py-3 rounded">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <strong>Revocation Confirmed</strong>
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <div>✓ Credential is revoked</div>
+                                <div>✓ Jane is no longer CFO</div>
+                                <div>✓ Revocation reason: ${credential.revocationReason}</div>
+                                <div>✓ Revoked at: ${new Date(credential.revocationDate).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                            <div class="flex items-center">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <strong>Revocation Not Found</strong>
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <div>✗ Credential is still active</div>
+                                <div>✗ Jane is still CFO</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                this.showNotification('Revocation confirmation completed!', isRevoked ? 'success' : 'error');
+            }
+
+            // KERI Event Management
+            addEvent(type, data) {
+                const event = {
+                    id: this.events.length + 1,
+                    type,
+                    data,
+                    timestamp: new Date().toISOString(),
+                    sequence: this.events.length + 1
+                };
+                this.events.push(event);
+                this.updateEventLog();
+                return event;
+            }
+
+            updateEventLog() {
+                const eventList = document.getElementById('event-list');
+                eventList.innerHTML = '';
+
+                this.events.forEach(event => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'keri-event p-3 border border-gray-200 rounded cursor-pointer';
+                    eventElement.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-medium text-sm">${event.type}</div>
+                                <div class="text-xs text-gray-500">${event.timestamp}</div>
+                            </div>
+                            <div class="text-xs bg-gray-100 px-2 py-1 rounded">#${event.sequence}</div>
+                        </div>
+                    `;
+                    eventElement.addEventListener('click', () => this.selectEvent(event));
+                    eventList.appendChild(eventElement);
+                });
+            }
+
+            selectEvent(event) {
+                // Remove previous selection
+                document.querySelectorAll('.keri-event').forEach(el => el.classList.remove('selected'));
+                
+                // Add selection to clicked event
+                event.target.closest('.keri-event').classList.add('selected');
+                
+                // Show event details
+                this.showEventDetails(event);
+            }
+
+            showEventDetails(event) {
+                const detailsDiv = document.getElementById('event-details');
+                detailsDiv.innerHTML = `
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Event Type</label>
+                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">${event.type}</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Sequence</label>
+                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">${event.sequence}</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Timestamp</label>
+                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">${event.timestamp}</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Data</label>
+                            <pre class="text-xs bg-gray-50 p-2 rounded overflow-auto max-h-32">${JSON.stringify(event.data, null, 2)}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+
+            toggleDrawer() {
+                const drawer = document.getElementById('keri-drawer');
+                drawer.classList.toggle('closed');
+                drawer.classList.toggle('open');
+            }
+
+            // KERI Identifier Management
+            createKERIIdentifier(name, type = 'entity') {
+                const wallet = this.ethers.Wallet.createRandom();
+                const identifier = {
+                    did: `did:keri:${wallet.address}`,
+                    name,
+                    type,
+                    wallet,
+                    inceptionEvent: this.addEvent('inception', {
+                        identifier: `did:keri:${wallet.address}`,
+                        name,
+                        type,
+                        publicKey: wallet.publicKey
+                    })
+                };
+                this.identifiers[identifier.did] = identifier;
+                return identifier;
+            }
+
+            // Credential Management
+            createCredential(issuer, subject, role, entityName, lei) {
+                const credential = {
+                    '@context': [
+                        'https://www.w3.org/2018/credentials/v1',
+                        'https://www.gleif.org/vc/v1'
+                    ],
+                    type: ['VerifiableCredential', 'vLEICredential'],
+                    issuer: { id: issuer.did },
+                    issuanceDate: new Date().toISOString(),
+                    credentialSubject: {
+                        id: subject.did,
+                        lei,
+                        entityName,
+                        role,
+                        entityDID: issuer.did
+                    }
+                };
+
+                const credentialId = `credential-${Date.now()}`;
+                this.credentials[credentialId] = credential;
+                
+                this.addEvent('credential_issued', {
+                    credentialId,
+                    issuer: issuer.did,
+                    subject: subject.did,
+                    role,
+                    entityName,
+                    lei
+                });
+
+                return credentialId;
+            }
+
+            revokeCredential(credentialId, reason = 'Role revoked') {
+                if (this.credentials[credentialId]) {
+                    this.credentials[credentialId].revoked = true;
+                    this.credentials[credentialId].revocationDate = new Date().toISOString();
+                    this.credentials[credentialId].revocationReason = reason;
+                    
+                    this.addEvent('credential_revoked', {
+                        credentialId,
+                        reason,
+                        revokedAt: new Date().toISOString()
+                    });
+                }
+            }
+
+            // Step Management
+            loadStep(step) {
+                this.currentStep = step;
+                this.updateStepDisplay();
+                
+                const stepContent = document.getElementById('step-content');
+                
+                switch(step) {
+                    case 1:
+                        stepContent.innerHTML = this.getStep1Content();
+                        break;
+                    case 2:
+                        stepContent.innerHTML = this.getStep2Content();
+                        break;
+                    case 3:
+                        stepContent.innerHTML = this.getStep3Content();
+                        break;
+                    case 4:
+                        stepContent.innerHTML = this.getStep4Content();
+                        break;
+                    case 5:
+                        stepContent.innerHTML = this.getStep5Content();
+                        break;
+                }
+                this.addStepEventHandlers(); // Add handlers after content is loaded
+                
+                // Populate fields with data from previous steps
+                this.populateStepFields();
+            }
+
+            getStep1Content() {
+                return `
+                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-building mr-2 text-blue-500"></i>
+                            Step 1: Issue vLEI for ACME Company Ltd
+                        </h2>
+                        <p class="text-gray-600 mb-6">
+                            QVI generates a KERI identifier for ACME and issues a vLEI credential.
+                        </p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Company Name</label>
+                                    <input type="text" id="company-name" value="ACME Company Ltd" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">LEI</label>
+                                    <input type="text" id="lei" value="529900WXKG14MWNYUQ33" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">QVI Name</label>
+                                    <input type="text" id="qvi-name" value="Qualified vLEI Issuer" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-3">KERI Events</h3>
+                                <div id="step1-events" class="text-sm space-y-2">
+                                    <div class="text-gray-500">No events yet</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <button id="issue-vlei" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-certificate mr-2"></i>Issue vLEI
+                            </button>
+                        </div>
+
+                        <div id="step1-result" class="mt-6 hidden">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <h3 class="font-semibold text-green-800 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>vLEI Issued Successfully!
+                                </h3>
+                                <div class="space-y-2">
+                                    <div><strong>ACME DID:</strong> <span id="acme-did" class="font-mono text-sm"></span></div>
+                                    <div><strong>QVI DID:</strong> <span id="qvi-did" class="font-mono text-sm"></span></div>
+                                    <div><strong>LEI:</strong> <span id="issued-lei"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            getStep2Content() {
+                return `
+                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-user-plus mr-2 text-green-500"></i>
+                            Step 2: Appoint Jane Doe as CFO
+                        </h2>
+                        <p class="text-gray-600 mb-6">
+                            ACME creates a KERI identifier for Jane and issues a delegation credential.
+                        </p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Representative Name</label>
+                                    <input type="text" id="rep-name" value="Jane Doe" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Role</label>
+                                    <select id="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                        <option value="CFO">CFO</option>
+                                        <option value="CEO">CEO</option>
+                                        <option value="CTO">CTO</option>
+                                        <option value="COO">COO</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">ACME DID</label>
+                                    <input type="text" id="acme-did-display" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-3">Delegation Events</h3>
+                                <div id="step2-events" class="text-sm space-y-2">
+                                    <div class="text-gray-500">No delegation events yet</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <button id="appoint-cfo" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-user-tie mr-2"></i>Appoint CFO
+                            </button>
+                        </div>
+
+                        <div id="step2-result" class="mt-6 hidden">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <h3 class="font-semibold text-green-800 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>CFO Appointed Successfully!
+                                </h3>
+                                <div class="space-y-2">
+                                    <div><strong>Jane's DID:</strong> <span id="jane-did" class="font-mono text-sm"></span></div>
+                                    <div><strong>Role:</strong> <span id="appointed-role"></span></div>
+                                    <div><strong>Credential ID:</strong> <span id="credential-id" class="font-mono text-sm"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            getStep3Content() {
+                return `
+                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-search mr-2 text-purple-500"></i>
+                            Step 3: Verify Jane's CFO Claims
+                        </h2>
+                        <p class="text-gray-600 mb-6">
+                            Verify Jane's credential and check the cryptographic chain.
+                        </p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Jane's DID</label>
+                                    <input type="text" id="verify-jane-did" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Expected Role</label>
+                                    <input type="text" id="verify-role" value="CFO" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Credential ID</label>
+                                    <input type="text" id="verify-credential-id" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-3">Verification Results</h3>
+                                <div id="step3-results" class="text-sm space-y-2">
+                                    <div class="text-gray-500">Click "Verify Claims" to see results</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <button id="verify-claims" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-search mr-2"></i>Verify Claims
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            getStep4Content() {
+                return `
+                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-user-minus mr-2 text-red-500"></i>
+                            Step 4: Remove Jane as CFO
+                        </h2>
+                        <p class="text-gray-600 mb-6">
+                            ACME revokes Jane's CFO credential and logs the revocation event.
+                        </p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Credential ID to Revoke</label>
+                                    <input type="text" id="revoke-credential-id" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Revocation Reason</label>
+                                    <input type="text" id="revocation-reason" value="Role terminated" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Jane's DID</label>
+                                    <input type="text" id="revoke-jane-did" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-3">Revocation Events</h3>
+                                <div id="step4-events" class="text-sm space-y-2">
+                                    <div class="text-gray-500">No revocation events yet</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <button id="revoke-cfo" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-user-times mr-2"></i>Revoke CFO Role
+                            </button>
+                        </div>
+
+                        <div id="step4-result" class="mt-6 hidden">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <h3 class="font-semibold text-red-800 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>CFO Role Revoked!
+                                </h3>
+                                <div class="space-y-2">
+                                    <div><strong>Revoked Credential:</strong> <span id="revoked-credential-id" class="font-mono text-sm"></span></div>
+                                    <div><strong>Reason:</strong> <span id="revocation-reason-display"></span></div>
+                                    <div><strong>Revoked At:</strong> <span id="revocation-time"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            getStep5Content() {
+                return `
+                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-ban mr-2 text-orange-500"></i>
+                            Step 5: Confirm Jane is No Longer CFO
+                        </h2>
+                        <p class="text-gray-600 mb-6">
+                            Verify that Jane's credential has been revoked and is no longer valid.
+                        </p>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Jane's DID</label>
+                                    <input type="text" id="confirm-jane-did" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Credential ID</label>
+                                    <input type="text" id="confirm-credential-id" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Expected Status</label>
+                                    <input type="text" id="expected-status" value="Revoked" readonly 
+                                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-gray-800 mb-3">Confirmation Results</h3>
+                                <div id="step5-results" class="text-sm space-y-2">
+                                    <div class="text-gray-500">Click "Confirm Revocation" to verify</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <button id="confirm-revocation" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-check mr-2"></i>Confirm Revocation
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            nextStep() {
+                if (this.currentStep < 5) {
+                    this.currentStep++;
+                    this.loadStep(this.currentStep);
+                }
+            }
+
+            prevStep() {
+                if (this.currentStep > 1) {
+                    this.currentStep--;
+                    this.loadStep(this.currentStep);
+                }
+            }
+
+            updateStepDisplay() {
+                // Update step indicators
+                document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                    const stepNumber = index + 1;
+                    const circle = indicator.querySelector('div');
+                    const text = indicator.querySelector('span');
+
+                    if (stepNumber === this.currentStep) {
+                        circle.className = 'w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold';
+                        text.className = 'text-sm mt-1 text-blue-600 font-medium';
+                    } else if (stepNumber < this.currentStep) {
+                        circle.className = 'w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold';
+                        text.className = 'text-sm mt-1 text-green-600 font-medium';
+                    } else {
+                        circle.className = 'w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold';
+                        text.className = 'text-sm mt-1 text-gray-500';
+                    }
+                });
+
+                // Update navigation buttons
+                const prevButton = document.getElementById('prev-step');
+                const nextButton = document.getElementById('next-step');
+
+                if (this.currentStep === 1) {
+                    prevButton.classList.add('hidden');
+                    nextButton.textContent = 'Next';
+                } else if (this.currentStep === 5) {
+                    prevButton.classList.remove('hidden');
+                    nextButton.textContent = 'Finish';
+                } else {
+                    prevButton.classList.remove('hidden');
+                    nextButton.textContent = 'Next';
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+                
+                if (type === 'success') {
+                    notification.className += ' bg-green-500 text-white';
+                } else if (type === 'error') {
+                    notification.className += ' bg-red-500 text-white';
+                } else {
+                    notification.className += ' bg-blue-500 text-white';
+                }
+
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                // Animate in
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                }, 100);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+
+            populateStepFields() {
+                switch(this.currentStep) {
+                    case 2:
+                        if (this.acme) {
+                            document.getElementById('acme-did-display').value = this.acme.did;
+                        }
+                        break;
+                    case 3:
+                        if (this.jane) {
+                            document.getElementById('verify-jane-did').value = this.jane.did;
+                        }
+                        if (this.delegationCredentialId) {
+                            document.getElementById('verify-credential-id').value = this.delegationCredentialId;
+                        }
+                        break;
+                    case 4:
+                        if (this.delegationCredentialId) {
+                            document.getElementById('revoke-credential-id').value = this.delegationCredentialId;
+                        }
+                        if (this.jane) {
+                            document.getElementById('revoke-jane-did').value = this.jane.did;
+                        }
+                        break;
+                    case 5:
+                        if (this.jane) {
+                            document.getElementById('confirm-jane-did').value = this.jane.did;
+                        }
+                        if (this.delegationCredentialId) {
+                            document.getElementById('confirm-credential-id').value = this.delegationCredentialId;
+                        }
+                        break;
+                }
+            }
+        }
+
+        // Initialize the KERI demo when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.keriDemo = new KERISystem();
+        });
+    </script>
+</body>
+</html> 
