@@ -74,7 +74,7 @@
                         </div>
                         <div class="step-indicator" data-step="2">
                             <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">2</div>
-                            <span class="text-sm mt-1">Appoint CFO</span>
+                            <span class="text-sm mt-1">Appoint Representative</span>
                         </div>
                         <div class="step-indicator" data-step="3">
                             <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
@@ -82,7 +82,7 @@
                         </div>
                         <div class="step-indicator" data-step="4">
                             <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">4</div>
-                            <span class="text-sm mt-1">Remove CFO</span>
+                            <span class="text-sm mt-1">Remove Representative</span>
                         </div>
                         <div class="step-indicator" data-step="5">
                             <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">5</div>
@@ -254,7 +254,7 @@
                     <div class="text-green-600">✓ Delegation credential issued</div>
                 `;
 
-                this.showNotification('CFO appointed successfully!', 'success');
+                this.showNotification(`${repName} appointed as ${role} successfully!`, 'success');
                 
                 // Store for later steps
                 this.jane = jane;
@@ -325,7 +325,7 @@
                     <div class="text-red-600">✓ Credential revocation event</div>
                 `;
 
-                this.showNotification('CFO role revoked successfully!', 'success');
+                this.showNotification('role revoked successfully!', 'success');
             }
 
             executeStep5() {
@@ -344,7 +344,7 @@
                             </div>
                             <div class="mt-2 text-sm">
                                 <div>✓ Credential is revoked</div>
-                                <div>✓ Jane is no longer CFO</div>
+                                <div>✓ ${credential.credentialSubject.name} has been removed</div>
                                 <div>✓ Revocation reason: ${credential.revocationReason}</div>
                                 <div>✓ Revoked at: ${new Date(credential.revocationDate).toLocaleString()}</div>
                             </div>
@@ -359,7 +359,7 @@
                             </div>
                             <div class="mt-2 text-sm">
                                 <div>✗ Credential is still active</div>
-                                <div>✗ Jane is still CFO</div>
+                                <div>✗ ${credential.credentialSubject.name} is still ${credential.credentialSubject.role}</div>
                             </div>
                         </div>
                     `;
@@ -384,6 +384,11 @@
 
             updateEventLog() {
                 const eventList = document.getElementById('event-list');
+                if (!eventList) {
+                    console.error('Event list element not found');
+                    return;
+                }
+                
                 eventList.innerHTML = '';
 
                 this.events.forEach(event => {
@@ -398,24 +403,53 @@
                             <div class="text-xs bg-gray-100 px-2 py-1 rounded">#${event.sequence}</div>
                         </div>
                     `;
-                    eventElement.addEventListener('click', () => this.selectEvent(event));
+                    
+                    // Add click event listener
+                    eventElement.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Event clicked:', event);
+                        this.selectEvent(event);
+                    });
+                    
                     eventList.appendChild(eventElement);
                 });
+                
+                console.log('Updated event log with', this.events.length, 'events');
             }
 
-            selectEvent(event) {
+            selectEvent(keriEvent) {
+                console.log('KERI Event selected:', keriEvent);
+                
                 // Remove previous selection
                 document.querySelectorAll('.keri-event').forEach(el => el.classList.remove('selected'));
                 
-                // Add selection to clicked event
-                event.target.closest('.keri-event').classList.add('selected');
+                // Find the element that was clicked and add selection
+                const eventElements = document.querySelectorAll('.keri-event');
+                eventElements.forEach((element, index) => {
+                    if (this.events[index] === keriEvent) {
+                        element.classList.add('selected');
+                        console.log('Selected element:', element);
+                    }
+                });
                 
                 // Show event details
-                this.showEventDetails(event);
+                this.showEventDetails(keriEvent);
             }
 
+
+
             showEventDetails(event) {
+                console.log('Showing event details for:', event);
+                
                 const detailsDiv = document.getElementById('event-details');
+                if (!detailsDiv) {
+                    console.error('Event details element not found');
+                    return;
+                }
+                
+                console.log('Found details div, updating content...');
+                
                 detailsDiv.innerHTML = `
                     <div class="space-y-3">
                         <div>
@@ -424,18 +458,20 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Sequence</label>
-                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">${event.sequence}</div>
+                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">#${event.sequence}</div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700">Timestamp</label>
-                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">${event.timestamp}</div>
+                            <div class="text-sm font-mono bg-gray-50 p-2 rounded">${new Date(event.timestamp).toLocaleString()}</div>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700">Data</label>
-                            <pre class="text-xs bg-gray-50 p-2 rounded overflow-auto max-h-32">${JSON.stringify(event.data, null, 2)}</pre>
+                            <label class="block text-xs font-medium text-gray-700">Event Data</label>
+                            <pre class="text-xs bg-gray-50 p-2 rounded overflow-auto max-h-32 border">${JSON.stringify(event.data, null, 2)}</pre>
                         </div>
                     </div>
                 `;
+                
+                console.log('Event details updated successfully');
             }
 
             toggleDrawer() {
@@ -606,7 +642,7 @@
                     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
                         <h2 class="text-2xl font-bold mb-4 text-gray-800">
                             <i class="fas fa-user-plus mr-2 text-green-500"></i>
-                            Step 2: Appoint Jane Doe as CFO
+                            Step 2: Appoint Jane Doe
                         </h2>
                         <p class="text-gray-600 mb-6">
                             ACME creates a KERI identifier for Jane and issues a delegation credential.
@@ -645,14 +681,14 @@
 
                         <div class="mt-6 text-center">
                             <button id="appoint-cfo" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-                                <i class="fas fa-user-tie mr-2"></i>Appoint CFO
+                                <i class="fas fa-user-tie mr-2"></i>Make Appointment 
                             </button>
                         </div>
 
                         <div id="step2-result" class="mt-6 hidden">
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                                 <h3 class="font-semibold text-green-800 mb-2">
-                                    <i class="fas fa-check-circle mr-2"></i>CFO Appointed Successfully!
+                                    <i class="fas fa-check-circle mr-2"></i>Successfully Appointed!
                                 </h3>
                                 <div class="space-y-2">
                                     <div><strong>Jane's DID:</strong> <span id="jane-did" class="font-mono text-sm"></span></div>
@@ -752,14 +788,14 @@
 
                         <div class="mt-6 text-center">
                             <button id="revoke-cfo" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-                                <i class="fas fa-user-times mr-2"></i>Revoke CFO Role
+                                <i class="fas fa-user-times mr-2"></i>Revoke Role
                             </button>
                         </div>
 
                         <div id="step4-result" class="mt-6 hidden">
                             <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                                 <h3 class="font-semibold text-red-800 mb-2">
-                                    <i class="fas fa-check-circle mr-2"></i>CFO Role Revoked!
+                                    <i class="fas fa-check-circle mr-2"></i>Role Revoked!
                                 </h3>
                                 <div class="space-y-2">
                                     <div><strong>Revoked Credential:</strong> <span id="revoked-credential-id" class="font-mono text-sm"></span></div>
