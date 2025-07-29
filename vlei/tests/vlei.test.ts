@@ -6,6 +6,7 @@ import {
     createSigner,
     type VLEIIssuer
 } from "../index"
+import { newDiD, newVLEIDiD } from "../vlei"
 
 describe("vLEI Credential Functions", () => {
     let issuer: VLEIIssuer
@@ -202,6 +203,45 @@ describe("vLEI Credential Functions", () => {
             const representativeDID = "did:ethr:0xabcdef1234567890abcdef1234567890abcdef12"
             const legalEntityDID = "did:ethr:0xfedcba0987654321fedcba0987654321fedcba09"
             const lei = "529900WXKG14MWNYUQ33"
+            const entityName = "Global Tech Solutions Ltd"
+            const role = "CTO"
+
+            const vleiJwt = await createVLEI(
+                issuer,
+                representativeDID,
+                legalEntityDID,
+                lei,
+                entityName,
+                role
+            )
+
+            // Step 2: Verify the JWT structure
+            expect(vleiJwt).toBeDefined()
+            expect(typeof vleiJwt).toBe("string")
+            expect(vleiJwt.split(".")).toHaveLength(3)
+
+            // Step 3: Decode and verify the payload content
+            const parts = vleiJwt.split(".")
+            const payloadBase64 = parts[1]
+            if (payloadBase64) {
+                const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString())
+
+                expect(payload.vc.type).toContain("vLEICredential")
+                expect(payload.vc.credentialSubject.lei).toBe(lei)
+                expect(payload.vc.credentialSubject.entityName).toBe(entityName)
+                expect(payload.vc.credentialSubject.role).toBe(role)
+                expect(payload.vc.credentialSubject.entityDID).toBe(legalEntityDID)
+            }
+        })
+
+        it("should use vlei", async () => {
+            // Step 1: get LEI from LOU
+            const lei = "thisismyLEI"
+
+
+            const representativeDID = newVLEIDiD(lei)
+            const legalEntityDID = "did:ethr:0xfedcba0987654321fedcba0987654321fedcba09"
+
             const entityName = "Global Tech Solutions Ltd"
             const role = "CTO"
 

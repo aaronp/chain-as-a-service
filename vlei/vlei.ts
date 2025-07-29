@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { createVerifiableCredentialJwt, type JwtCredentialPayload } from "did-jwt-vc";
-import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { importJWK, jwtVerify, type JWTPayload, type KeyLike } from "jose";
 
 // ---------------------------------------------
 // TYPE DEFINITIONS
@@ -36,7 +36,9 @@ export function generateKeypair(): KeyPair {
 // STEP 2: Create DID
 // ---------------------------------------------
 
-export const newDiD = (): string => `did:vlei:${crypto.randomUUID()}`;
+export const newVLEIDiD = (lei: string = crypto.randomUUID()): string => `did:vlei:${lei}`;
+export const newEthrDiD = (address: string): string => `did:ethr:${address}`;
+export const newWebDiD = (domain: string): string => `did:web:${domain}`;
 
 // ---------------------------------------------
 // STEP 3: Create Issuer
@@ -105,18 +107,32 @@ export async function signCredential(
 // ---------------------------------------------
 // STEP 6: Verify Credential
 // ---------------------------------------------
-
 export async function verifyCredential(
     jwt: string,
-    publicKeyHex: string
+    publicKeyHex: string // compressed or uncompressed secp256k1 public key in hex
 ): Promise<JWTPayload> {
-    const publicKey = await ethers.computePublicKey(publicKeyHex, true);
+    // Convert the hex public key to a JWK for jose
+    const publicKeyBuffer = ethers.getBytes(publicKeyHex);
+    const ecPublicKeyJWK = {
+        kty: "EC",
+        crv: "secp256k1",
+        x: "",
+        y: "",
+    };
 
-    const result = await jwtVerify(jwt, async (header, token) => {
-        const recoveredAddress = ethers.verifyMessage(token.payload.iss || '', jwt);
-        const pubKey = ethers.computePublicKey(recoveredAddress, true);
-        return ethers.recoverPublicKey(ethers.hashMessage(jwt), jwt);
-    });
+    // Parse x and y from public key (assuming uncompressed 0x04 + x + y)
+    if (publicKeyBuffer[0] === 0x04 && publicKeyBuffer.length === 65) {
+        const x = publicKeyBuffer.slice(1, 33);
+        const y = publicKeyBuffer.slice(33, 65);
 
-    return result.payload;
-} 
+        ecPublicKeyJWK.x = Buffer.from(x).toString("base64url");
+        ecPublicKeyJWK.y = Buffer.from(y).toString("base64url");
+    } else {
+        throw new Error("Only uncompressed public keys are supported");
+    }
+
+    const key: KeyLike = await importJWK(ecPublicKeyJWK, "ES256K");
+
+    const { payload } = await jwtVerify(jwt, key);
+    return payload;
+}
