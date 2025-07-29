@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { createVerifiableCredentialJwt, type JwtCredentialPayload } from "did-jwt-vc";
-import { importJWK, jwtVerify, type JWTPayload, type KeyLike } from "jose";
+import { importJWK, jwtVerify, type JWTPayload } from "jose";
 
 // ---------------------------------------------
 // TYPE DEFINITIONS
@@ -132,7 +132,7 @@ export async function verifyCredential(
         throw new Error("Only uncompressed public keys are supported");
     }
 
-    const key: KeyLike = await importJWK(ecPublicKeyJWK, "ES256K");
+    const key = await importJWK(ecPublicKeyJWK, "ES256K");
 
     const { payload } = await jwtVerify(jwt, key);
     return payload;

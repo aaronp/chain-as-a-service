@@ -4,7 +4,8 @@ import {
     validateVLEI,
     createResolver,
     createSigner,
-    type VLEIIssuer
+    type VLEIIssuer,
+    validateVLEIJWT
 } from "../index"
 import { createIssuer, generateKeypair, newVLEIDiD, signCredential, verifyCredential } from "../vlei"
 
@@ -13,8 +14,9 @@ describe("vLEI Credential Functions", () => {
     let resolver: any
 
     beforeEach(() => {
-        // Mock private key for testing (32 bytes)
-        const privateKey = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        // private key for testing (32 bytes)
+        const privateKey = generateKeypair().privateKey
+        console.log("privateKey", privateKey)
 
         issuer = {
             did: "did:ethr:0x1234567890123456789012345678901234567890",
@@ -268,16 +270,19 @@ describe("vLEI Credential Functions", () => {
             // prove another party can't verify the credential
             try {
                 const differentKey = generateKeypair()
-                await verifyCredential(vleiJwt, differentKey.publicKey)
+                const failed = await validateVLEIJWT(vleiJwt, differentKey.publicKey)
+                expect(failed.isValid).toBe(false)
+                expect(failed.error).toBeDefined()
             } catch (error) {
                 expect(error).toBeDefined()
             }
 
             // Step 3: the LOU can now issue the LEI to the applicant
-            const payload = await verifyCredential(vleiJwt, issuerIdentity.signer.publicKey)
-            expect(payload).toBeDefined()
-            expect(payload.sub).toBe(representativeDID)
-            console.log(payload)
+            // Use the public key from the issuerIdentity for verification
+            const result = await validateVLEIJWT(vleiJwt, issuerIdentity.signer.publicKey)
+            expect(result.isValid).toBe(true)
+            expect(result.credential).toBeDefined()
+            expect(result.error).toBeUndefined()
 
         })
     })
