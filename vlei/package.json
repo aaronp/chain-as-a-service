@@ -12,6 +12,8 @@
   "dependencies": {
     "did-jwt-vc": "^4.0.15",
     "did-resolver": "^4.1.0",
-    "ethr-did-resolver": "^11.0.4"
+    "ethers": "^6.15.0",
+    "ethr-did-resolver": "^11.0.4",
+    "jose": "^6.0.12"
   }
 }
