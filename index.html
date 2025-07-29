@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLEI - Verifiable Legal Entity Identifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .feature-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-5xl font-bold mb-4">
+                <i class="fas fa-shield-alt mr-4"></i>
+                VLEI
+            </h1>
+            <p class="text-2xl mb-6 opacity-90">
+                Verifiable Legal Entity Identifier System
+            </p>
+            <p class="text-lg opacity-80 max-w-3xl mx-auto">
+                A comprehensive implementation of verifiable credentials for legal entity identification, 
+                built with modern cryptographic standards and KERI (Key Event Receipt Infrastructure).
+            </p>
+            <div class="mt-8 flex justify-center space-x-4">
+                <a href="vlei/demo.html" class="bg-white text-purple-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fas fa-play mr-2"></i>VLEI Example
+                </a>
+                <a href="vlei/keri.html" class="bg-white text-purple-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fas fa-play mr-2"></i>KERI Example
+                </a>
+                <a href="https://github.com/aaronp/chain-as-a-service" class="bg-transparent border-2 border-white text-white font-bold py-3 px-6 rounded-lg hover:bg-white hover:text-purple-600 transition-colors duration-200">
+                    <i class="fab fa-github mr-2"></i>View Code
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-16">
+        <!-- Features Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">
+                Key Features
+            </h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                    <div class="text-4xl mb-4 feature-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Cryptographic Security</h3>
+                    <p class="text-gray-600">
+                        Built on robust cryptographic primitives with support for multiple key types 
+                        and secure key management through KERI standards.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                    <div class="text-4xl mb-4 feature-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Verifiable Credentials</h3>
+                    <p class="text-gray-600">
+                        Implements W3C Verifiable Credentials standard for legal entity identification 
+                        with tamper-evident digital signatures.
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                    <div class="text-4xl mb-4 feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">Zero-Knowledge Verification</h3>
+                    <p class="text-gray-600">
+                        Verify entity relationships and roles without revealing sensitive information, 
+                        enabling privacy-preserving identity verification.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VLEI Information Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">
+                About VLEI
+            </h2>
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                            What is VLEI?
+                        </h3>
+                        <p class="text-gray-600 mb-4">
+                            Verifiable Legal Entity Identifiers (VLEI) are digital credentials that establish 
+                            the identity and relationships of legal entities in a verifiable, tamper-evident manner.
+                        </p>
+                        <p class="text-gray-600 mb-4">
+                            Unlike traditional LEI (Legal Entity Identifier) systems, VLEI leverages 
+                            blockchain and cryptographic technologies to provide:
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Immutable identity records</li>
+                            <li>Cryptographic proof of relationships</li>
+                            <li>Privacy-preserving verification</li>
+                            <li>Decentralized trust networks</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-link mr-2 text-green-500"></i>
+                            Learn More
+                        </h3>
+                        <div class="space-y-4">
+                            <a href="https://www.gleif.org/en/lei-data/lei-iso-17442-standard" 
+                               class="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-external-link-alt mr-3 text-blue-500"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">GLEIF LEI Standard</h4>
+                                        <p class="text-sm text-gray-600">ISO 17442 Legal Entity Identifier standard</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="https://www.w3.org/TR/vc-data-model/" 
+                               class="block p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-external-link-alt mr-3 text-green-500"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">W3C Verifiable Credentials</h4>
+                                        <p class="text-sm text-gray-600">Data model for verifiable credentials</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="https://www.gleif.org/en/lei-data/lei-iso-17442-standard/verifiable-lei-vlei" 
+                               class="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-external-link-alt mr-3 text-purple-500"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">GLEIF vLEI Initiative</h4>
+                                        <p class="text-sm text-gray-600">Official verifiable LEI program</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VLEI Structure Diagram -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">
+                VLEI Structure
+            </h2>
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-sitemap mr-2 text-purple-500"></i>
+                            Hierarchical Identity Structure
+                        </h3>
+                        <p class="text-gray-600">
+                            VLEI establishes a clear hierarchy between individual representatives and legal entities, 
+                            with cryptographic proof of relationships and roles.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+                        <div class="font-mono text-sm md:text-base">
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">👤</div>
+                                <div class="font-semibold text-blue-800">Individual Person (Representative)</div>
+                            </div>
+                            <div class="ml-8 mb-4 space-y-2">
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-2">├──</span>
+                                    <span class="text-gray-700"><strong>DID:</strong> <code class="bg-blue-100 px-2 py-1 rounded">did:ethr:0xabcdef...</code></span>
+                                    <span class="text-gray-500 ml-2">(John Smith's personal DID)</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-2">├──</span>
+                                    <span class="text-gray-700"><strong>Role:</strong> <code class="bg-green-100 px-2 py-1 rounded">"CFO"</code></span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 mr-2">└──</span>
+                                    <span class="text-gray-700"><strong>Represents:</strong> <span class="text-purple-600 font-semibold">Legal Entity</span></span>
+                                </div>
+                            </div>
+                            
+                            <div class="ml-8">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold mr-3">🏢</div>
+                                    <div class="font-semibold text-purple-800">Legal Entity</div>
+                                </div>
+                                <div class="ml-8 space-y-2">
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">├──</span>
+                                        <span class="text-gray-700"><strong>DID:</strong> <code class="bg-purple-100 px-2 py-1 rounded">did:ethr:0xfedcba...</code></span>
+                                        <span class="text-gray-500 ml-2">(ACME Corp's DID)</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">├──</span>
+                                        <span class="text-gray-700"><strong>LEI:</strong> <code class="bg-yellow-100 px-2 py-1 rounded">529900WXKG14MWNYUQ33</code></span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-gray-500 mr-2">└──</span>
+                                        <span class="text-gray-700"><strong>Name:</strong> <code class="bg-orange-100 px-2 py-1 rounded">"ACME Corporation"</code></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 grid md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <h4 class="font-semibold text-blue-800 mb-2">
+                                <i class="fas fa-user mr-2"></i>Representative
+                            </h4>
+                            <p class="text-sm text-blue-700">
+                                Individual person with a specific role within the legal entity, 
+                                identified by their personal DID.
+                            </p>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                            <h4 class="font-semibold text-purple-800 mb-2">
+                                <i class="fas fa-building mr-2"></i>Legal Entity
+                            </h4>
+                            <p class="text-sm text-purple-700">
+                                Organization or corporation with its own DID and official LEI identifier.
+                            </p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                            <h4 class="font-semibold text-green-800 mb-2">
+                                <i class="fas fa-certificate mr-2"></i>Verifiable Credential
+                            </h4>
+                            <p class="text-sm text-green-700">
+                                Cryptographic proof of the representative's role and relationship to the entity.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KERI Information Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">
+                About KERI
+            </h2>
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-cogs mr-2 text-purple-500"></i>
+                            Key Event Receipt Infrastructure
+                        </h3>
+                        <p class="text-gray-600 mb-4">
+                            KERI is a cryptographic key management infrastructure that provides secure, 
+                            scalable, and interoperable digital identity systems.
+                        </p>
+                        <p class="text-gray-600 mb-4">
+                            Key features of KERI include:
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Self-sovereign identity management</li>
+                            <li>Cryptographic key rotation and recovery</li>
+                            <li>Decentralized identifier (DID) support</li>
+                            <li>Event-sourced key management</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-link mr-2 text-orange-500"></i>
+                            KERI Resources
+                        </h3>
+                        <div class="space-y-4">
+                            <a href="https://keri.one/" 
+                               class="block p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-external-link-alt mr-3 text-orange-500"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">KERI Official Site</h4>
+                                        <p class="text-sm text-gray-600">Official KERI documentation and resources</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="https://github.com/WebOfTrust/keri" 
+                               class="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors duration-200">
+                                <div class="flex items-center">
+                                    <i class="fab fa-github mr-3 text-blue-500"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">KERI GitHub</h4>
+                                        <p class="text-sm text-gray-600">Open source KERI implementation</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <a href="https://www.w3.org/TR/did-core/" 
+                               class="block p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors duration-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-external-link-alt mr-3 text-green-500"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">W3C DID Standard</h4>
+                                        <p class="text-sm text-gray-600">Decentralized Identifiers specification</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">
+                Interactive Demo
+            </h2>
+            <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+                <div class="max-w-2xl mx-auto">
+                    <div class="text-6xl mb-6 feature-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                        See it in Action
+                    </h3>
+                    <p class="text-gray-600 mb-8">
+                        Try our interactive demo to see how VLEI credentials work in practice. 
+                        Generate cryptographic keys, create verifiable credentials, and test verification processes.
+                    </p>
+                    <a href="vlei/demo.html" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-8 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 inline-block">
+                        <i class="fas fa-rocket mr-2"></i>Launch VLEI Demo
+                    </a>
+                    <a href="vlei/keri.html" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-8 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 inline-block">
+                        <i class="fas fa-rocket mr-2"></i>Launch KERI Demo
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Details -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">
+                Technical Implementation
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-code mr-2 text-blue-500"></i>
+                        Built With
+                    </h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>TypeScript for type safety</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>Ethers.js for Ethereum integration</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>JOSE for JWT handling</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>W3C Verifiable Credentials</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>KERI-compatible key management</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">
+                        <i class="fas fa-shield-alt mr-2 text-green-500"></i>
+                        Security Features
+                    </h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>Cryptographic signatures</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>Tamper-evident credentials</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>Zero-knowledge proofs</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>Decentralized identifiers</li>
+                        <li><i class="fas fa-check mr-2 text-green-500"></i>Key rotation support</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">VLEI Project</h3>
+                    <p class="text-gray-400">
+                        A comprehensive implementation of verifiable credentials for legal entity identification, 
+                        built with modern cryptographic standards and KERI.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="demo.html" class="hover:text-white transition-colors duration-200">Interactive Demo</a></li>
+                        <li><a href="keri.html" class="hover:text-white transition-colors duration-200">KERI Documentation</a></li>
+                        <li><a href="keri.md" class="hover:text-white transition-colors duration-200">KERI Markdown</a></li>
+                        <li><a href="README-demo.md" class="hover:text-white transition-colors duration-200">Demo README</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Resources</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="https://www.gleif.org/" class="hover:text-white transition-colors duration-200">GLEIF</a></li>
+                        <li><a href="https://keri.one/" class="hover:text-white transition-colors duration-200">KERI</a></li>
+                        <li><a href="https://www.w3.org/TR/vc-data-model/" class="hover:text-white transition-colors duration-200">W3C VCs</a></li>
+                        <li><a href="https://www.w3.org/TR/did-core/" class="hover:text-white transition-colors duration-200">DIDs</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 VLEI Project. Built with modern web technologies and cryptographic standards.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html> 
